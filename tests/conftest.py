@@ -12,8 +12,8 @@ os.environ["DEFAULT_LANG"] = "uz"
 import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
-from aiogram.methods import CopyMessage, GetMe, GetWebhookInfo, SendMessage
-from aiogram.types import Chat, Message, MessageId, Update, User, WebhookInfo
+from aiogram.methods import CopyMessage, GetMe, GetWebhookInfo, SendDocument, SendMessage, SendPhoto, SendVoice
+from aiogram.types import Chat, Document, Message, MessageId, PhotoSize, Update, User, Voice, WebhookInfo
 
 from bot.app import get_dispatcher
 from bot.db.session import init_db, make_engine, reset_sessionmaker, use_sessionmaker
@@ -44,6 +44,14 @@ class FakeSession(BaseSession):
                 chat=Chat(id=method.chat_id, type="private"),
                 text=method.text,
             )
+        if isinstance(method, (SendPhoto, SendVoice, SendDocument)):
+            n = next(self._ids)
+            media = {
+                SendPhoto: {"photo": [PhotoSize(file_id=f"photo{n}", file_unique_id=f"u{n}", width=1, height=1)]},
+                SendVoice: {"voice": Voice(file_id=f"voice{n}", file_unique_id=f"u{n}", duration=1)},
+                SendDocument: {"document": Document(file_id=f"doc{n}", file_unique_id=f"u{n}")},
+            }[type(method)]
+            return Message(message_id=n, date=datetime.now(), chat=Chat(id=method.chat_id, type="group"), **media)
         if isinstance(method, CopyMessage):
             return MessageId(message_id=next(self._ids))
         return True
@@ -83,6 +91,13 @@ class Harness:
         await self._send("message", {
             "message_id": next(self._ids), "date": int(time.time()),
             "chat": {"id": uid, "type": "private"}, "from": self._user(uid), "text": text,
+        })
+
+    async def private_media(self, uid, **media):
+        """A private media message, e.g. voice={"file_id": "v", "file_unique_id": "u", "duration": 3}."""
+        await self._send("message", {
+            "message_id": next(self._ids), "date": int(time.time()),
+            "chat": {"id": uid, "type": "private"}, "from": self._user(uid), **media,
         })
 
     async def group(self, chat_id, uid, text, title="7-B sinf", reply_to=None):

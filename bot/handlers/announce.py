@@ -3,7 +3,7 @@ import contextlib
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramAPIError
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -12,11 +12,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.callbacks import AnnCb, AnnDelCb
-from bot.db.models import Announcement, Group, User
+from bot.db.models import Announcement, Group, MediaDraft, User
 from bot.filters import CanAnnounce, can_announce, is_admin
 from bot.i18n import t
 from bot.services.broadcast import broadcast, delete_announcement, save_announcement
 from bot.services.common import group_sort_key, q
+from bot.services.media import describe_media
 
 router = Router(name="announce")
 router.message.filter(F.chat.type == ChatType.PRIVATE)
@@ -69,6 +70,21 @@ async def cmd_announce(message: Message, state: FSMContext, session: AsyncSessio
     await state.clear()
     await state.set_state(AnnounceSG.content)
     await message.answer(t(lang, "ann_send_content"))
+
+
+MEDIA = F.photo | F.video | F.voice | F.audio | F.document | F.video_note | F.animation
+
+
+@router.message(StateFilter(None), MEDIA, CanAnnounce())
+async def save_media_draft(message: Message, session: AsyncSession, user: User, lang: str):
+    """Media sent to the bot outside a conversation becomes an attachment for the Mini App."""
+    kind, file_name, duration = describe_media(message)
+    session.add(MediaDraft(
+        user_id=user.id, chat_id=message.chat.id, message_id=message.message_id,
+        kind=kind, caption=message.caption, file_name=file_name, duration=duration,
+    ))
+    await session.commit()
+    await message.reply(t(lang, "draft_saved", kind=t(lang, f"media_{kind}")))
 
 
 @router.message(AnnounceSG.content)
@@ -160,7 +176,7 @@ async def _do_send(status_msg: Message, session: AsyncSession, bot: Bot, user: U
     ann = await save_announcement(session, user.id, pin, data.get("preview", ""), result)
 
     labels = {g.chat_id: g.label for g in await active_groups(session)}
-    lines = [t(lang, "ann_report", sent=len(result.sent), total=len(chat_ids))]
+    lines = [t(lang, "ann_report", sent=result.chats_reached, total=len(chat_ids))]
     if result.failed:
         names = ", ".join(q(labels.get(c, str(c))) for c in result.failed)
         lines.append(t(lang, "ann_failed", names=names))

@@ -158,6 +158,26 @@ class PendingDelete(Base):
     delete_at: Mapped[datetime]
 
 
+class MediaDraft(Base):
+    """A photo/video/voice/file an announcer sent to the bot privately, to attach in the Mini App.
+
+    Kept as (chat_id, message_id) so it can be re-sent with copy_message, which preserves the
+    type exactly (a voice note stays a voice note) and has no upload size limit."""
+
+    __tablename__ = "media_drafts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger)
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int]
+    # "photo" | "video" | "voice" | "audio" | "document" | "video_note" | "animation"
+    kind: Mapped[str] = mapped_column(String(16))
+    caption: Mapped[str | None] = mapped_column(Text)
+    file_name: Mapped[str | None] = mapped_column(String(255))
+    duration: Mapped[int | None]
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
 class AnnouncementMessage(Base):
     __tablename__ = "announcement_messages"
 

@@ -339,6 +339,23 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Не найдено. Обновите страницу.",
         "en": "Not found. Please refresh.",
     },
+    "webapp_media_too_big": {
+        "uz": "Fayl juda katta (3 MB dan oshmasin). Kattaroq faylni botga yuboring, u «Botga yuborilganlar» ro'yxatida chiqadi.",
+        "ru": "Файл слишком большой (не больше 3 МБ). Отправьте большой файл боту — он появится в списке «Отправленные боту».",
+        "en": "The file is too big (3 MB max). Send larger files to the bot; they'll appear under “Sent to the bot”.",
+    },
+    "draft_saved": {
+        "uz": "✅ {kind} saqlandi. Uni Mini App'da E'lon → Biriktirish orqali guruhlarga yuborishingiz mumkin.",
+        "ru": "✅ {kind}: сохранено. Отправить в группы можно в Mini App: Объявление → Вложение.",
+        "en": "✅ {kind} saved. Send it to groups from the Mini App: Announce → Attach.",
+    },
+    "media_photo": {"uz": "Rasm", "ru": "Фото", "en": "Photo"},
+    "media_video": {"uz": "Video", "ru": "Видео", "en": "Video"},
+    "media_voice": {"uz": "Ovozli xabar", "ru": "Голосовое", "en": "Voice message"},
+    "media_audio": {"uz": "Audio", "ru": "Аудио", "en": "Audio"},
+    "media_document": {"uz": "Fayl", "ru": "Файл", "en": "File"},
+    "media_video_note": {"uz": "Video xabar", "ru": "Видеосообщение", "en": "Video message"},
+    "media_animation": {"uz": "GIF", "ru": "GIF", "en": "GIF"},
     "webapp_text_empty": {
         "uz": "E'lon matni bo'sh.",
         "ru": "Текст объявления пуст.",

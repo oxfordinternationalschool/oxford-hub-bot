@@ -134,7 +134,7 @@
   .search { position: relative; }
   .search svg.i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 19px; height: 19px; }
   .search .in { padding-left: 42px; background: var(--surface); box-shadow: var(--shadow); }
-  .switch { position: relative; width: 50px; height: 30px; flex: none; }
+  .switch { position: relative; display: inline-block; vertical-align: middle; width: 50px; height: 30px; flex: none; }
   .switch input { opacity: 0; position: absolute; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
   .switch i { position: absolute; inset: 0; border-radius: 999px; background: var(--surface-2); transition: background .2s; pointer-events: none;
     box-shadow: inset 0 0 0 1px var(--line); }
@@ -165,6 +165,30 @@
   .sheet .top { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
   .sheet h2 { font-size: 21px; margin: 0; letter-spacing: -.015em; flex: 1; }
 
+  /* Custom select: a field-looking button that opens a list sheet above everything */
+  .pick { width: 100%; display: flex; align-items: center; gap: 10px; border: 1.5px solid transparent; background: var(--surface-2);
+    border-radius: 13px; padding: 0 14px; min-height: 48px; text-align: left; font-weight: 550; }
+  .pick span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick svg.i { color: var(--muted); width: 18px; height: 18px; transform: rotate(90deg); }
+  .pick:active { border-color: var(--accent); }
+  .picker-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .picker { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: var(--bg); border-radius: 24px 24px 0 0;
+    max-height: 70vh; overflow-y: auto; transform: translateY(100%); transition: transform .22s cubic-bezier(.2,.8,.2,1);
+    padding: 8px 16px calc(20px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  .picker.open { transform: translateY(0); } .picker-bg.open { opacity: 1; pointer-events: auto; }
+  .picker h3 { font-size: 17px; margin: 4px 4px 12px; }
+  .opt { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 14px 16px; text-align: left;
+    font-size: 15.5px; position: relative; }
+  .opt + .opt::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 1px; background: var(--line); }
+  .opt span { flex: 1; } .opt svg.i { color: var(--accent); width: 20px; height: 20px; }
+  .opt.on { font-weight: 650; } .opt:active { background: var(--surface-2); }
+
+  /* Attachment chip */
+  .att { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--accent-soft); margin-top: 10px; }
+  .att .main { flex: 1; min-width: 0; } .att .title { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .att .sub { color: var(--muted); font-size: 12.5px; }
+  .att-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
   .toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); z-index: 40;
     transform: translateX(-50%) translateY(16px); background: var(--text); color: var(--bg); padding: 11px 16px; border-radius: 14px;
     font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .2s, transform .2s; max-width: 90vw; pointer-events: none; }
@@ -185,6 +209,8 @@
 <nav class="bottom" id="nav" hidden><div class="inner" id="navInner"></div></nav>
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet"></div>
+<div class="picker-bg" id="pickerBg"></div>
+<div class="picker" id="picker"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -213,8 +239,12 @@ const T = {
     ann_failed: "Yuborilmadi: {list}", ann_pin_failed: "Pin qilinmadi: {list}", ann_history: "Yuborilganlar",
     ann_none: "Hali e'lon yuborilmagan", ann_delete: "Hammasidan o'chirish", ann_delete_confirm: "Bu e'lon barcha guruhlardan o'chirilsinmi?",
     ann_deleted: "O'chirildi: {n}/{total}", ann_deleted_badge: "o'chirilgan", ann_groups: "{n} guruh",
-    ann_need_text: "E'lon matnini yozing", ann_need_groups: "Kamida bitta guruhni tanlang",
-    ann_media_hint: "Rasm yoki fayl bilan e'lon uchun botda /announce ishlating.", done: "Tayyor",
+    ann_need_text: "E'lon matnini yozing yoki fayl biriktiring", ann_need_groups: "Kamida bitta guruhni tanlang", done: "Tayyor",
+    att_title: "Biriktirma", att_phone: "Telefondan", att_bot: "Botga yuborilgan", att_bot_title: "Botga yuborilganlar",
+    att_bot_hint: "Ovozli xabar, video yoki katta fayl uchun: botga odatdagidek yuboring — u shu ro'yxatda paydo bo'ladi.",
+    att_open_bot: "Botni ochish", att_none: "Oxirgi 3 kunda botga hech narsa yuborilmagan", att_too_big: "Fayl 3 MB dan katta. Uni botga yuboring — «Botga yuborilganlar» ro'yxatida chiqadi.",
+    att_caption_hint: "Matn rasm/fayl ostida izoh bo'lib chiqadi.", att_reading: "Fayl tayyorlanmoqda…",
+    m_photo: "Rasm", m_video: "Video", m_voice: "Ovozli xabar", m_audio: "Audio", m_document: "Fayl", m_video_note: "Video xabar", m_animation: "GIF",
     search: "Ism yoki @username", perm_admin: "Admin", perm_announcer: "E'lon beruvchi", perm_teacher: "O'qituvchi",
     no_users: "Hech kim topilmadi", rights: "Huquqlar", user_roles: "Xodim rollari", add_role: "Rol berish",
     role: "Rol", floor: "Qavat", all_floors: "Barcha qavatlar", add: "Qo'shish", main_admin: "Bosh admin", you: "Siz",
@@ -261,8 +291,12 @@ const T = {
     ann_failed: "Не отправлено: {list}", ann_pin_failed: "Не закреплено: {list}", ann_history: "Отправленные",
     ann_none: "Объявлений ещё не было", ann_delete: "Удалить везде", ann_delete_confirm: "Удалить это объявление из всех групп?",
     ann_deleted: "Удалено: {n}/{total}", ann_deleted_badge: "удалено", ann_groups: "групп: {n}",
-    ann_need_text: "Напишите текст объявления", ann_need_groups: "Выберите хотя бы одну группу",
-    ann_media_hint: "Для объявления с фото или файлом используйте /announce в боте.", done: "Готово",
+    ann_need_text: "Напишите текст или прикрепите файл", ann_need_groups: "Выберите хотя бы одну группу", done: "Готово",
+    att_title: "Вложение", att_phone: "С телефона", att_bot: "Из бота", att_bot_title: "Отправленные боту",
+    att_bot_hint: "Для голосового, видео или большого файла: отправьте его боту как обычно — он появится в этом списке.",
+    att_open_bot: "Открыть бота", att_none: "За последние 3 дня боту ничего не отправляли", att_too_big: "Файл больше 3 МБ. Отправьте его боту — он появится в «Отправленные боту».",
+    att_caption_hint: "Текст будет подписью к фото/файлу.", att_reading: "Готовлю файл…",
+    m_photo: "Фото", m_video: "Видео", m_voice: "Голосовое", m_audio: "Аудио", m_document: "Файл", m_video_note: "Видеосообщение", m_animation: "GIF",
     search: "Имя или @username", perm_admin: "Админ", perm_announcer: "Публикует объявления", perm_teacher: "Учитель",
     no_users: "Никого не найдено", rights: "Права", user_roles: "Роли сотрудника", add_role: "Назначить роль",
     role: "Роль", floor: "Этаж", all_floors: "Все этажи", add: "Добавить", main_admin: "Главный админ", you: "Вы",
@@ -309,8 +343,12 @@ const T = {
     ann_failed: "Failed: {list}", ann_pin_failed: "Not pinned: {list}", ann_history: "Sent",
     ann_none: "No announcements yet", ann_delete: "Delete everywhere", ann_delete_confirm: "Delete this announcement from all groups?",
     ann_deleted: "Deleted: {n}/{total}", ann_deleted_badge: "deleted", ann_groups: "{n} groups",
-    ann_need_text: "Write the announcement text", ann_need_groups: "Select at least one group",
-    ann_media_hint: "For photos or files, use /announce in the bot.", done: "Done",
+    ann_need_text: "Write a text or attach a file", ann_need_groups: "Select at least one group", done: "Done",
+    att_title: "Attachment", att_phone: "From phone", att_bot: "From bot", att_bot_title: "Sent to the bot",
+    att_bot_hint: "For a voice message, video or large file: send it to the bot as usual — it will show up in this list.",
+    att_open_bot: "Open the bot", att_none: "Nothing sent to the bot in the last 3 days", att_too_big: "The file is over 3 MB. Send it to the bot — it will appear under “Sent to the bot”.",
+    att_caption_hint: "The text becomes the caption of the photo/file.", att_reading: "Preparing the file…",
+    m_photo: "Photo", m_video: "Video", m_voice: "Voice message", m_audio: "Audio", m_document: "File", m_video_note: "Video message", m_animation: "GIF",
     search: "Name or @username", perm_admin: "Admin", perm_announcer: "Announcer", perm_teacher: "Teacher",
     no_users: "Nobody found", rights: "Rights", user_roles: "Staff roles", add_role: "Give a role",
     role: "Role", floor: "Floor", all_floors: "All floors", add: "Add", main_admin: "Main admin", you: "You",
@@ -476,12 +514,32 @@ function toggle(checked, onchange) {
   return el("label", { class: "switch" }, input, el("i"));
 }
 const field = (label, input, hint) => el("label", { class: "f" }, el("span", {}, label), input, hint ? el("div", { class: "hint" }, hint) : null);
-function select(options, value) {
-  const s = el("select", { class: "in" });
-  for (const [v, label] of options) s.append(el("option", { value: String(v) }, label));
-  s.value = String(value ?? "");
-  return s;
+/** A select replacement: looks like a field, opens a list sheet. Keeps the <select> API
+ * (`.value` as a string, a "change" event) so the forms using it stay simple. */
+function select(options, value, title) {
+  let current = String(value ?? "");
+  const label = el("span", {});
+  const btn = el("button", { class: "pick", type: "button" }, label, icon("chevron"));
+  const sync = () => { const o = options.find(([v]) => String(v) === current); label.textContent = o ? o[1] : "—"; };
+  Object.defineProperty(btn, "value", { get: () => current, set: (v) => { current = String(v ?? ""); sync(); } });
+  btn.addEventListener("click", () => openPicker(title || "", options, current, (v) => {
+    current = String(v); sync(); btn.dispatchEvent(new Event("change"));
+  }));
+  sync();
+  return btn;
 }
+function closePicker() {
+  $("picker").classList.remove("open"); $("pickerBg").classList.remove("open"); syncBackButton();
+}
+function openPicker(title, options, current, onpick) {
+  $("picker").replaceChildren(el("div", { class: "grip" }), title ? el("h3", {}, title) : null,
+    el("div", { class: "card" }, options.map(([v, labelText]) => el("button", {
+      class: "opt" + (String(v) === current ? " on" : ""), type: "button",
+      onclick: () => { haptic(); onpick(v); closePicker(); },
+    }, el("span", {}, labelText), String(v) === current ? icon("check") : null))));
+  $("picker").classList.add("open"); $("pickerBg").classList.add("open"); syncBackButton();
+}
+document.getElementById("pickerBg").addEventListener("click", closePicker);
 function seg(options, current, onpick) {
   return el("div", { class: "seg" }, options.map(([v, label]) =>
     el("button", { type: "button", class: current === v ? "on" : "", onclick: () => { haptic(); onpick(v); } }, label)));
@@ -511,10 +569,11 @@ function openSheet(title, ...content) {
 $("sheetBg").addEventListener("click", closeSheet);
 function syncBackButton() {
   if (!canTg("6.1")) return;
-  const show = $("sheet").classList.contains("open") || !!state.sub;
+  const show = $("picker").classList.contains("open") || $("sheet").classList.contains("open") || !!state.sub;
   show ? tg.BackButton.show() : tg.BackButton.hide();
 }
 function onBack() {
+  if ($("picker").classList.contains("open")) return closePicker();
   if ($("sheet").classList.contains("open")) return closeSheet();
   if (state.sub) { state.sub = null; render(); }
 }
@@ -538,7 +597,7 @@ const groupLabel = (g) => g.class_name || g.title;
 // ---------------------------------------------------------------- navigation
 const NAV = [["home", "home"], ["announce", "megaphone"], ["calls", "bell"], ["staff", "users"], ["more", "grid"]];
 const state = { tab: "home", sub: null, callsFilter: "pending", staffFilter: "all", staffQuery: "", statsDays: 7,
-  annSelected: new Set(), annPin: false, annText: "", invitePreset: null };
+  annSelected: new Set(), annPin: false, annText: "", annMedia: null, invitePreset: null };
 
 function renderNav() {
   const pending = (cached("dashboard") || {}).pending || [];
@@ -600,6 +659,52 @@ function callRow(c, onChange) {
   });
 }
 
+// ---------------------------------------------------------------- attachments
+const KIND_EMOJI = { photo: "🖼", video: "🎬", voice: "🎤", audio: "🎵", document: "📎", video_note: "⭕", animation: "🎞" };
+const MAX_UPLOAD = 3 * 1024 * 1024;  // the server's limit (Vercel's request size, minus base64 overhead)
+const fmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
+const fmtDur = (s) => (s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "");
+function uploadKind(mime, name) {
+  mime = (mime || "").toLowerCase(); name = (name || "").toLowerCase();
+  if (/^image\/(jpeg|png|webp)$/.test(mime)) return "photo";
+  if (mime === "image/gif") return "animation";
+  if (mime === "video/mp4" || name.endsWith(".mp4")) return "video";
+  if (/^audio\/(ogg|opus)$/.test(mime) || /\.(ogg|oga|opus)$/.test(name)) return "voice";
+  if (mime.startsWith("audio/") || /\.(mp3|m4a)$/.test(name)) return "audio";
+  return "document";
+}
+async function compressImage(file) {
+  const img = await createImageBitmap(file);
+  const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
+  const c = el("canvas", { width: Math.round(img.width * scale), height: Math.round(img.height * scale) });
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  return new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.85));
+}
+/** Reads a picked file into the shape the API takes; big photos are shrunk first. null = too big. */
+async function prepareUpload(file) {
+  let blob = file, name = file.name || "file", mime = file.type || "";
+  if (/^image\/(jpeg|png|webp)$/.test(mime) && file.size > 1.5 * 1024 * 1024) {
+    blob = await compressImage(file); mime = "image/jpeg"; name = name.replace(/\.\w+$/, "") + ".jpg";
+  }
+  if (blob.size > MAX_UPLOAD) return null;
+  const data = await new Promise((ok, fail) => {
+    const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob);
+  });
+  const kind = uploadKind(mime, name);
+  return { kind, title: name, sub: `${t("m_" + kind)} · ${fmtSize(blob.size)}`, media: { upload: { name, mime, data } } };
+}
+// The draft (text, groups) survives closing the app, e.g. to record a voice message in the bot.
+const DRAFT_KEY = "ois-ann-draft";
+function saveAnnDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: state.annText, sel: [...state.annSelected], pin: state.annPin })); } catch {}
+}
+function loadAnnDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+    if (d) { state.annText = d.text || ""; state.annSelected = new Set(d.sel || []); state.annPin = !!d.pin; }
+  } catch {}
+}
+
 // ---------------------------------------------------------------- main screens
 const SCREENS = {
   async home() {
@@ -644,6 +749,7 @@ const SCREENS = {
     const pickedLabel = el("div", { class: "sub" });
     const updateUi = () => {
       state.annText = text.value;
+      saveAnnDraft();
       counter.textContent = `${text.value.length}/4096`;
       sendBtn.textContent = sel.size ? t("ann_send_n", { n: sel.size }) : t("ann_send");
       pickedLabel.textContent = sel.size ? t("ann_picked", { n: sel.size }) : t("ann_none_picked");
@@ -668,7 +774,7 @@ const SCREENS = {
     };
     drawChips();
 
-    const openPicker = () => {
+    const openGroupPicker = () => {
       const list = el("div", { class: "card" });
       const draw = () => list.replaceChildren(...groups.map((g) => row({
         flat: true, title: groupLabel(g), sub: g.class_name && g.title !== g.class_name ? g.title : null,
@@ -678,14 +784,64 @@ const SCREENS = {
       openSheet(t("ann_pick"), list, el("button", { class: "btn block mt", type: "button", onclick: closeSheet }, t("done")));
     };
 
+    const attBox = el("div");
+    const fileInput = el("input", { type: "file", style: "display:none",
+      accept: "image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" });
+    const drawAtt = () => {
+      const m = state.annMedia;
+      attBox.replaceChildren(m
+        ? el("div", {}, el("div", { class: "att" }, lead(KIND_EMOJI[m.kind] || "📎"),
+            el("div", { class: "main" }, el("div", { class: "title" }, m.title), el("div", { class: "sub" }, m.sub)),
+            el("button", { class: "icon-btn", type: "button", style: "box-shadow:none", "aria-label": "remove",
+              onclick: () => { state.annMedia = null; haptic(); drawAtt(); } }, icon("x"))),
+          el("div", { class: "hint" }, t("att_caption_hint")))
+        : el("div", { class: "att-btns" },
+            el("button", { class: "btn ghost", type: "button", onclick: () => fileInput.click() }, icon("plus"), t("att_phone")),
+            el("button", { class: "btn ghost", type: "button", onclick: openBotMedia }, icon("inbox"), t("att_bot"))));
+    };
+    fileInput.addEventListener("change", () => act(null, async () => {
+      const file = fileInput.files[0]; fileInput.value = "";
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) toast(t("att_reading"));
+      const prepared = await prepareUpload(file);
+      if (!prepared) return alertMsg(t("att_too_big"));
+      state.annMedia = prepared; haptic("ok"); drawAtt();
+    }));
+    const openBotMedia = () => {
+      const list = el("div", { class: "card" }, el("div", { class: "skel", style: "height:60px;border-radius:0" }));
+      const loadDrafts = async () => {
+        const drafts = await api("media.list");
+        list.replaceChildren(...(drafts.length ? drafts.map((d) => {
+          const title = d.caption || d.file_name || t("m_" + d.kind);
+          const sub = [t("m_" + d.kind), fmtDur(d.duration), ago(d.created_at)].filter(Boolean).join(" · ");
+          return row({ lead: lead(KIND_EMOJI[d.kind] || "📎"), title, sub, chevron: true, onclick: () => {
+            state.annMedia = { kind: d.kind, title, sub, media: { draft_id: d.id } }; haptic("ok"); drawAtt(); closeSheet();
+          } });
+        }) : [empty(t("att_none"), "inbox")]));
+      };
+      const botName = (cached("me") || {}).bot;
+      openSheet(t("att_bot_title"), el("div", { class: "hint", style: "margin:0 2px 12px" }, t("att_bot_hint")), list,
+        el("div", { class: "btns mt" },
+          el("button", { class: "btn ghost", type: "button", style: "flex:none", "aria-label": "refresh",
+            onclick: (e) => act(e.currentTarget, loadDrafts) }, icon("refresh")),
+          botName ? el("button", { class: "btn", type: "button", onclick: () => {
+            saveAnnDraft();
+            const url = "https://t.me/" + botName;
+            if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+          } }, t("att_open_bot")) : null));
+      act(null, loadDrafts);
+    };
+    drawAtt();
+
     sendBtn.addEventListener("click", () => act(sendBtn, async () => {
-      if (!text.value.trim()) return alertMsg(t("ann_need_text"));
+      if (!text.value.trim() && !state.annMedia) return alertMsg(t("ann_need_text"));
       if (!sel.size) return alertMsg(t("ann_need_groups"));
       if (!(await confirmMsg(t("ann_confirm", { n: sel.size })))) return;
-      const r = await api("announce.send", { text: text.value, chat_ids: [...sel], pin: state.annPin });
+      const r = await api("announce.send", { text: text.value, chat_ids: [...sel], pin: state.annPin,
+        media: state.annMedia ? state.annMedia.media : undefined });
       haptic(r.failed.length ? "warning" : "ok");
       toast(t("ann_sent", { sent: r.sent, total: r.total }));
-      state.annText = ""; sel.clear(); invalidate("annHistory");
+      state.annText = ""; state.annMedia = null; sel.clear(); saveAnnDraft(); invalidate("annHistory");
       await render();
       if (r.failed.length || r.pin_failed.length) {
         await alertMsg([
@@ -712,11 +868,11 @@ const SCREENS = {
     return [
       pageHead(t("ann_title")),
       card(el("div", { style: "padding:14px" }, text,
-        el("div", { class: "hint", style: "display:flex;justify-content:space-between;gap:10px" }, el("span", {}, t("ann_media_hint")), counter))),
+        el("div", { class: "hint", style: "text-align:right" }, counter), fileInput, attBox)),
       header(t("ann_to")),
       quickChips,
-      card(row({ lead: lead("school"), title: t("ann_pick"), sub: pickedLabel, onclick: openPicker, chevron: true }),
-        row({ lead: lead("tag", "warn"), title: t("ann_pin"), side: toggle(state.annPin, (v) => { state.annPin = v; haptic(); }) })),
+      card(row({ lead: lead("school"), title: t("ann_pick"), sub: pickedLabel, onclick: openGroupPicker, chevron: true }),
+        row({ lead: lead("tag", "warn"), title: t("ann_pin"), side: toggle(state.annPin, (v) => { state.annPin = v; saveAnnDraft(); haptic(); }) })),
       sendBtn,
       header(t("ann_history")),
       card(historyRows.length ? historyRows : empty(t("ann_none"))),
@@ -849,8 +1005,8 @@ const SUBS = {
     const kinds = [["teacher", t("perm_teacher")], ["announcer", t("perm_announcer")], ["admin", t("perm_admin")],
       ...roles.map((r) => ["role:" + r.id, `${r.emoji} ${r.name}`])];
     const preset = state.invitePreset; state.invitePreset = null;
-    const kind = select(kinds, preset || "teacher");
-    const floor = select([["", t("inv_floor_any")], ...floors.map((f) => [f.id, f.name])], "");
+    const kind = select(kinds, preset || "teacher", t("inv_for"));
+    const floor = select([["", t("inv_floor_any")], ...floors.map((f) => [f.id, f.name])], "", t("inv_floor"));
     const floorField = field(t("inv_floor"), floor);
     let uses = 1;
     const usesSeg = el("div");
@@ -943,8 +1099,8 @@ function openUser(u, roles, floors) {
   }) : [empty("—", "tag")]));
   drawRoles();
 
-  const roleSel = select(roles.map((r) => [r.id, `${r.emoji} ${r.name}`]), roles[0] && roles[0].id);
-  const floorSel = select([["", t("all_floors")], ...floors.map((f) => [f.id, f.name])], "");
+  const roleSel = select(roles.map((r) => [r.id, `${r.emoji} ${r.name}`]), roles[0] && roles[0].id, t("role"));
+  const floorSel = select([["", t("all_floors")], ...floors.map((f) => [f.id, f.name])], "", t("floor"));
   const addBtn = el("button", { class: "btn block mt", type: "button", onclick: () => act(addBtn, async () => {
     const args = { user_id: u.id, role_id: Number(roleSel.value) };
     if (floorSel.value) args.floor_id = Number(floorSel.value);
@@ -965,8 +1121,8 @@ function openUser(u, roles, floors) {
 
 function openGroup(g, floors) {
   const cls = el("input", { class: "in", value: g.class_name || "", placeholder: "7-B", maxLength: 16 });
-  const floor = select([["", t("no_floor")], ...floors.map((f) => [f.id, f.name])], g.floor_id ?? "");
-  const lang = select([["uz", "O'zbekcha"], ["ru", "Русский"], ["en", "English"]], g.lang);
+  const floor = select([["", t("no_floor")], ...floors.map((f) => [f.id, f.name])], g.floor_id ?? "", t("floor"));
+  const lang = select([["uz", "O'zbekcha"], ["ru", "Русский"], ["en", "English"]], g.lang, t("lang"));
   const save = el("button", { class: "btn block mt", type: "button", onclick: () => act(save, async () => {
     const args = { chat_id: g.chat_id, floor_id: floor.value ? Number(floor.value) : null, lang: lang.value };
     if (cls.value.trim() && cls.value.trim() !== g.class_name) args.class_name = cls.value;
@@ -1045,6 +1201,7 @@ function openFloor(f) {
     const [me] = await Promise.all([load("me", "me"), load("dashboard", "dashboard"),
       load("groups", "groups.list").catch(() => null), load("roles", "roles.list").catch(() => null), load("floors", "floors.list").catch(() => null)]);
     L = T[me.lang] ? me.lang : "uz";
+    loadAnnDraft();
     document.documentElement.lang = L;
     $("nav").hidden = false;
     await render();

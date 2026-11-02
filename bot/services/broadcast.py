@@ -13,15 +13,20 @@ from bot.services.common import migrate_group
 
 log = logging.getLogger(__name__)
 
-# Sends the announcement to one chat and returns the sent message (anything with .message_id).
+# Sends the announcement to one chat and returns the sent message (anything with .message_id),
+# or a list of them when it takes several (media, then text that didn't fit in the caption).
 Sender = Callable[[int], Awaitable]
 
 
 @dataclass
 class BroadcastResult:
-    sent: list[tuple[int, int]] = field(default_factory=list)  # (chat_id, message_id)
+    sent: list[tuple[int, int]] = field(default_factory=list)  # (chat_id, message_id), every message
     failed: list[int] = field(default_factory=list)
     pin_failed: list[int] = field(default_factory=list)
+
+    @property
+    def chats_reached(self) -> int:
+        return len({chat_id for chat_id, _ in self.sent})
 
 
 async def broadcast(bot: Bot, session: AsyncSession, chat_ids: list[int], pin: bool, send: Sender) -> BroadcastResult:
@@ -45,10 +50,11 @@ async def broadcast(bot: Bot, session: AsyncSession, chat_ids: list[int], pin: b
         if msg is None:
             result.failed.append(chat_id)
             continue
-        result.sent.append((target, msg.message_id))
+        msgs = msg if isinstance(msg, list) else [msg]
+        result.sent.extend((target, m.message_id) for m in msgs)
         if pin:
             try:
-                await bot.pin_chat_message(target, msg.message_id)
+                await bot.pin_chat_message(target, msgs[0].message_id)
             except TelegramAPIError:
                 result.pin_failed.append(target)
         # Stay well under Telegram's ~30 messages/second limit.

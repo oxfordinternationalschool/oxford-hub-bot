@@ -4,6 +4,7 @@ Every request is a POST with the header `Authorization: tma <initData>` and the 
 {"op": "<operation>", "args": {...}}. Telegram signs initData with the bot token, so it
 proves who opened the app; only admins get any data.
 """
+import base64
 import json
 import logging
 import re
@@ -21,10 +22,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.app import request_scope
 from bot.config import LANGS, settings, utcnow
-from bot.db.models import Announcement, AnnouncementMessage, Call, Floor, Group, Invite, Role, StaffRole, User
+from bot.db.models import (
+    Announcement, AnnouncementMessage, Call, Floor, Group, Invite, MediaDraft, Role, StaffRole, User,
+)
 from bot.i18n import t
 from bot.services import admin_views as views
-from bot.services.broadcast import broadcast, delete_announcement, save_announcement
+from bot.services.broadcast import Sender, broadcast, delete_announcement, save_announcement
+from bot.services.media import draft_sender, upload_kind, upload_sender
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
 from bot.services.menus import set_user_menu
@@ -215,7 +219,8 @@ async def _count(session: AsyncSession, model, *where) -> int:
 
 @op("me")
 async def op_me(ctx: Ctx, args: dict):
-    return {"id": ctx.user.id, "name": ctx.user.full_name, "lang": ctx.user.lang}
+    me = await ctx.bot.me()
+    return {"id": ctx.user.id, "name": ctx.user.full_name, "lang": ctx.user.lang, "bot": me.username}
 
 
 @op("dashboard")
@@ -509,10 +514,59 @@ async def op_invites_revoke(ctx: Ctx, args: dict):
 
 # ---------- Announcements ----------
 
+MEDIA_ICONS = {"photo": "🖼", "video": "🎬", "voice": "🎤", "audio": "🎵", "document": "📎", "video_note": "⭕", "animation": "🎞"}
+# Vercel accepts request bodies up to 4.5 MB; base64 adds a third on top of the file.
+MAX_UPLOAD = 3 * 1024 * 1024
+
+
+def _draft_json(d: MediaDraft) -> dict:
+    return {
+        "id": d.id, "kind": d.kind, "caption": d.caption, "file_name": d.file_name,
+        "duration": d.duration, "created_at": _iso(d.created_at),
+    }
+
+
+@op("media.list")
+async def op_media_list(ctx: Ctx, args: dict):
+    """Media this admin recently sent to the bot, ready to attach to an announcement."""
+    since = utcnow() - timedelta(days=3)
+    drafts = (await ctx.session.scalars(
+        select(MediaDraft).where(MediaDraft.user_id == ctx.user.id, MediaDraft.created_at >= since)
+        .order_by(MediaDraft.created_at.desc()).limit(15)
+    )).all()
+    return [_draft_json(d) for d in drafts]
+
+
+async def _media_sender(ctx: Ctx, media: dict, text: str) -> tuple[Sender, str]:
+    """Returns the per-group sender for the attachment and its kind."""
+    if "draft_id" in media:
+        draft = await _get(ctx, MediaDraft, _int(media, "draft_id"))
+        if draft.user_id != ctx.user.id:
+            raise ctx.error("webapp_not_found", status=404)
+        return draft_sender(ctx.bot, draft, text), draft.kind
+    upload = media.get("upload")
+    if not isinstance(upload, dict):
+        raise ApiError(400, "bad_args", "media")
+    name = _str(upload, "name", 100) or "file"
+    try:
+        data = base64.b64decode(_str(upload, "data", 6 * 1024 * 1024) or "", validate=True)
+    except ValueError:
+        raise ApiError(400, "bad_args", "media.data")
+    if not data:
+        raise ApiError(400, "bad_args", "media.data")
+    if len(data) > MAX_UPLOAD:
+        raise ctx.error("webapp_media_too_big")
+    kind = upload_kind(_str(upload, "mime", 100, optional=True) or "", name)
+    return upload_sender(ctx.bot, kind, data, name, text), kind
+
+
 @op("announce.send")
 async def op_announce_send(ctx: Ctx, args: dict):
-    text = _str(args, "text", 4096)
-    if not text:
+    text = _str(args, "text", 4096) or ""
+    media = args.get("media")
+    if media is not None and not isinstance(media, dict):
+        raise ApiError(400, "bad_args", "media")
+    if not text and not media:
         raise ctx.error("webapp_text_empty")
     pin = _bool(args, "pin")
     ids = args.get("chat_ids")
@@ -523,19 +577,22 @@ async def op_announce_send(ctx: Ctx, args: dict):
     if not chat_ids:
         raise ctx.error("ann_nothing_selected")
 
-    result = await broadcast(
-        ctx.bot, ctx.session, chat_ids, pin,
+    if media:
+        send, kind = await _media_sender(ctx, media, text)
+        preview = f"{MEDIA_ICONS.get(kind, '📎')} {text}".strip()
+    else:
         # Plain text: whatever the admin typed is shown exactly as written.
-        send=lambda chat_id: ctx.bot.send_message(chat_id, text, parse_mode=None),
-    )
-    ann = await save_announcement(ctx.session, ctx.user.id, pin, text, result)
+        send = lambda chat_id: ctx.bot.send_message(chat_id, text, parse_mode=None)  # noqa: E731
+        preview = text
+    result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
+    ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result)
 
     def labels(cids: list[int]) -> list[str]:
         return [groups[c].label if c in groups else str(c) for c in cids]
 
     return {
         "id": ann.id,
-        "sent": len(result.sent),
+        "sent": result.chats_reached,
         "total": len(chat_ids),
         "failed": labels(result.failed),
         "pin_failed": labels(result.pin_failed),
@@ -547,7 +604,7 @@ async def op_announce_history(ctx: Ctx, args: dict):
     s = ctx.session
     anns = (await s.scalars(select(Announcement).order_by(Announcement.created_at.desc()).limit(30))).all()
     counts = dict((await s.execute(
-        select(AnnouncementMessage.announcement_id, func.count())
+        select(AnnouncementMessage.announcement_id, func.count(func.distinct(AnnouncementMessage.chat_id)))
         .where(AnnouncementMessage.announcement_id.in_([a.id for a in anns]))
         .group_by(AnnouncementMessage.announcement_id)
     )).all())

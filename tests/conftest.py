@@ -174,7 +174,6 @@ async def wh(tmp_path, monkeypatch):
     patched = dataclasses.replace(app_module.settings, database_url=db_url, webhook_secret=SECRET)
     monkeypatch.setattr(app_module, "settings", patched)
     monkeypatch.setattr(webhook_module, "settings", patched)
-    monkeypatch.setattr(app_module, "_schema_ready", False)
     api = FakeSession()
     monkeypatch.setattr(app_module, "make_bot", lambda: Bot("999:TEST", session=api))
 

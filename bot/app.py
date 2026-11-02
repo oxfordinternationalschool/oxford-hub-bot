@@ -9,7 +9,7 @@ from aiogram.types import BotCommandScopeAllPrivateChats, Update
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from bot.config import settings
-from bot.db.session import ensure_schema, make_engine, reset_sessionmaker, use_sessionmaker
+from bot.db.session import make_engine, reset_sessionmaker, use_sessionmaker
 from bot.handlers import admin, admin_panel, announce, calls, groups, start
 from bot.middlewares import DbMiddleware
 from bot.services.calls import run_periodic
@@ -42,7 +42,6 @@ DESCRIPTIONS = {
 }
 
 _dispatcher: Dispatcher | None = None
-_schema_ready = False
 
 
 def get_dispatcher() -> Dispatcher:
@@ -89,13 +88,10 @@ async def request_scope() -> AsyncIterator[tuple[Bot, async_sessionmaker]]:
     """Fresh bot + DB engine for one serverless request.
 
     Nothing is reused between requests: the platform may run each one on a different
-    event loop, and aiohttp/asyncpg connections cannot cross loops.
+    event loop, and aiohttp/asyncpg connections cannot cross loops. The tables are not
+    checked here (that costs dozens of queries); `python -m bot.setup_webhook` creates them.
     """
-    global _schema_ready
     engine = make_engine(settings.database_url, serverless=True)
-    if not _schema_ready:
-        await ensure_schema(engine)
-        _schema_ready = True
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
     token = use_sessionmaker(sessionmaker)
     bot = make_bot()

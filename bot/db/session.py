@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from sqlalchemy import event, inspect, text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
 
 from bot.db.models import Base
 
@@ -28,8 +27,10 @@ def get_sessionmaker() -> async_sessionmaker:
 def make_engine(url: str, serverless: bool = False) -> AsyncEngine:
     kwargs = {}
     if serverless:
-        # Short-lived functions: never keep connections between requests.
-        kwargs["poolclass"] = NullPool
+        # The engine lives for one request and is disposed after it, so a small pool only
+        # reuses a connection within that request (the middleware session, the FSM storage
+        # and the handlers would otherwise each open their own, paying a TLS handshake each).
+        kwargs.update(pool_size=1, max_overflow=4)
     if url.startswith("sqlite"):
         db_path = url.split("///", 1)[-1]
         if db_path and db_path != ":memory:":

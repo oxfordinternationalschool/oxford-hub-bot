@@ -144,7 +144,8 @@ Agar 3-qadam bajarilmasa, buyruq nima qilish kerakligini aytadi: Supabase'da `pg
 ### Bilib qo'yish kerak bo'lgan narsalar
 
 - Vercel'da ishlayotgan paytda `run.bat` ni ishga tushirsangiz, bot to'xtaydi va ogohlantiradi, chunki ikki joyda bir vaqtda ishlay olmaydi. Kompyuterda sinash kerak bo'lsa, `python -m bot --force-polling` buyrug'ini ishlating. Keyin Vercel'ga qaytarish uchun `setup_webhook` buyrug'ini qayta bajaring.
-- Kodni o'zgartirib GitHub'ga yuklasangiz, Vercel o'zi qayta joylaydi. `setup_webhook` ni qayta bajarish shart emas.
+- Kodni o'zgartirib GitHub'ga yuklasangiz, Vercel o'zi qayta joylaydi. `setup_webhook` ni qayta bajarish shart emas. Faqat bazaga yangi jadval yoki ustun qo'shilgan bo'lsa, uni bir marta qayta bajaring: tezlik uchun bot ishlash paytida jadvallarni tekshirmaydi.
+- Bot Vercel'ning Frankfurt (`fra1`) serverida, Supabase bazasi bilan bir hududda ishlaydi (`vercel.json` dagi `regions`). Supabase loyihasi boshqa hududda bo'lsa, buni ham o'shanga moslang.
 - "Faqat o'qituvchilar chaqira oladi" ogohlantirishi guruhdan taxminan 1 daqiqada o'chadi, chunki u Supabase Cron bilan birga ishlaydi.
 - **Narxlar:** Vercel'ning bepul Hobby tarifi faqat shaxsiy va notijorat loyihalar uchun. Xususiy maktab uchun Pro tarifi talab qilinishi mumkin. Supabase'ning bepul loyihasi uzoq vaqt ishlatilmasa, pauzaga tushadi.
 

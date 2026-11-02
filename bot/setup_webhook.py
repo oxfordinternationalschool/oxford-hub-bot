@@ -101,6 +101,8 @@ async def main(base_url: str) -> None:
 
 
 if __name__ == "__main__":
+    # The Windows console defaults to cp1251, which can't print the ✅/❌ marks below.
+    sys.stdout.reconfigure(encoding="utf-8")
     if len(sys.argv) != 2:
         sys.exit("Foydalanish: python -m bot.setup_webhook https://loyiha-nomi.vercel.app")
     asyncio.run(main(sys.argv[1]))

@@ -305,7 +305,7 @@ const T = {
     f_pending: "Kutilmoqda", f_all: "Hammasi", ago_now: "hozir", ago_min: "{n} daq oldin", ago_h: "{n} soat oldin",
     ann_title: "Yangi e'lon", ann_ph: "E'lon matnini yozing…", ann_to: "Kimga", ann_all: "Hammasi",
     ann_grade: "{g}-sinflar", ann_pick: "Guruhlarni tanlash", ann_picked: "{n} ta guruh tanlandi", ann_none_picked: "Guruh tanlanmagan",
-    ann_pin: "Guruhda pin qilish", ann_send: "Yuborish", ann_send_n: "{n} ta guruhga yuborish",
+    ann_pin: "Guruhda pin qilish", ann_send: "Yuborish", ann_send_n: "{n} ta guruhga yuborish", sending: "⏳ Yuborilmoqda…", timeout: "Server javob bermadi. Internetni tekshirib qayta urinib ko'ring — e'lon yuborilgan bo'lishi mumkin, avval «Yuborilganlar»ni tekshiring.",
     ann_confirm: "E'lon {n} ta guruhga yuborilsinmi?", ann_sent: "Yuborildi: {sent}/{total}",
     ann_failed: "Yuborilmadi: {list}", ann_pin_failed: "Pin qilinmadi: {list}", ann_history: "Yuborilganlar",
     ann_none: "Hali e'lon yuborilmagan", ann_delete: "Hammasidan o'chirish", ann_delete_confirm: "Bu e'lon barcha guruhlardan o'chirilsinmi?",
@@ -365,7 +365,7 @@ const T = {
     f_pending: "Ожидают", f_all: "Все", ago_now: "сейчас", ago_min: "{n} мин назад", ago_h: "{n} ч назад",
     ann_title: "Новое объявление", ann_ph: "Напишите текст объявления…", ann_to: "Кому", ann_all: "Все",
     ann_grade: "{g}-е классы", ann_pick: "Выбрать группы", ann_picked: "Выбрано групп: {n}", ann_none_picked: "Группы не выбраны",
-    ann_pin: "Закрепить в группе", ann_send: "Отправить", ann_send_n: "Отправить в {n} групп",
+    ann_pin: "Закрепить в группе", ann_send: "Отправить", ann_send_n: "Отправить в {n} групп", sending: "⏳ Отправляю…", timeout: "Сервер не ответил. Проверьте интернет и попробуйте снова — объявление могло уйти, сначала проверьте «Отправленные».",
     ann_confirm: "Отправить объявление в {n} групп?", ann_sent: "Отправлено: {sent}/{total}",
     ann_failed: "Не отправлено: {list}", ann_pin_failed: "Не закреплено: {list}", ann_history: "Отправленные",
     ann_none: "Объявлений ещё не было", ann_delete: "Удалить везде", ann_delete_confirm: "Удалить это объявление из всех групп?",
@@ -425,7 +425,7 @@ const T = {
     f_pending: "Waiting", f_all: "All", ago_now: "now", ago_min: "{n} min ago", ago_h: "{n} h ago",
     ann_title: "New announcement", ann_ph: "Write the announcement…", ann_to: "Send to", ann_all: "All",
     ann_grade: "Grade {g}", ann_pick: "Choose groups", ann_picked: "{n} groups selected", ann_none_picked: "No groups selected",
-    ann_pin: "Pin in the group", ann_send: "Send", ann_send_n: "Send to {n} groups",
+    ann_pin: "Pin in the group", ann_send: "Send", ann_send_n: "Send to {n} group(s)", sending: "⏳ Sending…", timeout: "The server didn't answer. Check the connection and try again — it may have been sent, so check “Sent” first.",
     ann_confirm: "Send the announcement to {n} groups?", ann_sent: "Sent: {sent}/{total}",
     ann_failed: "Failed: {list}", ann_pin_failed: "Not pinned: {list}", ann_history: "Sent",
     ann_none: "No announcements yet", ann_delete: "Delete everywhere", ann_delete_confirm: "Delete this announcement from all groups?",
@@ -524,17 +524,23 @@ function el(tag, props, ...kids) {
 }
 const $ = (id) => document.getElementById(id);
 
+const API_TIMEOUT_MS = 45000;
 class ApiError extends Error { constructor(message, code) { super(message); this.code = code; } }
 async function api(op, args = {}) {
   let body;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
   try {
     const res = await fetch("/api", {
       method: "POST",
       headers: { "Authorization": "tma " + initData, "Content-Type": "application/json" },
       body: JSON.stringify({ op, args }),
+      signal: ctrl.signal,
     });
     body = await res.json();
-  } catch (e) { throw new ApiError(t("error"), "network"); }
+  } catch (e) {
+    throw new ApiError(e.name === "AbortError" ? t("timeout") : t("error"), "network");
+  } finally { clearTimeout(timer); }
   if (!body.ok) throw new ApiError(body.message || t("error"), body.error);
   return body.data;
 }
@@ -549,8 +555,15 @@ function toast(msg) {
   const box = $("toast"); box.textContent = msg; box.classList.add("show");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => box.classList.remove("show"), 2200);
 }
-const alertMsg = (msg) => new Promise((ok) => (canTg("6.2") ? tg.showAlert(msg, ok) : (alert(msg), ok())));
-const confirmMsg = (msg) => new Promise((ok) => (canTg("6.2") ? tg.showConfirm(msg, ok) : ok(confirm(msg))));
+// Telegram's popups, or the browser's if Telegram refuses to open one (e.g. another popup is open).
+const alertMsg = (msg) => new Promise((ok) => {
+  try { if (canTg("6.2")) return tg.showAlert(msg, ok); } catch {}
+  alert(msg); ok();
+});
+const confirmMsg = (msg) => new Promise((ok) => {
+  try { if (canTg("6.2")) return tg.showConfirm(msg, (yes) => ok(!!yes)); } catch {}
+  ok(confirm(msg));
+});
 /** Runs an action; on failure shows the server's (already translated) message. */
 async function act(button, fn) {
   if (button) button.disabled = true;
@@ -1187,10 +1200,19 @@ const SCREENS = {
         sel.size ? el("button", { class: "btn block mt", type: "button", onclick: () => { closeSheet(); sendBtn.click(); } },
           t("ann_send_n", { n: sel.size })) : el("div", { class: "hint mt" }, t("ann_need_groups")));
     };
-    sendBtn.addEventListener("click", () => act(sendBtn, async () => {
+    // The button is busy only while the request runs (not while the confirm dialog is open),
+    // and the API call times out, so it can never stay stuck.
+    let sending = false;
+    sendBtn.addEventListener("click", async () => {
+      if (sending) return;
       const problem = validate();
       if (problem) return alertMsg(problem);
       if (!(await confirmMsg(t("ann_confirm", { n: sel.size })))) return;
+      sending = true;
+      sendBtn.textContent = t("sending");
+      act(sendBtn, doSend).finally(() => { sending = false; updateUi(); });
+    });
+    const doSend = async () => {
       const { html } = current();
       const r = await api("announce.send", { html, chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id),
         layout: effectiveLayout() });
@@ -1205,7 +1227,7 @@ const SCREENS = {
           r.pin_failed.length ? t("ann_pin_failed", { list: r.pin_failed.join(", ") }) : "",
         ].filter(Boolean).join("\n"));
       }
-    }));
+    };
     updateUi();
 
     const historyRows = history.slice(0, 5).map((a) => row({

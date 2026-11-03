@@ -123,9 +123,18 @@ TEXTS: dict[str, dict[str, str]] = {
         "en": "Available tags: {triggers}",
     },
     "help_announcer": {
-        "uz": "<b>📢 E'lonlar</b>\n/announce — barcha yoki tanlangan guruhlarga e'lon yuborish",
-        "ru": "<b>📢 Объявления</b>\n/announce — отправить объявление во все или выбранные группы",
-        "en": "<b>📢 Announcements</b>\n/announce — send an announcement to all or selected groups",
+        "uz": (
+            "<b>📢 E'lonlar</b>\n/announce — barcha yoki tanlangan guruhlarga e'lon yuborish\n"
+            "Yoki tayyor e'lonni (albom ham bo'ladi) shu chatga yuboring yoki forward qiling → 📢 Guruhlarga yuborish"
+        ),
+        "ru": (
+            "<b>📢 Объявления</b>\n/announce — отправить объявление во все или выбранные группы\n"
+            "Или пришлите/перешлите сюда готовое объявление (можно альбом) → 📢 Отправить в группы"
+        ),
+        "en": (
+            "<b>📢 Announcements</b>\n/announce — send an announcement to all or selected groups\n"
+            "Or send/forward a finished announcement here (albums too) → 📢 Send to groups"
+        ),
     },
     "help_admin": {
         "uz": (
@@ -364,10 +373,16 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Не удалось загрузить файл в Telegram. Попробуйте отправить его боту напрямую.",
         "en": "Couldn't upload the file to Telegram. Try sending it to the bot directly.",
     },
-    "draft_saved": {
-        "uz": "✅ {kind} saqlandi. Uni Mini App'da E'lon → Biriktirish orqali guruhlarga yuborishingiz mumkin.",
-        "ru": "✅ {kind}: сохранено. Отправить в группы можно в Mini App: Объявление → Вложение.",
-        "en": "✅ {kind} saved. Send it to groups from the Mini App: Announce → Attach.",
+    "fwd_ask": {
+        "uz": "📢 Shu xabarni guruhlarga yuboraymi? Guruhlarda aynan shunday ko'rinadi.",
+        "ru": "📢 Отправить это сообщение в группы? Там оно будет выглядеть точно так же.",
+        "en": "📢 Send this message to groups? It will look exactly like this there.",
+    },
+    "fwd_btn": {"uz": "📢 Guruhlarga yuborish", "ru": "📢 Отправить в группы", "en": "📢 Send to groups"},
+    "fwd_saved_too": {
+        "uz": "<i>{kind} Mini App'dagi biriktirmalarga ham saqlandi.</i>",
+        "ru": "<i>{kind}: также сохранено во вложениях Mini App.</i>",
+        "en": "<i>{kind} is also saved to the Mini App's attachments.</i>",
     },
     "media_photo": {"uz": "Rasm", "ru": "Фото", "en": "Photo"},
     "media_video": {"uz": "Video", "ru": "Видео", "en": "Video"},
@@ -656,14 +671,24 @@ TEXTS: dict[str, dict[str, str]] = {
 
     # ---------- Announcements ----------
     "ann_send_content": {
-        "uz": "📢 E'lon matnini yuboring (matn, rasm, video yoki fayl — bitta xabar).\nBekor qilish: /cancel",
-        "ru": "📢 Отправьте объявление (текст, фото, видео или файл — одним сообщением).\nОтмена: /cancel",
-        "en": "📢 Send the announcement (text, photo, video or file — one message).\nCancel: /cancel",
-    },
-    "ann_no_albums": {
-        "uz": "❌ Albom (bir nechta rasm) qo'llab-quvvatlanmaydi. Bitta rasm yoki faylni izoh bilan yuboring.",
-        "ru": "❌ Альбомы (несколько фото) не поддерживаются. Отправьте одно фото или файл с подписью.",
-        "en": "❌ Albums (several photos) aren't supported. Send one photo or file with a caption.",
+        "uz": (
+            "📢 Tayyor e'lonni yuboring yoki forward qiling: matn, rasm, albom, video, fayl yoki ovozli xabar. "
+            "Guruhlarga aynan shunday boradi.\n\n"
+            "💡 Buyruqsiz ham bo'ladi: istalgan xabarni menga yuborsangiz, guruhlarga yuborishni taklif qilaman.\n"
+            "Bekor qilish: /cancel"
+        ),
+        "ru": (
+            "📢 Отправьте или перешлите готовое объявление: текст, фото, альбом, видео, файл или голосовое. "
+            "В группы оно уйдёт точно таким же.\n\n"
+            "💡 Можно и без команды: пришлите мне любое сообщение, и я предложу отправить его в группы.\n"
+            "Отмена: /cancel"
+        ),
+        "en": (
+            "📢 Send or forward the finished announcement: text, photo, album, video, file or voice message. "
+            "Groups get it exactly as it is.\n\n"
+            "💡 No command needed: send me any message and I'll offer to send it to groups.\n"
+            "Cancel: /cancel"
+        ),
     },
     "ann_choose": {
         "uz": "Qaysi guruhlarga yuborilsin? Tanlangan: <b>{n}</b>",
@@ -700,6 +725,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "uz": "📌 Pin qilinmadi (botda huquq yo'q): {names}",
         "ru": "📌 Не закреплено (нет прав у бота): {names}",
         "en": "📌 Not pinned (bot lacks rights): {names}",
+    },
+    "ann_forwarded": {
+        "uz": "↪️ Telegram bu xabarni nusxalashga ruxsat bermadi, shuning uchun forward qilib yuborildi.",
+        "ru": "↪️ Telegram не разрешил скопировать это сообщение, поэтому оно переслано.",
+        "en": "↪️ Telegram wouldn't copy this message, so it was forwarded instead.",
     },
     "ann_delete_all": {
         "uz": "🗑 Hamma guruhlardan o'chirish",

@@ -13,8 +13,8 @@ import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, GetFile, GetMe, GetWebhookInfo, SendDocument, SendMediaGroup, SendMessage, SendPhoto, SendRichMessage,
-    SendVideo, SendVoice,
+    CopyMessage, CopyMessages, ForwardMessage, ForwardMessages, GetFile, GetMe, GetWebhookInfo, SendDocument,
+    SendMediaGroup, SendMessage, SendPhoto, SendRichMessage, SendVideo, SendVoice,
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
@@ -37,6 +37,7 @@ class FakeSession(BaseSession):
         self.requests = []
         self._ids = itertools.count(1000)
         self.reject_rich = False  # simulate a chat where Telegram refuses rich messages
+        self.reject_copy = False  # simulate a message Telegram won't let bots copy
 
     async def make_request(self, bot, method, timeout=None):
         self.requests.append(method)
@@ -62,8 +63,14 @@ class FakeSession(BaseSession):
                     for m in method.media]
         if isinstance(method, GetFile):
             return File(file_id=method.file_id, file_unique_id="u", file_path=f"thumbs/{method.file_id}.jpg")
+        if isinstance(method, (CopyMessage, CopyMessages)) and self.reject_copy:
+            raise TelegramBadRequest(method=method, message="Bad Request: message can't be copied")
         if isinstance(method, CopyMessage):
             return MessageId(message_id=next(self._ids))
+        if isinstance(method, (CopyMessages, ForwardMessages)):
+            return [MessageId(message_id=next(self._ids)) for _ in method.message_ids]
+        if isinstance(method, ForwardMessage):
+            return Message(message_id=next(self._ids), date=datetime.now(), chat=Chat(id=method.chat_id, type="group"))
         return True
 
     def _media_message(self, chat_id, kind):
@@ -133,13 +140,15 @@ class Harness:
         await self._send("message", msg)
         return msg
 
-    async def callback(self, uid, data, message_id=1):
+    async def callback(self, uid, data, message_id=1, reply_to=None):
+        message = {
+            "message_id": message_id, "date": int(time.time()),
+            "chat": {"id": uid, "type": "private"}, "from": BOT_USER, "text": "…",
+        }
+        if reply_to:
+            message["reply_to_message"] = reply_to
         await self._send("callback_query", {
-            "id": str(next(self._ids)), "from": self._user(uid), "chat_instance": "ci", "data": data,
-            "message": {
-                "message_id": message_id, "date": int(time.time()),
-                "chat": {"id": uid, "type": "private"}, "from": BOT_USER, "text": "…",
-            },
+            "id": str(next(self._ids)), "from": self._user(uid), "chat_instance": "ci", "data": data, "message": message,
         })
 
     async def bot_added(self, chat_id, by_uid, title="7-B sinf", status="member"):

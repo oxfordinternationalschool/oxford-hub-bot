@@ -20,6 +20,12 @@ class AnnCb(CallbackData, prefix="ann"):
     value: int = 0
 
 
+class FwdCb(CallbackData, prefix="fwd"):
+    """"Send to groups" under a message an announcer sent to the bot."""
+
+    m: int  # that message's id
+
+
 class AnnDelCb(CallbackData, prefix="anndel"):
     ann_id: int
 

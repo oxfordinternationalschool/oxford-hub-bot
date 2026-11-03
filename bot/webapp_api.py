@@ -32,7 +32,7 @@ from bot.i18n import t
 from bot.services import admin_views as views
 from bot.services.broadcast import broadcast, delete_announcement, save_announcement
 from bot.services.media import (
-    ALBUM_FAMILY, LAYOUTS, album_problem, announcement_sender, layout_problem, upload_kind, upload_to_owner,
+    ALBUM_FAMILY, LAYOUTS, album_problem, announcement_sender, layout_problem, media_preview, upload_kind, upload_to_owner,
 )
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
@@ -520,7 +520,6 @@ async def op_invites_revoke(ctx: Ctx, args: dict):
 
 # ---------- Announcements ----------
 
-MEDIA_ICONS = {"photo": "🖼", "video": "🎬", "voice": "🎤", "audio": "🎵", "document": "📎", "video_note": "⭕", "animation": "🎞"}
 # Vercel accepts request bodies up to 4.5 MB; base64 adds a third on top of the file.
 MAX_UPLOAD = 3 * 1024 * 1024
 
@@ -634,8 +633,7 @@ async def op_announce_send(ctx: Ctx, args: dict):
     if not chat_ids:
         raise ctx.error("ann_nothing_selected")
 
-    icons = "".join(MEDIA_ICONS.get(d.kind, "📎") for d in drafts[:3]) + ("…" if len(drafts) > 3 else "")
-    preview = f"{icons} {plain}".strip()
+    preview = media_preview(drafts, plain)
     send = announcement_sender(ctx.bot, drafts, html_text, plain, layout)
     result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
     ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result)

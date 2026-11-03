@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramAPIError, TelegramMigrateToChat, TelegramRetryAfter
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest, TelegramMigrateToChat, TelegramRetryAfter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,31 @@ log = logging.getLogger(__name__)
 # Sends the announcement to one chat and returns the sent message (anything with .message_id),
 # or a list of them when it takes several (media, then text that didn't fit in the caption).
 Sender = Callable[[int], Awaitable]
+
+
+class CopySender:
+    """Copies a message, or every message of an album, exactly as it is (copy_messages keeps an
+    album together). If Telegram won't copy it (protected content, or a kind bots can't copy),
+    it forwards it instead and sets `forwarded`."""
+
+    def __init__(self, bot: Bot, from_chat_id: int, message_ids: list[int]):
+        self.bot, self.from_chat_id, self.ids = bot, from_chat_id, message_ids
+        self.forwarded = False
+
+    async def __call__(self, chat_id: int):
+        if not self.forwarded:
+            try:
+                if len(self.ids) == 1:
+                    return await self.bot.copy_message(chat_id, self.from_chat_id, self.ids[0])
+                return await self.bot.copy_messages(chat_id, self.from_chat_id, self.ids)
+            except TelegramBadRequest as e:
+                # Only a problem with the message itself; a problem with this chat fails as usual.
+                if "cop" not in e.message.lower():
+                    raise
+                self.forwarded = True
+        if len(self.ids) == 1:
+            return await self.bot.forward_message(chat_id, self.from_chat_id, self.ids[0])
+        return await self.bot.forward_messages(chat_id, self.from_chat_id, self.ids)
 
 
 @dataclass

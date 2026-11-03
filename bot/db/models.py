@@ -179,6 +179,19 @@ class MediaDraft(Base):
     # Telegram's ids for the file and a small preview; with file_id several drafts can go out as one album.
     file_id: Mapped[str | None] = mapped_column(String(255))
     thumb_file_id: Mapped[str | None] = mapped_column(String(255))
+    # Set for an item of an album sent to the bot, so the whole album can be copied to groups.
+    media_group_id: Mapped[str | None] = mapped_column(String(64))
+
+
+class AlbumLead(Base):
+    """The first item of an album that reached the bot. Each item of an album is its own update,
+    possibly handled in parallel; the primary key lets exactly one of them answer."""
+
+    __tablename__ = "album_leads"
+
+    chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    media_group_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
 class AnnouncementMessage(Base):

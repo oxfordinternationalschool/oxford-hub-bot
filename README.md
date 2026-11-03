@@ -83,7 +83,7 @@ Bot havola beradi. Uni xodimga yuborasiz, xodim havolani bosadi va avtomatik ro'
 | `#doctor! bola yiqildi` | 🚨 shoshilinch chaqiruv |
 | biror xabarga reply qilib `#inspector` | o'sha xabar ham inspektorga boradi |
 
-**E'lon beruvchi** (shaxsiy chatda): `/announce` → e'lonni yuboring → guruhlarni tanlang → 📤 Yuborish.
+**E'lon beruvchi** (shaxsiy chatda): tayyor e'lonni botga yuboring yoki forward qiling → **📢 Guruhlarga yuborish** → guruhlarni tanlang → 📤 Yuborish. E'lon guruhlarga aynan o'zidek boradi: formatlangan matn, rasm, video, fayl, ovozli xabar va **albom** ham. `/announce` buyrug'idan keyin yuborilgan xabarda guruhlar ro'yxati darhol ochiladi.
 
 **Admin**: barcha buyruqlar ro'yxati `/admin` da. Statistika uchun `/stats 7` ni yozing.
 
@@ -167,7 +167,7 @@ Telegram ichida ochiladigan boshqaruv paneli. U faqat adminlarga ko'rinadi va fa
 | Havolalar | Taklif havolasi yaratish (nusxa olish yoki ulashish), bekor qilish |
 | Statistika | 1/7/30/90 kunlik: rollar bo'yicha va eng ko'p chaqirgan sinflar |
 
-Rasm yoki fayl bilan e'lon yuborish uchun botdagi `/announce` buyrug'idan foydalaning. Mini App faqat matnli e'lon yuboradi.
+Tayyor e'lonni (albom ham bo'ladi) botning o'ziga yuborib ham tarqatish mumkin (3-bo'lim). Botga yuborilgan rasm va videolar Mini App'dagi biriktirmalarda ham ko'rinadi.
 
 **Vercel'da** Mini App o'zi ishlaydi: sahifa `https://SIZNING-LOYIHA.vercel.app/admin/` manzilida bo'ladi. `setup_webhook` buyrug'i adminlarga **Panel** tugmasini qo'yadi. Vercel loyiha manzilini botga o'zi beradi. Boshqa manzil (masalan, o'z domeningiz) ishlatilsa, Vercel'da `WEBAPP_URL` o'zgaruvchisini qo'shing.
 

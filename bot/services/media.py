@@ -37,7 +37,15 @@ SEND_METHODS = {
 }
 # Kinds that may share an album: photos and videos together, files only with files, audio with audio.
 ALBUM_FAMILY = {"photo": "visual", "video": "visual", "document": "document", "audio": "audio"}
+MEDIA_ICONS = {"photo": "🖼", "video": "🎬", "voice": "🎤", "audio": "🎵", "document": "📎", "video_note": "⭕", "animation": "🎞"}
 INPUT_MEDIA = {"photo": InputMediaPhoto, "video": InputMediaVideo, "document": InputMediaDocument, "audio": InputMediaAudio}
+
+
+def media_preview(drafts: list[MediaDraft], text: str) -> str:
+    """Announcement history line: an icon per attachment, then the text (or the first caption)."""
+    icons = "".join(MEDIA_ICONS.get(d.kind, "📎") for d in drafts[:3]) + ("…" if len(drafts) > 3 else "")
+    text = text or next((d.caption for d in drafts if d.caption), "")
+    return f"{icons} {text}".strip()
 
 
 @dataclass

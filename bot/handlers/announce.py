@@ -1,7 +1,7 @@
 import contextlib
 
 from aiogram import Bot, F, Router
-from aiogram.enums import ChatType
+from aiogram.enums import ChatType, ContentType
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -9,15 +9,16 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy import select
+from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.callbacks import AnnCb, AnnDelCb
-from bot.db.models import Announcement, Group, MediaDraft, User
+from bot.callbacks import AnnCb, AnnDelCb, FwdCb
+from bot.db.models import AlbumLead, Announcement, Group, MediaDraft, User
 from bot.filters import CanAnnounce, can_announce, is_admin
 from bot.i18n import t
-from bot.services.broadcast import broadcast, delete_announcement, save_announcement
+from bot.services.broadcast import CopySender, broadcast, delete_announcement, save_announcement
 from bot.services.common import group_sort_key, q
-from bot.services.media import describe_media
+from bot.services.media import describe_media, media_preview
 
 router = Router(name="announce")
 router.message.filter(F.chat.type == ChatType.PRIVATE)
@@ -72,43 +73,98 @@ async def cmd_announce(message: Message, state: FSMContext, session: AsyncSessio
     await message.answer(t(lang, "ann_send_content"))
 
 
-MEDIA = F.photo | F.video | F.voice | F.audio | F.document | F.video_note | F.animation
+MEDIA_KINDS = {
+    ContentType.PHOTO, ContentType.VIDEO, ContentType.VOICE, ContentType.AUDIO, ContentType.DOCUMENT,
+    ContentType.VIDEO_NOTE, ContentType.ANIMATION,
+}
+# What an announcement can be: anything a person writes or forwards, but not service messages.
+COPYABLE = MEDIA_KINDS | {
+    ContentType.TEXT, ContentType.STICKER, ContentType.POLL, ContentType.LOCATION, ContentType.VENUE,
+    ContentType.CONTACT, ContentType.RICH_MESSAGE,
+}
 
 
-@router.message(StateFilter(None), MEDIA, CanAnnounce())
-async def save_media_draft(message: Message, session: AsyncSession, user: User, lang: str):
-    """Media sent to the bot outside a conversation becomes an attachment for the Mini App."""
-    info = describe_media(message)
-    session.add(MediaDraft(
-        user_id=user.id, chat_id=message.chat.id, message_id=message.message_id,
-        kind=info.kind, caption=message.caption, file_name=info.file_name, duration=info.duration,
-        file_id=info.file_id, thumb_file_id=info.thumb_file_id,
-    ))
+def _not_command(message: Message) -> bool:
+    return not (message.text or "").startswith("/")
+
+
+@router.message(StateFilter(None, AnnounceSG.content, AnnounceSG.targets), F.content_type.in_(COPYABLE),
+                _not_command, CanAnnounce())
+async def on_ready_message(message: Message, state: FSMContext, session: AsyncSession, user: User, lang: str):
+    """A finished announcement sent or forwarded to the bot goes to groups exactly as it is.
+
+    After /announce the group picker opens at once; otherwise the bot offers a button, so a
+    message sent by mistake goes nowhere. Media is also kept as a Mini App attachment."""
+    kind = None
+    if message.content_type in MEDIA_KINDS:
+        info = describe_media(message)
+        kind = info.kind
+        session.add(MediaDraft(
+            user_id=user.id, chat_id=message.chat.id, message_id=message.message_id,
+            kind=info.kind, caption=message.caption, file_name=info.file_name, duration=info.duration,
+            file_id=info.file_id, thumb_file_id=info.thumb_file_id, media_group_id=message.media_group_id,
+        ))
+        await session.commit()
+    # Only one item of an album answers; the others are found by media_group_id when it's sent.
+    if message.media_group_id and not await _album_lead(session, message):
+        return
+
+    if await state.get_state() == AnnounceSG.content:
+        if not await active_groups(session):
+            await state.clear()
+            await message.answer(t(lang, "groups_empty"))
+            return
+        await _open_targets(message, state, session, lang, message.message_id, message.text or message.caption)
+        return
+
+    text = t(lang, "fwd_ask")
+    if kind:
+        text += "\n" + t(lang, "fwd_saved_too", kind=t(lang, f"media_{kind}"))
+    kb = InlineKeyboardBuilder()
+    kb.button(text=t(lang, "fwd_btn"), callback_data=FwdCb(m=message.message_id))
+    await message.reply(text, reply_markup=kb.as_markup())
+
+
+async def _album_lead(session: AsyncSession, message: Message) -> bool:
+    """True for the first item of this album to get here."""
+    dialect = postgresql if session.bind.dialect.name == "postgresql" else sqlite
+    result = await session.execute(
+        dialect.insert(AlbumLead)
+        .values(chat_id=message.chat.id, media_group_id=message.media_group_id)
+        .on_conflict_do_nothing()
+    )
     await session.commit()
-    await message.reply(t(lang, "draft_saved", kind=t(lang, f"media_{info.kind}")))
+    return result.rowcount == 1
 
 
-@router.message(AnnounceSG.content)
-async def on_content(message: Message, state: FSMContext, session: AsyncSession, lang: str):
-    if message.text and message.text.startswith("/"):
-        await message.answer(t(lang, "ann_send_content"))
-        return
-    if message.media_group_id:
-        data = await state.get_data()
-        if data.get("warned_album") != message.media_group_id:
-            await state.update_data(warned_album=message.media_group_id)
-            await message.answer(t(lang, "ann_no_albums"))
-        return
+async def _open_targets(message: Message, state: FSMContext, session: AsyncSession, lang: str,
+                        src_msg: int, preview: str | None, edit: bool = False) -> None:
     groups = await active_groups(session)
-    preview = message.text or message.caption or "📎"
-    await state.update_data(
-        src_chat=message.chat.id, src_msg=message.message_id, preview=preview[:200], selected=[], pin=False,
-    )
     await state.set_state(AnnounceSG.targets)
-    await message.answer(
-        t(lang, "ann_choose", n=0),
-        reply_markup=_targets_keyboard(lang, groups, set(), False),
-    )
+    await state.set_data({
+        "src_chat": message.chat.id, "src_msg": src_msg, "preview": (preview or "")[:200], "selected": [], "pin": False,
+    })
+    markup = _targets_keyboard(lang, groups, set(), False)
+    if edit:
+        await message.edit_text(t(lang, "ann_choose", n=0), reply_markup=markup)
+    else:
+        await message.answer(t(lang, "ann_choose", n=0), reply_markup=markup)
+
+
+@router.callback_query(FwdCb.filter())
+async def on_send_to_groups(
+    cb: CallbackQuery, callback_data: FwdCb, state: FSMContext, session: AsyncSession, user: User | None, lang: str
+):
+    if not can_announce(user):
+        await cb.answer(t(lang, "cannot_do"), show_alert=True)
+        return
+    if not await active_groups(session):
+        await cb.answer(t(lang, "groups_empty"), show_alert=True)
+        return
+    # The button sits on the bot's reply to the message, so Telegram hands that message back too.
+    src = cb.message.reply_to_message
+    await _open_targets(cb.message, state, session, lang, callback_data.m, src and (src.text or src.caption), edit=True)
+    await cb.answer()
 
 
 @router.callback_query(AnnounceSG.targets, AnnCb.filter())
@@ -168,13 +224,25 @@ async def on_stale_targets(cb: CallbackQuery, lang: str):
     await cb.answer(t(lang, "expired"), show_alert=True)
 
 
+async def _source(session: AsyncSession, user: User, chat_id: int, msg_id: int) -> tuple[list[int], list[MediaDraft]]:
+    """The messages to copy (the message itself, or every item of its album) and their drafts."""
+    draft = await session.scalar(select(MediaDraft).where(
+        MediaDraft.user_id == user.id, MediaDraft.chat_id == chat_id, MediaDraft.message_id == msg_id,
+    ))
+    if draft is None or not draft.media_group_id:
+        return [msg_id], [draft] if draft else []
+    album = (await session.scalars(select(MediaDraft).where(
+        MediaDraft.user_id == user.id, MediaDraft.chat_id == chat_id, MediaDraft.media_group_id == draft.media_group_id,
+    ).order_by(MediaDraft.message_id))).all()
+    return [d.message_id for d in album], list(album)
+
+
 async def _do_send(status_msg: Message, session: AsyncSession, bot: Bot, user: User, lang: str,
                    data: dict, chat_ids: list[int], pin: bool) -> None:
-    result = await broadcast(
-        bot, session, chat_ids, pin,
-        send=lambda chat_id: bot.copy_message(chat_id, data["src_chat"], data["src_msg"]),
-    )
-    ann = await save_announcement(session, user.id, pin, data.get("preview", ""), result)
+    ids, drafts = await _source(session, user, data["src_chat"], data["src_msg"])
+    send = CopySender(bot, data["src_chat"], ids)
+    result = await broadcast(bot, session, chat_ids, pin, send=send)
+    ann = await save_announcement(session, user.id, pin, media_preview(drafts, data.get("preview", "")), result)
 
     labels = {g.chat_id: g.label for g in await active_groups(session)}
     lines = [t(lang, "ann_report", sent=result.chats_reached, total=len(chat_ids))]
@@ -184,6 +252,8 @@ async def _do_send(status_msg: Message, session: AsyncSession, bot: Bot, user: U
     if result.pin_failed:
         names = ", ".join(q(labels.get(c, str(c))) for c in result.pin_failed)
         lines.append(t(lang, "ann_pin_failed", names=names))
+    if send.forwarded:
+        lines.append(t(lang, "ann_forwarded"))
 
     kb = InlineKeyboardBuilder()
     if result.sent:

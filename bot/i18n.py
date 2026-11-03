@@ -354,6 +354,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Это не собрать в один альбом: фото и видео — вместе, файлы — отдельно, аудио — отдельно. Голосовые, видеосообщения и GIF — только по одному.",
         "en": "These can't share one album: photos and videos go together, files separately, audio separately. Voice messages, video messages and GIFs go one at a time.",
     },
+    "webapp_layout_needs_photos": {
+        "uz": "Slideshow va kollaj uchun kamida 2 ta rasm yoki video tanlang (faqat rasm va video).",
+        "ru": "Для слайд-шоу и коллажа выберите хотя бы 2 фото или видео (только фото и видео).",
+        "en": "A slideshow or collage needs at least 2 photos or videos (photos and videos only).",
+    },
     "webapp_upload_failed": {
         "uz": "Faylni Telegram'ga yuklab bo'lmadi. Uni botga to'g'ridan-to'g'ri yuborib ko'ring.",
         "ru": "Не удалось загрузить файл в Telegram. Попробуйте отправить его боту напрямую.",

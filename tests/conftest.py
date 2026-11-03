@@ -13,8 +13,10 @@ import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, GetFile, GetMe, GetWebhookInfo, SendDocument, SendMediaGroup, SendMessage, SendPhoto, SendVideo, SendVoice,
+    CopyMessage, GetFile, GetMe, GetWebhookInfo, SendDocument, SendMediaGroup, SendMessage, SendPhoto, SendRichMessage,
+    SendVideo, SendVoice,
 )
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     Chat, Document, File, InputMediaPhoto, Message, MessageId, PhotoSize, Update, User, Video, Voice, WebhookInfo,
 )
@@ -34,6 +36,7 @@ class FakeSession(BaseSession):
         super().__init__()
         self.requests = []
         self._ids = itertools.count(1000)
+        self.reject_rich = False  # simulate a chat where Telegram refuses rich messages
 
     async def make_request(self, bot, method, timeout=None):
         self.requests.append(method)
@@ -50,6 +53,10 @@ class FakeSession(BaseSession):
             )
         if isinstance(method, (SendPhoto, SendVoice, SendDocument, SendVideo)):
             return self._media_message(method.chat_id, type(method).__name__[4:].lower())
+        if isinstance(method, SendRichMessage):
+            if self.reject_rich:
+                raise TelegramBadRequest(method=method, message="Bad Request: rich messages are not allowed")
+            return Message(message_id=next(self._ids), date=datetime.now(), chat=Chat(id=method.chat_id, type="group"))
         if isinstance(method, SendMediaGroup):
             return [self._media_message(method.chat_id, "photo" if isinstance(m, InputMediaPhoto) else "video")
                     for m in method.media]

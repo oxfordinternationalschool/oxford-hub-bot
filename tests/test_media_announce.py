@@ -1,7 +1,7 @@
 """Announcements with formatting, a photo/file/voice note, or an album, from the Mini App."""
 import base64
 
-from aiogram.methods import CopyMessage, DeleteMessage, SendMediaGroup, SendMessage, SendPhoto, SendVoice
+from aiogram.methods import CopyMessage, DeleteMessage, SendMediaGroup, SendMessage, SendPhoto, SendRichMessage, SendVoice
 from aiogram.types import BufferedInputFile
 from sqlalchemy import select
 
@@ -169,3 +169,43 @@ async def test_old_drafts_without_file_id_still_send_by_copy(wh):
     [copy] = wh.api.sent(kind=CopyMessage)
     assert (copy.chat_id, copy.from_chat_id, copy.message_id) == (GROUP_A, ADMIN, 55)
     assert wh.api.sent(GROUP_A, kind=SendMessage) == []
+
+
+async def test_slideshow_is_a_rich_message(wh):
+    await school(wh)
+    a, b = await upload("1.jpg", "image/jpeg"), await upload("2.mp4", "video/mp4")
+    wh.api.requests.clear()
+    await ok("announce.send", {"html": "<b>Tadbir</b>\n• Soat 9:00", "chat_ids": [GROUP_A], "pin": True,
+                               "media_ids": [a["id"], b["id"]], "layout": "slideshow"})
+    [rich] = wh.api.sent(GROUP_A, kind=SendRichMessage)
+    show, para, bullets = rich.rich_message.blocks
+    assert show.type == "slideshow" and [blk.type for blk in show.blocks] == ["photo", "video"]
+    assert show.blocks[0].photo.media.startswith("photo") and para.text.text == "Tadbir"
+    assert bullets.type == "list" and bullets.items[0].blocks[0].text == "Soat 9:00"
+    assert wh.api.sent(GROUP_A, kind=SendMediaGroup) == []
+
+    await ok("announce.send", {"html": "", "chat_ids": [GROUP_A], "pin": False,
+                               "media_ids": [a["id"], b["id"]], "layout": "collage"})
+    assert wh.api.sent(GROUP_A, kind=SendRichMessage)[-1].rich_message.blocks[0].type == "collage"
+
+
+async def test_rich_refused_falls_back_to_album(wh):
+    await school(wh)
+    a, b = await upload("1.jpg", "image/jpeg"), await upload("2.jpg", "image/jpeg")
+    wh.api.requests.clear()
+    wh.api.reject_rich = True
+    result = await ok("announce.send", {"html": "x", "chat_ids": [GROUP_A], "pin": False,
+                                        "media_ids": [a["id"], b["id"]], "layout": "slideshow"})
+    assert result["sent"] == 1 and len(wh.api.sent(GROUP_A, kind=SendMediaGroup)) == 1
+
+
+async def test_layout_rules(wh):
+    await school(wh)
+    a = await upload("1.jpg", "image/jpeg")
+    doc = await upload("a.pdf", "application/pdf", b"%PDF")
+    for ids in ([a["id"]], [a["id"], doc["id"]]):
+        status, body = await api("announce.send", {"html": "x", "chat_ids": [GROUP_A], "pin": False,
+                                                   "media_ids": ids, "layout": "slideshow"})
+        assert status == 400 and body["error"] == "webapp_layout_needs_photos"
+    status, _ = await api("announce.send", {"html": "x", "chat_ids": [GROUP_A], "pin": False, "layout": "carousel"})
+    assert status == 400

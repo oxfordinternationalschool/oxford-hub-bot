@@ -236,6 +236,18 @@
   .pv-grid.n1 .pv-cell { aspect-ratio: 4 / 3; }
   .pv-play { position: absolute; width: 38px; height: 38px; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff; font-size: 15px;
     display: grid; place-items: center; }
+  .pv-slide { position: relative; border-radius: 13px; overflow: hidden; }
+  .pv-slide .pv-cell { aspect-ratio: 4 / 3; }
+  .pv-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border-radius: 50%; border: 0;
+    background: rgba(0,0,0,.45); color: #fff; display: grid; place-items: center; padding: 0; }
+  .pv-arrow.l { left: 8px; } .pv-arrow.r { right: 8px; } .pv-arrow svg.i { width: 18px; height: 18px; stroke-width: 2.4; }
+  .pv-count { position: absolute; top: 8px; right: 8px; font-size: 11.5px; font-weight: 700; color: #fff; background: rgba(0,0,0,.45);
+    padding: 2px 7px; border-radius: 8px; }
+  .pv-dots { display: flex; justify-content: center; gap: 5px; margin: 7px 0 2px; }
+  .pv-dots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .25; }
+  .pv-dots i.on { opacity: .8; }
+  .pv-grid.collage { gap: 4px; padding: 2px; }
+  .pv-grid.collage .pv-cell { border-radius: 9px; }
   .pv-file { display: flex; align-items: center; gap: 10px; padding: 6px 7px; }
   .pv-ic { width: 42px; height: 42px; border-radius: 50%; background: #3390ec; color: #fff; display: grid; place-items: center; flex: none; font-size: 17px; }
   .pv-name { font-weight: 600; font-size: 14.5px; } .pv-sub { font-size: 12.5px; opacity: .6; }
@@ -299,6 +311,10 @@ const T = {
     ann_none: "Hali e'lon yuborilmagan", ann_delete: "Hammasidan o'chirish", ann_delete_confirm: "Bu e'lon barcha guruhlardan o'chirilsinmi?",
     ann_deleted: "O'chirildi: {n}/{total}", ann_deleted_badge: "o'chirilgan", ann_groups: "{n} guruh",
     ann_need_text: "E'lon matnini yozing yoki fayl biriktiring", ann_need_groups: "Kamida bitta guruhni tanlang", done: "Tayyor",
+    layout_album: "🖼 Albom", layout_slideshow: "◀▶ Slideshow", layout_collage: "🧩 Kollaj",
+    layout_hint_album: "Guruhda kollaj bo'lib chiqadi, bosilsa to'liq ekranda ochiladi. Matn birinchi rasm ostida.",
+    layout_hint_slideshow: "Bitta xabar ichida ← → bilan varaqlanadi. Matn rasmlar ostida chiqadi.",
+    layout_hint_collage: "Telegram'ning yangi kollaj bloki, matn rasmlar ostida. Eski Telegram versiyalarida ko'rinmasligi mumkin.",
     att_add: "Qo'shish", att_pick_n: "Tanlash ({n})", att_uploading: "Yuklanmoqda {i}/{n}…",
     att_album_hint: "{n} ta fayl bitta albom bo'lib ketadi. Matn birinchisining ostida chiqadi.",
     album_max: "Albomga ko'pi bilan 10 ta qo'shiladi.", album_mix: "Bu albomga qo'shilmaydi: rasm va video birga, fayllar alohida, audio alohida; ovozli xabar faqat yakka yuboriladi.",
@@ -355,6 +371,10 @@ const T = {
     ann_none: "Объявлений ещё не было", ann_delete: "Удалить везде", ann_delete_confirm: "Удалить это объявление из всех групп?",
     ann_deleted: "Удалено: {n}/{total}", ann_deleted_badge: "удалено", ann_groups: "групп: {n}",
     ann_need_text: "Напишите текст или прикрепите файл", ann_need_groups: "Выберите хотя бы одну группу", done: "Готово",
+    layout_album: "🖼 Альбом", layout_slideshow: "◀▶ Слайд-шоу", layout_collage: "🧩 Коллаж",
+    layout_hint_album: "В группе — коллаж, по нажатию открывается на весь экран. Текст под первым фото.",
+    layout_hint_slideshow: "Листается стрелками ← → внутри одного сообщения. Текст под фото.",
+    layout_hint_collage: "Новый блок-коллаж Telegram, текст под фото. В старых версиях Telegram может не отображаться.",
     att_add: "Добавить", att_pick_n: "Выбрать ({n})", att_uploading: "Загрузка {i}/{n}…",
     att_album_hint: "{n} файлов уйдут одним альбомом. Текст будет под первым.",
     album_max: "В альбоме не больше 10 вложений.", album_mix: "Не войдёт в альбом: фото и видео — вместе, файлы и аудио — отдельно; голосовое — только одно.",
@@ -411,6 +431,10 @@ const T = {
     ann_none: "No announcements yet", ann_delete: "Delete everywhere", ann_delete_confirm: "Delete this announcement from all groups?",
     ann_deleted: "Deleted: {n}/{total}", ann_deleted_badge: "deleted", ann_groups: "{n} groups",
     ann_need_text: "Write a text or attach a file", ann_need_groups: "Select at least one group", done: "Done",
+    layout_album: "🖼 Album", layout_slideshow: "◀▶ Slideshow", layout_collage: "🧩 Collage",
+    layout_hint_album: "Shows as a collage in the group; tapping opens full screen. Text under the first photo.",
+    layout_hint_slideshow: "Flip through with ← → inside one message. Text under the photos.",
+    layout_hint_collage: "Telegram's new collage block, text under the photos. Older Telegram versions may not show it.",
     att_add: "Add", att_pick_n: "Choose ({n})", att_uploading: "Uploading {i}/{n}…",
     att_album_hint: "{n} files go as one album. The text appears under the first.",
     album_max: "An album holds at most 10 items.", album_mix: "Can't join this album: photos and videos go together, files and audio separately; a voice message goes alone.",
@@ -668,7 +692,7 @@ const groupLabel = (g) => g.class_name || g.title;
 // ---------------------------------------------------------------- navigation
 const NAV = [["home", "home"], ["announce", "megaphone"], ["calls", "bell"], ["staff", "users"], ["more", "grid"]];
 const state = { tab: "home", sub: null, callsFilter: "pending", staffFilter: "all", staffQuery: "", statsDays: 7,
-  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], invitePreset: null };
+  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", invitePreset: null };
 
 function renderNav() {
   const pending = (cached("dashboard") || {}).pending || [];
@@ -776,6 +800,9 @@ function tile(d, onremove) {
   if (onremove) box.append(el("button", { class: "rm", type: "button", "aria-label": "remove", onclick: onremove }, icon("x")));
   return box;
 }
+/** Slideshow/collage need 2+ photos/videos; otherwise the announcement goes as an album. */
+const canRichLayout = (media) => media.length >= 2 && media.every((d) => ALBUM_FAMILY[d.kind] === "visual" && d.album_ok);
+const effectiveLayout = () => (canRichLayout(state.annMedia) ? state.annLayout : "album");
 /** Can `d` join the attachments already chosen? Returns an error text or null. */
 function albumProblem(chosen, d) {
   if (!chosen.length) return null;
@@ -852,7 +879,7 @@ function tgToNodes(html) {
 const DRAFT_KEY = "ois-ann-draft-v2";
 function saveAnnDraft() {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ html: state.annHtml, sel: [...state.annSelected], pin: state.annPin,
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ html: state.annHtml, sel: [...state.annSelected], pin: state.annPin, layout: state.annLayout,
       media: state.annMedia.map(({ id, kind, caption, file_name, duration, has_thumb, album_ok }) =>
         ({ id, kind, caption, file_name, duration, has_thumb, album_ok })) }));
   } catch {}
@@ -860,17 +887,44 @@ function saveAnnDraft() {
 function loadAnnDraft() {
   try {
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-    if (d) { state.annHtml = d.html || ""; state.annSelected = new Set(d.sel || []); state.annPin = !!d.pin; state.annMedia = d.media || []; }
+    if (d) { state.annHtml = d.html || ""; state.annSelected = new Set(d.sel || []); state.annPin = !!d.pin; state.annMedia = d.media || []; state.annLayout = d.layout || "album"; }
   } catch {}
 }
 
 /** A Telegram-like bubble showing how the announcement will look in the group. */
-function previewBubble(groupName, media, html, plain) {
+function previewBubble(groupName, media, html, plain, layout = "album") {
   const time = new Intl.DateTimeFormat(LOCALES[L], { hour: "2-digit", minute: "2-digit" }).format(new Date());
   const caption = (h) => el("div", { class: "pv-text" }, tgToNodes(h));
   const meta = el("div", { class: "pv-meta" }, time);
   const fits = plain.length <= 1024;
   const bubbles = [];
+  const cellFor = (d) => {
+    const cell = el("div", { class: "pv-cell" });
+    if (thumbs[d.id]) cell.style.backgroundImage = `url("${thumbs[d.id]}")`; else cell.append(KIND_EMOJI[d.kind] || "📎");
+    if (d.kind === "video") cell.append(el("span", { class: "pv-play" }, "▶"));
+    return cell;
+  };
+  if (layout === "slideshow" && media.length > 1) {
+    // One frame with arrows and dots, like Telegram's slideshow block; the arrows work here too.
+    let i = 0;
+    const frame = el("div", { class: "pv-slide" });
+    const dots = el("div", { class: "pv-dots" });
+    const show = () => {
+      frame.replaceChildren(cellFor(media[i]),
+        el("button", { class: "pv-arrow l", type: "button", onclick: () => { i = (i + media.length - 1) % media.length; show(); } }, icon("back")),
+        el("button", { class: "pv-arrow r", type: "button", onclick: () => { i = (i + 1) % media.length; show(); } }, icon("chevron")),
+        el("span", { class: "pv-count" }, `${i + 1}/${media.length}`));
+      dots.replaceChildren(...media.map((_, k) => el("i", { class: k === i ? "on" : "" })));
+    };
+    show();
+    bubbles.push(el("div", { class: "pv-bubble media" }, frame, dots, plain ? caption(html) : null, meta));
+    return el("div", { class: "pv-chat" }, el("div", { class: "pv-head" }, lead("school"), el("b", {}, groupName)), bubbles);
+  }
+  if (layout === "collage" && media.length > 1) {
+    bubbles.push(el("div", { class: "pv-bubble media" },
+      el("div", { class: "pv-grid collage n" + Math.min(media.length, 5) }, media.map(cellFor)), plain ? caption(html) : null, meta));
+    return el("div", { class: "pv-chat" }, el("div", { class: "pv-head" }, lead("school"), el("b", {}, groupName)), bubbles);
+  }
   if (media.length) {
     const visual = media.filter((d) => ALBUM_FAMILY[d.kind] === "visual" || d.kind === "animation" || d.kind === "video_note");
     let body;
@@ -945,7 +999,7 @@ const SCREENS = {
     const updateUi = () => {
       const { html, plain } = current();
       state.annHtml = html; saveAnnDraft();
-      const limit = state.annMedia.length ? 1024 : 4096;
+      const limit = state.annMedia.length && effectiveLayout() === "album" ? 1024 : 4096;
       counter.textContent = `${plain.length}/${limit}`;
       counter.style.color = plain.length > limit ? "var(--warn)" : "";
       sendBtn.textContent = sel.size ? t("ann_send_n", { n: sel.size }) : t("ann_send");
@@ -1022,10 +1076,14 @@ const SCREENS = {
     const drawAtt = () => {
       const m = state.annMedia;
       const add = el("button", { class: "tile add", type: "button", onclick: openAttach }, icon("plus"), el("span", {}, t("att_add")));
+      const layoutBox = canRichLayout(m) ? el("div", { class: "mt" },
+        seg([["album", t("layout_album")], ["slideshow", t("layout_slideshow")], ["collage", t("layout_collage")]], state.annLayout,
+          (v) => { state.annLayout = v; drawAtt(); updateUi(); }),
+        el("div", { class: "hint" }, t("layout_hint_" + state.annLayout))) : null;
       attBox.replaceChildren(m.length
         ? el("div", {}, el("div", { class: "tiles" }, m.map((d, i) => tile(d, () => { m.splice(i, 1); haptic(); drawAtt(); updateUi(); })),
             m.length < ALBUM_MAX ? add : null),
-          el("div", { class: "hint" }, m.length > 1 ? t("att_album_hint", { n: m.length }) : t("att_caption_hint")))
+          layoutBox || el("div", { class: "hint" }, m.length > 1 ? t("att_album_hint", { n: m.length }) : t("att_caption_hint")))
         : el("div", { class: "att-btns" },
             el("button", { class: "btn ghost", type: "button", onclick: () => fileInput.click() }, icon("plus"), t("att_phone")),
             el("button", { class: "btn ghost", type: "button", onclick: openAttach }, icon("inbox"), t("att_bot"))));
@@ -1125,7 +1183,7 @@ const SCREENS = {
       const { html, plain } = current();
       if (!plain && !state.annMedia.length) return alertMsg(t("ann_need_text"));
       const first = groups.find((g) => sel.has(g.chat_id)) || groups[0];
-      openSheet(t("preview"), previewBubble(groupLabel(first), state.annMedia, html, plain),
+      openSheet(t("preview"), previewBubble(groupLabel(first), state.annMedia, html, plain, effectiveLayout()),
         sel.size ? el("button", { class: "btn block mt", type: "button", onclick: () => { closeSheet(); sendBtn.click(); } },
           t("ann_send_n", { n: sel.size })) : el("div", { class: "hint mt" }, t("ann_need_groups")));
     };
@@ -1134,7 +1192,8 @@ const SCREENS = {
       if (problem) return alertMsg(problem);
       if (!(await confirmMsg(t("ann_confirm", { n: sel.size })))) return;
       const { html } = current();
-      const r = await api("announce.send", { html, chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id) });
+      const r = await api("announce.send", { html, chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id),
+        layout: effectiveLayout() });
       haptic(r.failed.length ? "warning" : "ok");
       toast(t("ann_sent", { sent: r.sent, total: r.total }));
       state.annHtml = ""; state.annMedia = []; sel.clear(); saveAnnDraft(); invalidate("annHistory");

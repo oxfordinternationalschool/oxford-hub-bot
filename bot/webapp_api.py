@@ -31,7 +31,9 @@ from bot.db.models import (
 from bot.i18n import t
 from bot.services import admin_views as views
 from bot.services.broadcast import broadcast, delete_announcement, save_announcement
-from bot.services.media import ALBUM_FAMILY, album_problem, announcement_sender, upload_kind, upload_to_owner
+from bot.services.media import (
+    ALBUM_FAMILY, LAYOUTS, album_problem, announcement_sender, layout_problem, upload_kind, upload_to_owner,
+)
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
 from bot.services.menus import set_user_menu
@@ -618,7 +620,10 @@ async def op_announce_send(ctx: Ctx, args: dict):
     drafts = await _own_drafts(ctx, media_ids) if media_ids else []
     if not plain and not drafts:
         raise ctx.error("webapp_text_empty")
-    if problem := album_problem(drafts):
+    layout = _str(args, "layout", 16, optional=True) or "album"
+    if layout not in LAYOUTS:
+        raise ApiError(400, "bad_args", "layout")
+    if problem := (layout_problem(drafts, layout) or album_problem(drafts)):
         raise ctx.error(problem)
     pin = _bool(args, "pin")
     ids = args.get("chat_ids")
@@ -631,7 +636,7 @@ async def op_announce_send(ctx: Ctx, args: dict):
 
     icons = "".join(MEDIA_ICONS.get(d.kind, "📎") for d in drafts[:3]) + ("…" if len(drafts) > 3 else "")
     preview = f"{icons} {plain}".strip()
-    send = announcement_sender(ctx.bot, drafts, html_text, plain)
+    send = announcement_sender(ctx.bot, drafts, html_text, plain, layout)
     result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
     ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result)
 

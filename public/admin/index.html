@@ -183,6 +183,65 @@
   .opt span { flex: 1; } .opt svg.i { color: var(--accent); width: 20px; height: 20px; }
   .opt.on { font-weight: 650; } .opt:active { background: var(--surface-2); }
 
+  /* Rich text editor */
+  .toolbar { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--line); overflow-x: auto;
+    scrollbar-width: none; position: sticky; top: 0; background: var(--surface); z-index: 2; }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .tool { flex: none; min-width: 36px; height: 36px; border: 0; border-radius: 10px; background: none; color: var(--text);
+    font-size: 16px; display: grid; place-items: center; padding: 0 6px; }
+  .tool svg.i { width: 18px; height: 18px; } .tool:active { background: var(--surface-2); }
+  .tool.on { background: var(--accent-soft); color: var(--accent); }
+  .tsep { flex: none; width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+  .editor { min-height: 140px; max-height: 50vh; overflow-y: auto; outline: none; font-size: 16px; line-height: 1.5;
+    padding: 2px 2px 6px; overflow-wrap: anywhere; }
+  .editor:empty::before { content: attr(data-ph); color: var(--muted); pointer-events: none; }
+  .editor blockquote, .pv-text blockquote { margin: 6px 0; padding: 4px 10px; border-left: 3px solid var(--accent);
+    background: var(--accent-soft); border-radius: 0 8px 8px 0; }
+  .editor ul, .editor ol { margin: 4px 0; padding-left: 22px; }
+  .editor a, .pv-text a { color: var(--accent); }
+
+  /* Attachment tiles */
+  .tiles { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 2px; margin-top: 8px; scrollbar-width: none; }
+  .tiles::-webkit-scrollbar { display: none; }
+  .tile { position: relative; flex: none; width: 76px; height: 76px; border-radius: 14px; background: var(--surface-2) center / cover no-repeat;
+    display: grid; place-items: center; border: 0; overflow: hidden; }
+  .row .tile { width: 44px; height: 44px; border-radius: 11px; }
+  .tile .emo { font-size: 26px; } .row .tile .emo { font-size: 19px; }
+  .tile .dur { position: absolute; left: 5px; bottom: 5px; font-size: 10.5px; font-weight: 700; color: #fff; background: rgba(0,0,0,.55);
+    padding: 1px 5px; border-radius: 6px; }
+  .row .tile .dur { display: none; }
+  .tile .rm { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6);
+    color: #fff; display: grid; place-items: center; padding: 0; }
+  .tile .rm svg.i { width: 13px; height: 13px; stroke-width: 2.4; }
+  .tile.add { border: 1.5px dashed var(--line); background: none; color: var(--accent); font-size: 11.5px; font-weight: 650;
+    display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center; filter: contrast(1.4); }
+
+  /* Preview (Telegram-like) */
+  .pv-chat { border-radius: 18px; padding: 12px 10px 14px; margin-top: 4px;
+    background: linear-gradient(160deg, #b9d3a8 0%, #d6e4b5 45%, #a8c99c 100%); }
+  :root[data-theme="dark"] .pv-chat { background: linear-gradient(160deg, #0f1a24 0%, #182633 50%, #0f1a24 100%); }
+  .pv-head { display: flex; align-items: center; gap: 10px; margin: 0 4px 10px; color: #1b2a12; }
+  :root[data-theme="dark"] .pv-head { color: #e8eef3; }
+  .pv-bubble { background: #fff; color: #111; border-radius: 16px 16px 16px 6px; padding: 8px 10px 6px; max-width: 88%; margin-top: 6px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.12); overflow: hidden; }
+  :root[data-theme="dark"] .pv-bubble { background: #212d3b; color: #f1f4f7; }
+  .pv-bubble.media { padding: 3px 3px 6px; } .pv-bubble.media .pv-text { padding: 6px 7px 0; }
+  .pv-text { white-space: normal; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+  .pv-meta { text-align: right; font-size: 11.5px; opacity: .55; margin: 2px 4px 0; }
+  .pv-grid { display: grid; gap: 2px; border-radius: 13px; overflow: hidden; }
+  .pv-grid.n1 { grid-template-columns: 1fr; } .pv-grid.n2, .pv-grid.n4 { grid-template-columns: 1fr 1fr; }
+  .pv-grid.n3 { grid-template-columns: 1fr 1fr; } .pv-grid.n3 .pv-cell:first-child { grid-column: span 2; }
+  .pv-grid.n5 { grid-template-columns: repeat(3, 1fr); }
+  .pv-cell { aspect-ratio: 1; background: #cfd8dc center / cover no-repeat; display: grid; place-items: center; font-size: 28px; position: relative; }
+  .pv-grid.n1 .pv-cell { aspect-ratio: 4 / 3; }
+  .pv-play { position: absolute; width: 38px; height: 38px; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff; font-size: 15px;
+    display: grid; place-items: center; }
+  .pv-file { display: flex; align-items: center; gap: 10px; padding: 6px 7px; }
+  .pv-ic { width: 42px; height: 42px; border-radius: 50%; background: #3390ec; color: #fff; display: grid; place-items: center; flex: none; font-size: 17px; }
+  .pv-name { font-weight: 600; font-size: 14.5px; } .pv-sub { font-size: 12.5px; opacity: .6; }
+  .pv-wave { display: flex; align-items: center; gap: 2px; flex: 1; height: 24px; }
+  .pv-wave i { width: 3px; border-radius: 2px; background: #3390ec; opacity: .8; }
+
   /* Attachment chip */
   .att { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--accent-soft); margin-top: 10px; }
   .att .main { flex: 1; min-width: 0; } .att .title { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -240,6 +299,10 @@ const T = {
     ann_none: "Hali e'lon yuborilmagan", ann_delete: "Hammasidan o'chirish", ann_delete_confirm: "Bu e'lon barcha guruhlardan o'chirilsinmi?",
     ann_deleted: "O'chirildi: {n}/{total}", ann_deleted_badge: "o'chirilgan", ann_groups: "{n} guruh",
     ann_need_text: "E'lon matnini yozing yoki fayl biriktiring", ann_need_groups: "Kamida bitta guruhni tanlang", done: "Tayyor",
+    att_add: "Qo'shish", att_pick_n: "Tanlash ({n})", att_uploading: "Yuklanmoqda {i}/{n}…",
+    att_album_hint: "{n} ta fayl bitta albom bo'lib ketadi. Matn birinchisining ostida chiqadi.",
+    album_max: "Albomga ko'pi bilan 10 ta qo'shiladi.", album_mix: "Bu albomga qo'shilmaydi: rasm va video birga, fayllar alohida, audio alohida; ovozli xabar faqat yakka yuboriladi.",
+    link_title: "Havola", link_url: "Manzil", link_text: "Ko'rinadigan matn", link_bad: "Manzil https:// bilan boshlansin", preview: "Ko'rinish",
     att_title: "Biriktirma", att_phone: "Telefondan", att_bot: "Botga yuborilgan", att_bot_title: "Botga yuborilganlar",
     att_bot_hint: "Ovozli xabar, video yoki katta fayl uchun: botga odatdagidek yuboring — u shu ro'yxatda paydo bo'ladi.",
     att_open_bot: "Botni ochish", att_none: "Oxirgi 3 kunda botga hech narsa yuborilmagan", att_too_big: "Fayl 3 MB dan katta. Uni botga yuboring — «Botga yuborilganlar» ro'yxatida chiqadi.",
@@ -292,6 +355,10 @@ const T = {
     ann_none: "Объявлений ещё не было", ann_delete: "Удалить везде", ann_delete_confirm: "Удалить это объявление из всех групп?",
     ann_deleted: "Удалено: {n}/{total}", ann_deleted_badge: "удалено", ann_groups: "групп: {n}",
     ann_need_text: "Напишите текст или прикрепите файл", ann_need_groups: "Выберите хотя бы одну группу", done: "Готово",
+    att_add: "Добавить", att_pick_n: "Выбрать ({n})", att_uploading: "Загрузка {i}/{n}…",
+    att_album_hint: "{n} файлов уйдут одним альбомом. Текст будет под первым.",
+    album_max: "В альбоме не больше 10 вложений.", album_mix: "Не войдёт в альбом: фото и видео — вместе, файлы и аудио — отдельно; голосовое — только одно.",
+    link_title: "Ссылка", link_url: "Адрес", link_text: "Текст ссылки", link_bad: "Адрес должен начинаться с https://", preview: "Просмотр",
     att_title: "Вложение", att_phone: "С телефона", att_bot: "Из бота", att_bot_title: "Отправленные боту",
     att_bot_hint: "Для голосового, видео или большого файла: отправьте его боту как обычно — он появится в этом списке.",
     att_open_bot: "Открыть бота", att_none: "За последние 3 дня боту ничего не отправляли", att_too_big: "Файл больше 3 МБ. Отправьте его боту — он появится в «Отправленные боту».",
@@ -344,6 +411,10 @@ const T = {
     ann_none: "No announcements yet", ann_delete: "Delete everywhere", ann_delete_confirm: "Delete this announcement from all groups?",
     ann_deleted: "Deleted: {n}/{total}", ann_deleted_badge: "deleted", ann_groups: "{n} groups",
     ann_need_text: "Write a text or attach a file", ann_need_groups: "Select at least one group", done: "Done",
+    att_add: "Add", att_pick_n: "Choose ({n})", att_uploading: "Uploading {i}/{n}…",
+    att_album_hint: "{n} files go as one album. The text appears under the first.",
+    album_max: "An album holds at most 10 items.", album_mix: "Can't join this album: photos and videos go together, files and audio separately; a voice message goes alone.",
+    link_title: "Link", link_url: "Address", link_text: "Link text", link_bad: "The address must start with https://", preview: "Preview",
     att_title: "Attachment", att_phone: "From phone", att_bot: "From bot", att_bot_title: "Sent to the bot",
     att_bot_hint: "For a voice message, video or large file: send it to the bot as usual — it will show up in this list.",
     att_open_bot: "Open the bot", att_none: "Nothing sent to the bot in the last 3 days", att_too_big: "The file is over 3 MB. Send it to the bot — it will appear under “Sent to the bot”.",
@@ -597,7 +668,7 @@ const groupLabel = (g) => g.class_name || g.title;
 // ---------------------------------------------------------------- navigation
 const NAV = [["home", "home"], ["announce", "megaphone"], ["calls", "bell"], ["staff", "users"], ["more", "grid"]];
 const state = { tab: "home", sub: null, callsFilter: "pending", staffFilter: "all", staffQuery: "", statsDays: 7,
-  annSelected: new Set(), annPin: false, annText: "", annMedia: null, invitePreset: null };
+  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], invitePreset: null };
 
 function renderNav() {
   const pending = (cached("dashboard") || {}).pending || [];
@@ -661,18 +732,12 @@ function callRow(c, onChange) {
 
 // ---------------------------------------------------------------- attachments
 const KIND_EMOJI = { photo: "🖼", video: "🎬", voice: "🎤", audio: "🎵", document: "📎", video_note: "⭕", animation: "🎞" };
-const MAX_UPLOAD = 3 * 1024 * 1024;  // the server's limit (Vercel's request size, minus base64 overhead)
+// Kinds that may share one album (same rule as the server).
+const ALBUM_FAMILY = { photo: "visual", video: "visual", document: "document", audio: "audio" };
+const ALBUM_MAX = 10;
+const MAX_UPLOAD = 3 * 1024 * 1024;  // per file; the server's limit (Vercel's request size, minus base64)
 const fmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
 const fmtDur = (s) => (s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "");
-function uploadKind(mime, name) {
-  mime = (mime || "").toLowerCase(); name = (name || "").toLowerCase();
-  if (/^image\/(jpeg|png|webp)$/.test(mime)) return "photo";
-  if (mime === "image/gif") return "animation";
-  if (mime === "video/mp4" || name.endsWith(".mp4")) return "video";
-  if (/^audio\/(ogg|opus)$/.test(mime) || /\.(ogg|oga|opus)$/.test(name)) return "voice";
-  if (mime.startsWith("audio/") || /\.(mp3|m4a)$/.test(name)) return "audio";
-  return "document";
-}
 async function compressImage(file) {
   const img = await createImageBitmap(file);
   const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
@@ -680,8 +745,8 @@ async function compressImage(file) {
   c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
   return new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.85));
 }
-/** Reads a picked file into the shape the API takes; big photos are shrunk first. null = too big. */
-async function prepareUpload(file) {
+/** Uploads one picked file (big photos shrunk first); returns the draft, or null if too big. */
+async function uploadFile(file) {
   let blob = file, name = file.name || "file", mime = file.type || "";
   if (/^image\/(jpeg|png|webp)$/.test(mime) && file.size > 1.5 * 1024 * 1024) {
     blob = await compressImage(file); mime = "image/jpeg"; name = name.replace(/\.\w+$/, "") + ".jpg";
@@ -690,19 +755,146 @@ async function prepareUpload(file) {
   const data = await new Promise((ok, fail) => {
     const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob);
   });
-  const kind = uploadKind(mime, name);
-  return { kind, title: name, sub: `${t("m_" + kind)} · ${fmtSize(blob.size)}`, media: { upload: { name, mime, data } } };
+  const draft = await api("media.upload", { name, mime, data });
+  if (mime.startsWith("image/")) thumbs[draft.id] = URL.createObjectURL(blob);
+  return draft;
 }
-// The draft (text, groups) survives closing the app, e.g. to record a voice message in the bot.
-const DRAFT_KEY = "ois-ann-draft";
+let selectionHandler = null;  // the editor toolbar's, replaced on each render
+// Draft id -> preview image (data: URL from the server, or a local blob: URL for fresh uploads).
+const thumbs = {};
+async function loadThumbs(drafts) {
+  const need = drafts.filter((d) => d.has_thumb && !thumbs[d.id]).map((d) => d.id);
+  if (!need.length) return;
+  Object.assign(thumbs, await api("media.thumbs", { ids: need }));
+}
+const draftTitle = (d) => d.caption || d.file_name || t("m_" + d.kind);
+function tile(d, onremove) {
+  const box = el("div", { class: "tile" + (thumbs[d.id] ? "" : " noimg") });
+  if (thumbs[d.id]) box.style.backgroundImage = `url("${thumbs[d.id]}")`;
+  else box.append(el("span", { class: "emo" }, KIND_EMOJI[d.kind] || "📎"));
+  if (d.kind === "video" || d.kind === "voice" || d.kind === "audio") box.append(el("span", { class: "dur" }, fmtDur(d.duration) || t("m_" + d.kind)));
+  if (onremove) box.append(el("button", { class: "rm", type: "button", "aria-label": "remove", onclick: onremove }, icon("x")));
+  return box;
+}
+/** Can `d` join the attachments already chosen? Returns an error text or null. */
+function albumProblem(chosen, d) {
+  if (!chosen.length) return null;
+  if (chosen.length >= ALBUM_MAX) return t("album_max");
+  const fam = ALBUM_FAMILY[d.kind];
+  if (!d.album_ok || !fam || chosen.some((c) => !c.album_ok || ALBUM_FAMILY[c.kind] !== fam)) return t("album_mix");
+  return null;
+}
+
+// ---------------------------------------------------------------- rich text (editor <-> Telegram HTML)
+const escHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const SAFE_HREF = /^(https?|tg):\/\/[^\s"'<>]+$/i;
+/** The editor's DOM as Telegram HTML + plain text (what the caption limit counts). */
+function editorToTg(root) {
+  let html = "", plain = "";
+  const out = (h, p = "") => { html += h; plain += p; };
+  const nl = () => { if (plain && !plain.endsWith("\n")) out("\n", "\n"); };
+  const WRAP = { B: "b", STRONG: "b", I: "i", EM: "i", U: "u", S: "s", STRIKE: "s", DEL: "s" };
+  const walk = (node) => {
+    for (const n of node.childNodes) {
+      if (n.nodeType === 3) { out(escHtml(n.nodeValue), n.nodeValue); continue; }
+      if (n.nodeType !== 1) continue;
+      const tag = n.nodeName;
+      if (tag === "BR") { out("\n", "\n"); continue; }
+      if (tag === "UL" || tag === "OL") {
+        nl(); let i = 0;
+        for (const li of n.children) { i++; const mark = tag === "UL" ? "• " : `${i}. `; out(mark, mark); walk(li); nl(); }
+        continue;
+      }
+      if (tag === "BLOCKQUOTE") { nl(); out("<blockquote>"); walk(n); out("</blockquote>"); nl(); continue; }
+      if (tag === "DIV" || tag === "P") { nl(); walk(n); nl(); continue; }
+      if (tag === "A") {
+        const href = n.getAttribute("href") || "";
+        if (SAFE_HREF.test(href)) { out(`<a href="${escHtml(href).replace(/"/g, "&quot;")}">`); walk(n); out("</a>"); } else walk(n);
+        continue;
+      }
+      const wraps = WRAP[tag] ? [WRAP[tag]] : [];
+      if (n.style) {  // some browsers format with <span style> instead of tags
+        if (n.style.fontWeight === "bold" || +n.style.fontWeight >= 600) wraps.push("b");
+        if (n.style.fontStyle === "italic") wraps.push("i");
+        const deco = n.style.textDecorationLine || n.style.textDecoration || "";
+        if (deco.includes("underline")) wraps.push("u");
+        if (deco.includes("line-through")) wraps.push("s");
+      }
+      const uniq = [...new Set(wraps)];
+      uniq.forEach((w) => out(`<${w}>`)); walk(n); uniq.reverse().forEach((w) => out(`</${w}>`));
+    }
+  };
+  walk(root);
+  return { html: html.replace(/^\n+|\n+$/g, ""), plain: plain.trim() };
+}
+/** Telegram HTML -> safe DOM nodes (for the editor and the preview). Only known tags are rebuilt. */
+function tgToNodes(html) {
+  const doc = new DOMParser().parseFromString(`<body>${html || ""}</body>`, "text/html");
+  const KEEP = { B: "b", I: "i", U: "u", S: "s", BLOCKQUOTE: "blockquote", CODE: "code", "TG-SPOILER": "span" };
+  const build = (src, dst) => {
+    for (const n of src.childNodes) {
+      if (n.nodeType === 3) {
+        n.nodeValue.split("\n").forEach((part, i) => { if (i) dst.append(el("br")); if (part) dst.append(part); });
+      } else if (n.nodeType === 1) {
+        let target;
+        if (n.nodeName === "A" && SAFE_HREF.test(n.getAttribute("href") || "")) target = el("a", { href: n.getAttribute("href") });
+        else if (KEEP[n.nodeName]) target = el(KEEP[n.nodeName]);
+        if (target) { build(n, target); dst.append(target); } else build(n, dst);
+      }
+    }
+  };
+  const frag = document.createDocumentFragment();
+  build(doc.body, frag);
+  return frag;
+}
+
+// The draft (text, groups, attachments) survives closing the app, e.g. to record a voice note in the bot.
+const DRAFT_KEY = "ois-ann-draft-v2";
 function saveAnnDraft() {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: state.annText, sel: [...state.annSelected], pin: state.annPin })); } catch {}
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ html: state.annHtml, sel: [...state.annSelected], pin: state.annPin,
+      media: state.annMedia.map(({ id, kind, caption, file_name, duration, has_thumb, album_ok }) =>
+        ({ id, kind, caption, file_name, duration, has_thumb, album_ok })) }));
+  } catch {}
 }
 function loadAnnDraft() {
   try {
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-    if (d) { state.annText = d.text || ""; state.annSelected = new Set(d.sel || []); state.annPin = !!d.pin; }
+    if (d) { state.annHtml = d.html || ""; state.annSelected = new Set(d.sel || []); state.annPin = !!d.pin; state.annMedia = d.media || []; }
   } catch {}
+}
+
+/** A Telegram-like bubble showing how the announcement will look in the group. */
+function previewBubble(groupName, media, html, plain) {
+  const time = new Intl.DateTimeFormat(LOCALES[L], { hour: "2-digit", minute: "2-digit" }).format(new Date());
+  const caption = (h) => el("div", { class: "pv-text" }, tgToNodes(h));
+  const meta = el("div", { class: "pv-meta" }, time);
+  const fits = plain.length <= 1024;
+  const bubbles = [];
+  if (media.length) {
+    const visual = media.filter((d) => ALBUM_FAMILY[d.kind] === "visual" || d.kind === "animation" || d.kind === "video_note");
+    let body;
+    if (visual.length === media.length) {
+      body = el("div", { class: "pv-grid n" + Math.min(media.length, 5) }, media.map((d) => {
+        const cell = el("div", { class: "pv-cell" });
+        if (thumbs[d.id]) cell.style.backgroundImage = `url("${thumbs[d.id]}")`; else cell.append(KIND_EMOJI[d.kind] || "📎");
+        if (d.kind === "video") cell.append(el("span", { class: "pv-play" }, "▶"));
+        return cell;
+      }));
+    } else {
+      body = el("div", {}, media.map((d) => d.kind === "voice"
+        ? el("div", { class: "pv-file" }, el("span", { class: "pv-ic" }, "▶"),
+            el("div", { class: "pv-wave" }, Array.from({ length: 28 }, (_, i) => el("i", { style: `height:${4 + ((i * 7) % 13)}px` }))),
+            el("span", { class: "pv-sub" }, fmtDur(d.duration)))
+        : el("div", { class: "pv-file" }, el("span", { class: "pv-ic" }, KIND_EMOJI[d.kind] || "📎"),
+            el("div", {}, el("div", { class: "pv-name" }, draftTitle(d)), el("div", { class: "pv-sub" }, t("m_" + d.kind))))));
+    }
+    bubbles.push(el("div", { class: "pv-bubble media" }, body, fits && plain ? caption(html) : null, meta.cloneNode(true)));
+    if (!fits && plain) bubbles.push(el("div", { class: "pv-bubble" }, caption(html), meta.cloneNode(true)));
+  } else if (plain) {
+    bubbles.push(el("div", { class: "pv-bubble" }, caption(html), meta));
+  }
+  return el("div", { class: "pv-chat" }, el("div", { class: "pv-head" }, lead("school"), el("b", {}, groupName)), bubbles);
 }
 
 // ---------------------------------------------------------------- main screens
@@ -743,19 +935,160 @@ const SCREENS = {
     const sel = state.annSelected;
     for (const id of [...sel]) if (!groups.some((g) => g.chat_id === id)) sel.delete(id);
 
-    const text = el("textarea", { class: "in", maxLength: 4096, placeholder: t("ann_ph"), value: state.annText });
+    // ---- editor with a formatting toolbar
+    const editor = el("div", { class: "editor", contenteditable: "true", "data-ph": t("ann_ph"), role: "textbox", "aria-multiline": "true" });
+    editor.append(tgToNodes(state.annHtml));
     const counter = el("span", {});
-    const sendBtn = el("button", { class: "btn block mt", type: "button" });
+    const sendBtn = el("button", { class: "btn block", type: "button" });
     const pickedLabel = el("div", { class: "sub" });
+    const current = () => editorToTg(editor);
     const updateUi = () => {
-      state.annText = text.value;
-      saveAnnDraft();
-      counter.textContent = `${text.value.length}/4096`;
+      const { html, plain } = current();
+      state.annHtml = html; saveAnnDraft();
+      const limit = state.annMedia.length ? 1024 : 4096;
+      counter.textContent = `${plain.length}/${limit}`;
+      counter.style.color = plain.length > limit ? "var(--warn)" : "";
       sendBtn.textContent = sel.size ? t("ann_send_n", { n: sel.size }) : t("ann_send");
       pickedLabel.textContent = sel.size ? t("ann_picked", { n: sel.size }) : t("ann_none_picked");
     };
-    text.addEventListener("input", updateUi);
+    editor.addEventListener("input", updateUi);
+    editor.addEventListener("paste", (e) => {  // keep pasted text plain; formatting comes from the toolbar
+      e.preventDefault();
+      document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain"));
+    });
 
+    const exec = (cmd, arg) => { editor.focus(); document.execCommand(cmd, false, arg); haptic(); updateUi(); syncTools(); };
+    let savedRange = null;
+    const keepRange = () => { const s = getSelection(); if (s.rangeCount && editor.contains(s.anchorNode)) savedRange = s.getRangeAt(0).cloneRange(); };
+    const restoreRange = () => { editor.focus(); if (savedRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(savedRange); } };
+    const insideTag = (tag) => { let n = getSelection().anchorNode; while (n && n !== editor) { if (n.nodeName === tag) return true; n = n.parentNode; } return false; };
+    const openLink = () => {
+      keepRange();
+      const selected = savedRange ? savedRange.toString() : "";
+      const url = el("input", { class: "in", type: "url", placeholder: "https://", autocapitalize: "off", inputmode: "url" });
+      const label = el("input", { class: "in", value: selected, placeholder: t("link_text") });
+      const save = el("button", { class: "btn block mt", type: "button", onclick: () => {
+        let href = url.value.trim();
+        if (href && !/^(https?|tg):\/\//i.test(href)) href = "https://" + href;
+        if (!SAFE_HREF.test(href)) return alertMsg(t("link_bad"));
+        closeSheet(); restoreRange();
+        if (getSelection().isCollapsed) document.execCommand("insertHTML", false,
+          `<a href="${escHtml(href).replace(/"/g, "&quot;")}">${escHtml(label.value.trim() || href)}</a>`);
+        else document.execCommand("createLink", false, href);
+        haptic("ok"); updateUi();
+      } }, t("save"));
+      openSheet(t("link_title"), field(t("link_url"), url), field(t("link_text"), label), save);
+      setTimeout(() => url.focus(), 250);
+    };
+    const TOOLS = [
+      ["undo", () => exec("undo"), "↶"], ["redo", () => exec("redo"), "↷"], null,
+      ["bold", () => exec("bold"), el("b", {}, "B")], ["italic", () => exec("italic"), el("i", {}, "I")],
+      ["underline", () => exec("underline"), el("u", {}, "U")], ["strikeThrough", () => exec("strikeThrough"), el("s", {}, "S")], null,
+      ["link", openLink, icon("link")],
+      ["quote", () => exec("formatBlock", insideTag("BLOCKQUOTE") ? "div" : "blockquote"), "❝"],
+      ["insertUnorderedList", () => exec("insertUnorderedList"), "•≡"], ["insertOrderedList", () => exec("insertOrderedList"), "1≡"], null,
+      ["clear", () => { exec("removeFormat"); exec("formatBlock", "div"); }, "⌫"],
+    ];
+    const toolBtns = {};
+    const toolbar = el("div", { class: "toolbar" }, TOOLS.map((tool) => {
+      if (!tool) return el("span", { class: "tsep" });
+      const [name, fn, glyph] = tool;
+      const b = el("button", { type: "button", class: "tool", "aria-label": name,
+        onpointerdown: (e) => { e.preventDefault(); keepRange(); },  // keep the text selection
+        onclick: () => fn() }, glyph);
+      toolBtns[name] = b;
+      return b;
+    }));
+    const syncTools = () => {
+      for (const cmd of ["bold", "italic", "underline", "strikeThrough", "insertUnorderedList", "insertOrderedList"]) {
+        try { toolBtns[cmd].classList.toggle("on", document.queryCommandState(cmd)); } catch {}
+      }
+      if (editor.contains(getSelection().anchorNode)) toolBtns.quote.classList.toggle("on", insideTag("BLOCKQUOTE"));
+    };
+    if (selectionHandler) document.removeEventListener("selectionchange", selectionHandler);
+    selectionHandler = syncTools;
+    document.addEventListener("selectionchange", syncTools);
+
+    // ---- attachments (one file, or an album of up to 10)
+    const attBox = el("div");
+    const fileInput = el("input", { type: "file", multiple: true, style: "display:none",
+      accept: "image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" });
+    const addDraft = (d) => {
+      if (state.annMedia.some((m) => m.id === d.id)) return true;
+      const problem = albumProblem(state.annMedia, d);
+      if (problem) { alertMsg(problem); return false; }
+      state.annMedia.push(d); return true;
+    };
+    const drawAtt = () => {
+      const m = state.annMedia;
+      const add = el("button", { class: "tile add", type: "button", onclick: openAttach }, icon("plus"), el("span", {}, t("att_add")));
+      attBox.replaceChildren(m.length
+        ? el("div", {}, el("div", { class: "tiles" }, m.map((d, i) => tile(d, () => { m.splice(i, 1); haptic(); drawAtt(); updateUi(); })),
+            m.length < ALBUM_MAX ? add : null),
+          el("div", { class: "hint" }, m.length > 1 ? t("att_album_hint", { n: m.length }) : t("att_caption_hint")))
+        : el("div", { class: "att-btns" },
+            el("button", { class: "btn ghost", type: "button", onclick: () => fileInput.click() }, icon("plus"), t("att_phone")),
+            el("button", { class: "btn ghost", type: "button", onclick: openAttach }, icon("inbox"), t("att_bot"))));
+      saveAnnDraft();
+    };
+    fileInput.addEventListener("change", () => act(null, async () => {
+      const files = [...fileInput.files]; fileInput.value = "";
+      for (const [i, file] of files.entries()) {
+        toast(t("att_uploading", { i: i + 1, n: files.length }));
+        const draft = await uploadFile(file);
+        if (!draft) { await alertMsg(`${file.name}: ${t("att_too_big")}`); continue; }
+        if (!addDraft(draft)) break;
+        drawAtt(); updateUi();
+      }
+      haptic("ok");
+    }));
+    function openAttach() {
+      closeSheet();
+      const chosen = new Set();
+      const list = el("div", { class: "card" }, el("div", { class: "skel", style: "height:64px;border-radius:0" }));
+      const pick = el("button", { class: "btn block mt", type: "button" });
+      const syncPick = () => { pick.textContent = t("att_pick_n", { n: chosen.size }); pick.disabled = !chosen.size; };
+      let drafts = [];
+      const drawList = () => list.replaceChildren(...(drafts.length ? drafts.map((d) => row({
+        lead: tile(d), title: draftTitle(d),
+        sub: [t("m_" + d.kind), fmtDur(d.duration), ago(d.created_at)].filter(Boolean).join(" · "),
+        side: toggle(chosen.has(d.id), (v, input) => {
+          if (v) {
+            const problem = albumProblem([...state.annMedia, ...drafts.filter((x) => chosen.has(x.id))], d);
+            if (problem) { input.checked = false; return alertMsg(problem); }
+            chosen.add(d.id);
+          } else chosen.delete(d.id);
+          haptic(); syncPick();
+        }),
+      })) : [empty(t("att_none"), "inbox")]));
+      const loadDrafts = async () => {
+        drafts = (await api("media.list")).filter((d) => !state.annMedia.some((m) => m.id === d.id));
+        drawList();
+        await loadThumbs(drafts); drawList();
+      };
+      pick.addEventListener("click", () => {
+        for (const d of drafts) if (chosen.has(d.id)) addDraft(d);
+        closeSheet(); drawAtt(); updateUi(); haptic("ok");
+      });
+      syncPick();
+      const botName = (cached("me") || {}).bot;
+      openSheet(t("att_title"),
+        el("div", { class: "btns" },
+          el("button", { class: "btn soft", type: "button", onclick: () => { closeSheet(); fileInput.click(); } }, icon("plus"), t("att_phone")),
+          botName ? el("button", { class: "btn ghost", type: "button", onclick: () => {
+            saveAnnDraft();
+            const url = "https://t.me/" + botName;
+            if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+          } }, t("att_open_bot")) : null),
+        header(t("att_bot_title"), el("button", { type: "button", onclick: (e) => act(e.currentTarget, loadDrafts) }, icon("refresh"))),
+        el("div", { class: "hint", style: "margin:-2px 4px 10px" }, t("att_bot_hint")),
+        list, pick);
+      act(null, loadDrafts);
+    }
+    loadThumbs(state.annMedia).then(drawAtt).catch(() => {});
+    drawAtt();
+
+    // ---- groups
     const grades = [...new Set(groups.map((g) => g.grade).filter(Boolean))].sort((a, b) => a - b);
     const quickChips = el("div", { class: "chips" });
     const drawChips = () => {
@@ -773,75 +1106,38 @@ const SCREENS = {
         }));
     };
     drawChips();
-
     const openGroupPicker = () => {
-      const list = el("div", { class: "card" });
-      const draw = () => list.replaceChildren(...groups.map((g) => row({
+      const list = el("div", { class: "card" }, groups.map((g) => row({
         flat: true, title: groupLabel(g), sub: g.class_name && g.title !== g.class_name ? g.title : null,
         side: toggle(sel.has(g.chat_id), (v) => { v ? sel.add(g.chat_id) : sel.delete(g.chat_id); haptic(); drawChips(); updateUi(); }),
       })));
-      draw();
       openSheet(t("ann_pick"), list, el("button", { class: "btn block mt", type: "button", onclick: closeSheet }, t("done")));
     };
 
-    const attBox = el("div");
-    const fileInput = el("input", { type: "file", style: "display:none",
-      accept: "image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" });
-    const drawAtt = () => {
-      const m = state.annMedia;
-      attBox.replaceChildren(m
-        ? el("div", {}, el("div", { class: "att" }, lead(KIND_EMOJI[m.kind] || "📎"),
-            el("div", { class: "main" }, el("div", { class: "title" }, m.title), el("div", { class: "sub" }, m.sub)),
-            el("button", { class: "icon-btn", type: "button", style: "box-shadow:none", "aria-label": "remove",
-              onclick: () => { state.annMedia = null; haptic(); drawAtt(); } }, icon("x"))),
-          el("div", { class: "hint" }, t("att_caption_hint")))
-        : el("div", { class: "att-btns" },
-            el("button", { class: "btn ghost", type: "button", onclick: () => fileInput.click() }, icon("plus"), t("att_phone")),
-            el("button", { class: "btn ghost", type: "button", onclick: openBotMedia }, icon("inbox"), t("att_bot"))));
+    // ---- preview & send
+    const validate = () => {
+      const { plain } = current();
+      if (!plain && !state.annMedia.length) return t("ann_need_text");
+      if (!sel.size) return t("ann_need_groups");
+      return null;
     };
-    fileInput.addEventListener("change", () => act(null, async () => {
-      const file = fileInput.files[0]; fileInput.value = "";
-      if (!file) return;
-      if (file.size > 1.5 * 1024 * 1024) toast(t("att_reading"));
-      const prepared = await prepareUpload(file);
-      if (!prepared) return alertMsg(t("att_too_big"));
-      state.annMedia = prepared; haptic("ok"); drawAtt();
-    }));
-    const openBotMedia = () => {
-      const list = el("div", { class: "card" }, el("div", { class: "skel", style: "height:60px;border-radius:0" }));
-      const loadDrafts = async () => {
-        const drafts = await api("media.list");
-        list.replaceChildren(...(drafts.length ? drafts.map((d) => {
-          const title = d.caption || d.file_name || t("m_" + d.kind);
-          const sub = [t("m_" + d.kind), fmtDur(d.duration), ago(d.created_at)].filter(Boolean).join(" · ");
-          return row({ lead: lead(KIND_EMOJI[d.kind] || "📎"), title, sub, chevron: true, onclick: () => {
-            state.annMedia = { kind: d.kind, title, sub, media: { draft_id: d.id } }; haptic("ok"); drawAtt(); closeSheet();
-          } });
-        }) : [empty(t("att_none"), "inbox")]));
-      };
-      const botName = (cached("me") || {}).bot;
-      openSheet(t("att_bot_title"), el("div", { class: "hint", style: "margin:0 2px 12px" }, t("att_bot_hint")), list,
-        el("div", { class: "btns mt" },
-          el("button", { class: "btn ghost", type: "button", style: "flex:none", "aria-label": "refresh",
-            onclick: (e) => act(e.currentTarget, loadDrafts) }, icon("refresh")),
-          botName ? el("button", { class: "btn", type: "button", onclick: () => {
-            saveAnnDraft();
-            const url = "https://t.me/" + botName;
-            if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
-          } }, t("att_open_bot")) : null));
-      act(null, loadDrafts);
+    const openPreview = () => {
+      const { html, plain } = current();
+      if (!plain && !state.annMedia.length) return alertMsg(t("ann_need_text"));
+      const first = groups.find((g) => sel.has(g.chat_id)) || groups[0];
+      openSheet(t("preview"), previewBubble(groupLabel(first), state.annMedia, html, plain),
+        sel.size ? el("button", { class: "btn block mt", type: "button", onclick: () => { closeSheet(); sendBtn.click(); } },
+          t("ann_send_n", { n: sel.size })) : el("div", { class: "hint mt" }, t("ann_need_groups")));
     };
-    drawAtt();
-
     sendBtn.addEventListener("click", () => act(sendBtn, async () => {
-      if (!text.value.trim() && !state.annMedia) return alertMsg(t("ann_need_text"));
-      if (!sel.size) return alertMsg(t("ann_need_groups"));
+      const problem = validate();
+      if (problem) return alertMsg(problem);
       if (!(await confirmMsg(t("ann_confirm", { n: sel.size })))) return;
-      const r = await api("announce.send", { text: text.value, chat_ids: [...sel], pin: state.annPin,
-        media: state.annMedia ? state.annMedia.media : undefined });
+      const { html } = current();
+      const r = await api("announce.send", { html, chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id) });
       haptic(r.failed.length ? "warning" : "ok");
       toast(t("ann_sent", { sent: r.sent, total: r.total }));
-      state.annText = ""; state.annMedia = null; sel.clear(); saveAnnDraft(); invalidate("annHistory");
+      state.annHtml = ""; state.annMedia = []; sel.clear(); saveAnnDraft(); invalidate("annHistory");
       await render();
       if (r.failed.length || r.pin_failed.length) {
         await alertMsg([
@@ -867,13 +1163,14 @@ const SCREENS = {
 
     return [
       pageHead(t("ann_title")),
-      card(el("div", { style: "padding:14px" }, text,
+      card(toolbar, el("div", { style: "padding:12px 14px 14px" }, editor,
         el("div", { class: "hint", style: "text-align:right" }, counter), fileInput, attBox)),
       header(t("ann_to")),
       quickChips,
       card(row({ lead: lead("school"), title: t("ann_pick"), sub: pickedLabel, onclick: openGroupPicker, chevron: true }),
         row({ lead: lead("tag", "warn"), title: t("ann_pin"), side: toggle(state.annPin, (v) => { state.annPin = v; saveAnnDraft(); haptic(); }) })),
-      sendBtn,
+      el("div", { class: "btns mt" }, el("button", { class: "btn ghost", type: "button", style: "flex:none;padding:0 16px", onclick: openPreview },
+        icon("search"), t("preview")), sendBtn),
       header(t("ann_history")),
       card(historyRows.length ? historyRows : empty(t("ann_none"))),
     ];

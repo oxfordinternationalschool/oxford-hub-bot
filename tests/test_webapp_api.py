@@ -143,7 +143,8 @@ async def test_announcement_send_history_delete(wh):
     result = await ok("announce.send", {"text": "Ertaga <b>dars</b> yo'q", "chat_ids": [GROUP, -999], "pin": True})
     assert (result["sent"], result["total"]) == (1, 1)
     msg = wh.api.sent(GROUP)[-1]
-    assert msg.text == "Ertaga <b>dars</b> yo'q" and msg.parse_mode is None
+    # Plain `text` is shown literally: its "<b>" is escaped, not treated as formatting.
+    assert msg.text == "Ertaga &lt;b&gt;dars&lt;/b&gt; yo'q" and msg.parse_mode == "HTML"
 
     [item] = await ok("announce.history")
     assert item["preview"].startswith("Ertaga") and item["groups"] == 1 and item["pinned"]

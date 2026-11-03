@@ -12,8 +12,12 @@ os.environ["DEFAULT_LANG"] = "uz"
 import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
-from aiogram.methods import CopyMessage, GetMe, GetWebhookInfo, SendDocument, SendMessage, SendPhoto, SendVoice
-from aiogram.types import Chat, Document, Message, MessageId, PhotoSize, Update, User, Voice, WebhookInfo
+from aiogram.methods import (
+    CopyMessage, GetFile, GetMe, GetWebhookInfo, SendDocument, SendMediaGroup, SendMessage, SendPhoto, SendVideo, SendVoice,
+)
+from aiogram.types import (
+    Chat, Document, File, InputMediaPhoto, Message, MessageId, PhotoSize, Update, User, Video, Voice, WebhookInfo,
+)
 
 from bot.app import get_dispatcher
 from bot.db.session import init_db, make_engine, reset_sessionmaker, use_sessionmaker
@@ -44,20 +48,31 @@ class FakeSession(BaseSession):
                 chat=Chat(id=method.chat_id, type="private"),
                 text=method.text,
             )
-        if isinstance(method, (SendPhoto, SendVoice, SendDocument)):
-            n = next(self._ids)
-            media = {
-                SendPhoto: {"photo": [PhotoSize(file_id=f"photo{n}", file_unique_id=f"u{n}", width=1, height=1)]},
-                SendVoice: {"voice": Voice(file_id=f"voice{n}", file_unique_id=f"u{n}", duration=1)},
-                SendDocument: {"document": Document(file_id=f"doc{n}", file_unique_id=f"u{n}")},
-            }[type(method)]
-            return Message(message_id=n, date=datetime.now(), chat=Chat(id=method.chat_id, type="group"), **media)
+        if isinstance(method, (SendPhoto, SendVoice, SendDocument, SendVideo)):
+            return self._media_message(method.chat_id, type(method).__name__[4:].lower())
+        if isinstance(method, SendMediaGroup):
+            return [self._media_message(method.chat_id, "photo" if isinstance(m, InputMediaPhoto) else "video")
+                    for m in method.media]
+        if isinstance(method, GetFile):
+            return File(file_id=method.file_id, file_unique_id="u", file_path=f"thumbs/{method.file_id}.jpg")
         if isinstance(method, CopyMessage):
             return MessageId(message_id=next(self._ids))
         return True
 
+    def _media_message(self, chat_id, kind):
+        n = next(self._ids)
+        fid, uid = f"{kind}{n}", f"u{n}"
+        media = {
+            "photo": {"photo": [PhotoSize(file_id=f"small{n}", file_unique_id=uid, width=90, height=90),
+                                PhotoSize(file_id=fid, file_unique_id=uid, width=800, height=600)]},
+            "voice": {"voice": Voice(file_id=fid, file_unique_id=uid, duration=1)},
+            "document": {"document": Document(file_id=fid, file_unique_id=uid)},
+            "video": {"video": Video(file_id=fid, file_unique_id=uid, width=1, height=1, duration=1)},
+        }[kind]
+        return Message(message_id=n, date=datetime.now(), chat=Chat(id=chat_id, type="group"), **media)
+
     async def stream_content(self, *args, **kwargs):
-        raise NotImplementedError
+        yield b"tiny jpeg bytes"
 
     async def close(self):
         pass

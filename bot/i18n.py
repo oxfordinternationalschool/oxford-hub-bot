@@ -344,6 +344,21 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Файл слишком большой (не больше 3 МБ). Отправьте большой файл боту — он появится в списке «Отправленные боту».",
         "en": "The file is too big (3 MB max). Send larger files to the bot; they'll appear under “Sent to the bot”.",
     },
+    "webapp_album_max": {
+        "uz": "Albomga ko'pi bilan 10 ta rasm yoki video qo'shiladi.",
+        "ru": "В альбоме может быть не больше 10 фото или видео.",
+        "en": "An album can hold at most 10 photos or videos.",
+    },
+    "webapp_album_mix": {
+        "uz": "Bular bitta albomga sig'maydi: rasm va videolarni birga, fayllarni alohida, audiolarni alohida yuboring. Ovozli xabar, video xabar va GIF faqat yakka yuboriladi.",
+        "ru": "Это не собрать в один альбом: фото и видео — вместе, файлы — отдельно, аудио — отдельно. Голосовые, видеосообщения и GIF — только по одному.",
+        "en": "These can't share one album: photos and videos go together, files separately, audio separately. Voice messages, video messages and GIFs go one at a time.",
+    },
+    "webapp_upload_failed": {
+        "uz": "Faylni Telegram'ga yuklab bo'lmadi. Uni botga to'g'ridan-to'g'ri yuborib ko'ring.",
+        "ru": "Не удалось загрузить файл в Telegram. Попробуйте отправить его боту напрямую.",
+        "en": "Couldn't upload the file to Telegram. Try sending it to the bot directly.",
+    },
     "draft_saved": {
         "uz": "✅ {kind} saqlandi. Uni Mini App'da E'lon → Biriktirish orqali guruhlarga yuborishingiz mumkin.",
         "ru": "✅ {kind}: сохранено. Отправить в группы можно в Mini App: Объявление → Вложение.",

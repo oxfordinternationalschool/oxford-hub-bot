@@ -4,7 +4,10 @@ Every request is a POST with the header `Authorization: tma <initData>` and the 
 {"op": "<operation>", "args": {...}}. Telegram signs initData with the bot token, so it
 proves who opened the app; only admins get any data.
 """
+import asyncio
 import base64
+import contextlib
+import html
 import json
 import logging
 import re
@@ -27,11 +30,12 @@ from bot.db.models import (
 )
 from bot.i18n import t
 from bot.services import admin_views as views
-from bot.services.broadcast import Sender, broadcast, delete_announcement, save_announcement
-from bot.services.media import draft_sender, upload_kind, upload_sender
+from bot.services.broadcast import broadcast, delete_announcement, save_announcement
+from bot.services.media import ALBUM_FAMILY, album_problem, announcement_sender, upload_kind, upload_to_owner
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
 from bot.services.menus import set_user_menu
+from bot.services.rich_text import to_telegram_html
 from bot.services.roles import is_valid_key, trigger_cache
 from bot.services.users import add_staff_role
 
@@ -522,52 +526,100 @@ MAX_UPLOAD = 3 * 1024 * 1024
 def _draft_json(d: MediaDraft) -> dict:
     return {
         "id": d.id, "kind": d.kind, "caption": d.caption, "file_name": d.file_name,
-        "duration": d.duration, "created_at": _iso(d.created_at),
+        "duration": d.duration, "created_at": _iso(d.created_at), "has_thumb": bool(d.thumb_file_id),
+        "album_ok": bool(d.file_id) and d.kind in ALBUM_FAMILY,
     }
+
+
+async def _own_drafts(ctx: Ctx, ids: list) -> list[MediaDraft]:
+    """The admin's own drafts, in the order given."""
+    if not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
+        raise ApiError(400, "bad_args", "ids")
+    found = {d.id: d for d in (await ctx.session.scalars(
+        select(MediaDraft).where(MediaDraft.id.in_(ids), MediaDraft.user_id == ctx.user.id)
+    )).all()}
+    if len(found) != len(set(ids)):
+        raise ctx.error("webapp_not_found", status=404)
+    return [found[i] for i in dict.fromkeys(ids)]
 
 
 @op("media.list")
 async def op_media_list(ctx: Ctx, args: dict):
-    """Media this admin recently sent to the bot, ready to attach to an announcement."""
+    """Media this admin recently sent to the bot or uploaded, ready to attach to an announcement."""
     since = utcnow() - timedelta(days=3)
     drafts = (await ctx.session.scalars(
         select(MediaDraft).where(MediaDraft.user_id == ctx.user.id, MediaDraft.created_at >= since)
-        .order_by(MediaDraft.created_at.desc()).limit(15)
+        .order_by(MediaDraft.created_at.desc()).limit(30)
     )).all()
     return [_draft_json(d) for d in drafts]
 
 
-async def _media_sender(ctx: Ctx, media: dict, text: str) -> tuple[Sender, str]:
-    """Returns the per-group sender for the attachment and its kind."""
-    if "draft_id" in media:
-        draft = await _get(ctx, MediaDraft, _int(media, "draft_id"))
-        if draft.user_id != ctx.user.id:
-            raise ctx.error("webapp_not_found", status=404)
-        return draft_sender(ctx.bot, draft, text), draft.kind
-    upload = media.get("upload")
-    if not isinstance(upload, dict):
-        raise ApiError(400, "bad_args", "media")
-    name = _str(upload, "name", 100) or "file"
+@op("media.upload")
+async def op_media_upload(ctx: Ctx, args: dict):
+    """One file from the phone (3 MB max per file). The bot stores it in Telegram via the admin's
+    own chat, deletes that message, and keeps the file_id as a draft."""
+    name = _str(args, "name", 100) or "file"
     try:
-        data = base64.b64decode(_str(upload, "data", 6 * 1024 * 1024) or "", validate=True)
+        data = base64.b64decode(_str(args, "data", 6 * 1024 * 1024) or "", validate=True)
     except ValueError:
-        raise ApiError(400, "bad_args", "media.data")
+        raise ApiError(400, "bad_args", "data")
     if not data:
-        raise ApiError(400, "bad_args", "media.data")
+        raise ApiError(400, "bad_args", "data")
     if len(data) > MAX_UPLOAD:
         raise ctx.error("webapp_media_too_big")
-    kind = upload_kind(_str(upload, "mime", 100, optional=True) or "", name)
-    return upload_sender(ctx.bot, kind, data, name, text), kind
+    kind = upload_kind(_str(args, "mime", 100, optional=True) or "", name)
+    try:
+        message, info = await upload_to_owner(ctx.bot, ctx.user.id, kind, data, name)
+    except (TelegramAPIError, ValueError) as e:
+        log.warning("Upload to Telegram failed: %s", e)
+        raise ctx.error("webapp_upload_failed")
+    with contextlib.suppress(TelegramAPIError):
+        await ctx.bot.delete_message(ctx.user.id, message.message_id)
+    draft = MediaDraft(
+        user_id=ctx.user.id, chat_id=ctx.user.id, message_id=message.message_id, kind=info.kind,
+        file_name=name, duration=info.duration, file_id=info.file_id, thumb_file_id=info.thumb_file_id,
+    )
+    ctx.session.add(draft)
+    await ctx.session.commit()
+    return _draft_json(draft)
+
+
+@op("media.thumbs")
+async def op_media_thumbs(ctx: Ctx, args: dict):
+    """Small previews of the admin's drafts as data URLs, keyed by draft id."""
+    ids = args.get("ids")
+    if not isinstance(ids, list) or len(ids) > 30:
+        raise ApiError(400, "bad_args", "ids")
+    drafts = [d for d in await _own_drafts(ctx, ids) if d.thumb_file_id]
+
+    async def fetch(d: MediaDraft):
+        try:
+            file = await ctx.bot.get_file(d.thumb_file_id)
+            buf = await ctx.bot.download_file(file.file_path)
+            return str(d.id), "data:image/jpeg;base64," + base64.b64encode(buf.read()).decode()
+        except TelegramAPIError:
+            return str(d.id), None
+
+    return {k: v for k, v in await asyncio.gather(*(fetch(d) for d in drafts)) if v}
 
 
 @op("announce.send")
 async def op_announce_send(ctx: Ctx, args: dict):
-    text = _str(args, "text", 4096) or ""
-    media = args.get("media")
-    if media is not None and not isinstance(media, dict):
-        raise ApiError(400, "bad_args", "media")
-    if not text and not media:
+    # `html` is the editor's formatted text; `text` (plain) is still accepted on its own.
+    raw = _str(args, "html", 20000, optional=True)
+    if raw is None:
+        raw = html.escape(_str(args, "text", 4096, optional=True) or "", quote=False)
+    html_text, plain = to_telegram_html(raw)
+    if len(plain) > 4096:
+        raise ApiError(400, "bad_args", "text: 4096 max")
+    media_ids = args.get("media_ids") or []
+    if not isinstance(media_ids, list):
+        raise ApiError(400, "bad_args", "media_ids")
+    drafts = await _own_drafts(ctx, media_ids) if media_ids else []
+    if not plain and not drafts:
         raise ctx.error("webapp_text_empty")
+    if problem := album_problem(drafts):
+        raise ctx.error(problem)
     pin = _bool(args, "pin")
     ids = args.get("chat_ids")
     if not isinstance(ids, list) or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
@@ -577,13 +629,9 @@ async def op_announce_send(ctx: Ctx, args: dict):
     if not chat_ids:
         raise ctx.error("ann_nothing_selected")
 
-    if media:
-        send, kind = await _media_sender(ctx, media, text)
-        preview = f"{MEDIA_ICONS.get(kind, '📎')} {text}".strip()
-    else:
-        # Plain text: whatever the admin typed is shown exactly as written.
-        send = lambda chat_id: ctx.bot.send_message(chat_id, text, parse_mode=None)  # noqa: E731
-        preview = text
+    icons = "".join(MEDIA_ICONS.get(d.kind, "📎") for d in drafts[:3]) + ("…" if len(drafts) > 3 else "")
+    preview = f"{icons} {plain}".strip()
+    send = announcement_sender(ctx.bot, drafts, html_text, plain)
     result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
     ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result)
 

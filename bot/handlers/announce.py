@@ -78,13 +78,14 @@ MEDIA = F.photo | F.video | F.voice | F.audio | F.document | F.video_note | F.an
 @router.message(StateFilter(None), MEDIA, CanAnnounce())
 async def save_media_draft(message: Message, session: AsyncSession, user: User, lang: str):
     """Media sent to the bot outside a conversation becomes an attachment for the Mini App."""
-    kind, file_name, duration = describe_media(message)
+    info = describe_media(message)
     session.add(MediaDraft(
         user_id=user.id, chat_id=message.chat.id, message_id=message.message_id,
-        kind=kind, caption=message.caption, file_name=file_name, duration=duration,
+        kind=info.kind, caption=message.caption, file_name=info.file_name, duration=info.duration,
+        file_id=info.file_id, thumb_file_id=info.thumb_file_id,
     ))
     await session.commit()
-    await message.reply(t(lang, "draft_saved", kind=t(lang, f"media_{kind}")))
+    await message.reply(t(lang, "draft_saved", kind=t(lang, f"media_{info.kind}")))
 
 
 @router.message(AnnounceSG.content)

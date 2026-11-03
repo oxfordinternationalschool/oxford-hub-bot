@@ -176,6 +176,9 @@ class MediaDraft(Base):
     file_name: Mapped[str | None] = mapped_column(String(255))
     duration: Mapped[int | None]
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    # Telegram's ids for the file and a small preview; with file_id several drafts can go out as one album.
+    file_id: Mapped[str | None] = mapped_column(String(255))
+    thumb_file_id: Mapped[str | None] = mapped_column(String(255))
 
 
 class AnnouncementMessage(Base):

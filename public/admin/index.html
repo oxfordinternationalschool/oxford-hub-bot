@@ -1091,7 +1091,11 @@ const SCREENS = {
           side: toggle(state.annStory, (v) => { state.annStory = v; haptic(); }) })
       : "");
     const current = () => editorToTg(editor);
+    // Once sent, the screen is drawn anew with an empty editor; this old screen must not write
+    // its text back into the draft afterwards, or the sent announcement would come back.
+    let done = false;
     const updateUi = () => {
+      if (done) return;
       const { html, plain } = current();
       state.annHtml = html; saveAnnDraft();
       const limit = state.annMedia.length && effectiveLayout() === "album" ? 1024 : 4096;
@@ -1301,6 +1305,7 @@ const SCREENS = {
         layout: effectiveLayout(), story: storyOn() });
       haptic(r.failed.length || (r.story && r.story !== "ok") ? "warning" : "ok");
       toast(t("ann_sent", { sent: r.sent, total: r.total }) + (r.story === "ok" ? " · " + t("story_ok") : ""));
+      done = true;
       state.annHtml = ""; state.annMedia = []; sel.clear(); saveAnnDraft(); invalidate("annHistory");
       await render();
       if (r.failed.length || r.pin_failed.length || (r.story && r.story !== "ok")) {

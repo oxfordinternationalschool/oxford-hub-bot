@@ -14,14 +14,15 @@ import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, CopyMessages, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages, GetChatMember,
+    CopyMessage, CopyMessages, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages,
+    GetChatAdministrators, GetChatMember, SavePreparedKeyboardButton,
     GetFile, GetMe, GetWebhookInfo, PostStory, PromoteChatMember, SendDocument, SendMediaGroup, SendMessage, SendPhoto,
     SendRichMessage, SendVideo, SendVoice,
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     Chat, ChatMemberAdministrator, ChatMemberLeft, ChatMemberMember, ChatMemberOwner, Document, File, InputMediaPhoto, Message, MessageId,
-    PhotoSize, Story, Update, User, Video, Voice, WebhookInfo,
+    PhotoSize, PreparedKeyboardButton, Story, Update, User, Video, Voice, WebhookInfo,
 )
 from PIL import Image
 
@@ -83,6 +84,12 @@ class FakeSession(BaseSession):
             raise TelegramBadRequest(method=method, message="Bad Request: message to edit not found")
         if isinstance(method, GetChatMember):
             return self.member(method.chat_id, method.user_id)
+        if isinstance(method, GetChatAdministrators):
+            ids = [BOT_USER["id"]] + [uid for (cid, uid), m in self.members.items()
+                                      if cid == method.chat_id and m["status"] in ("administrator", "creator")]
+            return [self.member(method.chat_id, uid) for uid in ids]
+        if isinstance(method, SavePreparedKeyboardButton):
+            return PreparedKeyboardButton(id=f"pkb{next(self._ids)}")
         if isinstance(method, PromoteChatMember):
             self.set_member(method.chat_id, method.user_id, "administrator" if method.can_manage_chat else "member",
                             can_be_edited=True)

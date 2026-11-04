@@ -36,7 +36,9 @@ from bot.services.media import (
 )
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
-from bot.services.group_admins import group_status, set_group_admin
+from bot.services.group_admins import (
+    group_status, member_status, new_request_id, person_name, picked_user, picker_button, set_group_admin,
+)
 from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.rich_text import to_telegram_html
 from bot.services.roles import is_valid_key, trigger_cache
@@ -497,28 +499,75 @@ async def _active_groups(ctx: Ctx) -> list[Group]:
     return sorted((await ctx.session.scalars(select(Group).where(Group.is_active))).all(), key=group_sort_key)
 
 
-@op("staff.group_admin")
-async def op_staff_group_admin(ctx: Ctx, args: dict):
+# ---------- Group admins ----------
+# The person may be anyone in the group: picked from the bot's users, or in Telegram's own
+# people picker (admins.pick), so they don't have to have started the bot.
+
+def _user_id(args: dict) -> int:
+    user_id = _int(args, "user_id")
+    if user_id <= 0:
+        raise ApiError(400, "bad_args", "user_id")
+    return user_id
+
+
+@op("admins.pick")
+async def op_admins_pick(ctx: Ctx, args: dict):
+    """A button for the Mini App's WebApp.requestChat(): it opens Telegram's people picker."""
+    request_id = new_request_id()
+    button = picker_button(_plain(t(ctx.lang, "pick_person")), request_id)
+    prepared = await ctx.bot.save_prepared_keyboard_button(ctx.user.id, button)
+    return {"id": prepared.id, "request_id": request_id}
+
+
+@op("admins.picked")
+async def op_admins_picked(ctx: Ctx, args: dict):
+    """The person picked with that button, once Telegram has told the bot (null until then)."""
+    picked = await picked_user(ctx.session, ctx.user.id, _int(args, "request_id"))
+    if picked is None:
+        return None
+    return {"id": picked.user_id, "name": picked.name, "username": picked.username}
+
+
+@op("admins.status")
+async def op_admins_status(ctx: Ctx, args: dict):
     """Where the person is an admin, a member, or absent, in every class group."""
-    target = await _get(ctx, User, _int(args, "user_id"), "user_not_found")
+    user_id = _user_id(args)
     groups = await _active_groups(ctx)
-    statuses = await _for_groups(groups, lambda g: group_status(ctx.bot, g.chat_id, target.id), limit=8)
+    statuses = await _for_groups(groups, lambda g: group_status(ctx.bot, g.chat_id, user_id), limit=8)
     return [{"chat_id": g.chat_id, "label": g.label, "status": s} for g, s in zip(groups, statuses)]
 
 
-@op("staff.set_group_admin")
-async def op_staff_set_group_admin(ctx: Ctx, args: dict):
-    target = await _get(ctx, User, _int(args, "user_id"), "user_not_found")
+@op("admins.set")
+async def op_admins_set(ctx: Ctx, args: dict):
+    """Makes the person an admin (value: true) or not, in exactly the groups given."""
+    user_id = _user_id(args)
     make_admin = _bool(args, "value")
     chat_ids = args.get("chat_ids")
     if not isinstance(chat_ids, list) or not chat_ids or not all(isinstance(c, int) for c in chat_ids):
         raise ApiError(400, "bad_args", "chat_ids")
     groups = [g for g in await _active_groups(ctx) if g.chat_id in set(chat_ids)]
-    results = await _for_groups(groups, lambda g: set_group_admin(ctx.bot, g.chat_id, target.id, make_admin), limit=5)
+    results = await _for_groups(groups, lambda g: set_group_admin(ctx.bot, g.chat_id, user_id, make_admin), limit=5)
+    name = html.escape(await person_name(ctx.session, user_id))
     return [{
         "chat_id": g.chat_id, "label": g.label, "result": r,
-        "message": None if r == "ok" else html.unescape(_plain(t(ctx.lang, f"gadm_{r}", name=html.escape(target.full_name)))),
+        "message": None if r == "ok" else html.unescape(_plain(t(ctx.lang, f"gadm_{r}", name=name))),
     } for g, r in zip(groups, results)]
+
+
+@op("groups.admins")
+async def op_groups_admins(ctx: Ctx, args: dict):
+    """The group's current admins (people, not bots); "admin" ones the bot appointed and may remove."""
+    group = await _get(ctx, Group, _int(args, "chat_id"))
+    try:
+        members = await ctx.bot.get_chat_administrators(group.chat_id)
+    except TelegramAPIError as e:
+        log.info("Cannot list admins of %s: %s", group.chat_id, e)
+        raise ctx.error("gadm_error", name="")
+    order = {"owner": 0, "admin": 1, "admin_other": 2}
+    out = [{
+        "id": m.user.id, "name": m.user.full_name, "username": m.user.username, "status": member_status(m),
+    } for m in members if not m.user.is_bot]
+    return sorted(out, key=lambda a: (order.get(a["status"], 3), a["name"].lower()))
 
 
 # ---------- Invites ----------

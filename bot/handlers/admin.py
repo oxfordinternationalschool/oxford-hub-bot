@@ -1,6 +1,9 @@
 """Admin text commands. The same features are also reachable as buttons from /admin (admin_panel.py)."""
+import contextlib
+
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatType
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +13,7 @@ from bot.filters import IsAdmin
 from bot.i18n import t
 from bot.services import admin_views as views
 from bot.services.common import chunk_lines, find_floor, q, resolve_user, user_link
+from bot.services.group_admins import save_picked
 from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.roles import is_valid_key, trigger_cache
 from bot.services.users import user_badges
@@ -25,6 +29,16 @@ def _args(command: CommandObject) -> list[str]:
 async def _answer_chunks(message: Message, lines: list[str]) -> None:
     for chunk in chunk_lines(lines):
         await message.answer(chunk)
+
+
+# ---------- A person picked in the Mini App ----------
+
+@router.message(F.users_shared)
+async def on_users_shared(message: Message, session: AsyncSession):
+    """Telegram's people picker, opened from the Mini App, reports the choice here; the Mini App reads it back."""
+    await save_picked(session, message.from_user.id, message.users_shared)
+    with contextlib.suppress(TelegramAPIError):
+        await message.delete()  # the "you shared …" note is of no use in the chat
 
 
 # ---------- Roles ----------

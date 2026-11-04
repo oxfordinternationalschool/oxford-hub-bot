@@ -4,15 +4,27 @@ They get the rights a teacher needs to keep order in a class group, and only tho
 itself has (Telegram refuses the rest): delete messages, restrict members, pin, invite,
 manage video chats. Not: change the group info, add admins, stay anonymous.
 Telegram lets the bot demote only the admins it promoted itself.
+
+The person can be anyone in the group, also someone who never started the bot: the Mini App
+lets the admin pick them in Telegram's own people picker (a "prepared keyboard button").
 """
 import logging
+import secrets
+from datetime import timedelta
 
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
-from aiogram.types import ChatMember
+from aiogram.types import ChatMember, KeyboardButton, KeyboardButtonRequestUsers, UsersShared
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bot.config import utcnow
+from bot.db.models import PickedUser, User
 
 log = logging.getLogger(__name__)
+
+PICK_TTL = timedelta(days=1)
 
 GRANTED = ("can_delete_messages", "can_restrict_members", "can_invite_users", "can_pin_messages",
            "can_manage_video_chats")
@@ -80,3 +92,41 @@ async def set_group_admin(bot: Bot, chat_id: int, user_id: int, make_admin: bool
         log.warning("Cannot change admin %s in %s: %s", user_id, chat_id, e)
         return ERROR
     return OK
+
+
+# ---------- Picking a person in Telegram's own picker (from the Mini App) ----------
+
+def new_request_id() -> int:
+    return secrets.randbelow(2**31 - 2) + 1  # Telegram wants a signed 32-bit number
+
+
+def picker_button(text: str, request_id: int) -> KeyboardButton:
+    return KeyboardButton(text=text, request_users=KeyboardButtonRequestUsers(
+        request_id=request_id, user_is_bot=False, max_quantity=1, request_name=True, request_username=True,
+    ))
+
+
+async def save_picked(session: AsyncSession, admin_id: int, shared: UsersShared) -> None:
+    await session.execute(delete(PickedUser).where(PickedUser.created_at < utcnow() - PICK_TTL))
+    for u in shared.users:
+        name = " ".join(filter(None, (u.first_name, u.last_name))) or (f"@{u.username}" if u.username else str(u.user_id))
+        session.add(PickedUser(admin_id=admin_id, request_id=shared.request_id, user_id=u.user_id,
+                               name=name[:255], username=u.username))
+    await session.commit()
+
+
+async def picked_user(session: AsyncSession, admin_id: int, request_id: int) -> PickedUser | None:
+    return await session.scalar(select(PickedUser).where(
+        PickedUser.admin_id == admin_id, PickedUser.request_id == request_id,
+    ).order_by(PickedUser.id.desc()).limit(1))
+
+
+async def person_name(session: AsyncSession, user_id: int) -> str:
+    """The name to show: from the bot's users, else from a recent pick, else the ID."""
+    user = await session.get(User, user_id)
+    if user is not None:
+        return user.full_name
+    picked = await session.scalar(
+        select(PickedUser.name).where(PickedUser.user_id == user_id).order_by(PickedUser.id.desc()).limit(1)
+    )
+    return picked or f"ID {user_id}"

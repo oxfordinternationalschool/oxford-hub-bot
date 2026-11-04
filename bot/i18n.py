@@ -590,6 +590,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Напишите ответом (reply) на сообщение человека: /promote — сделать админом группы, /demote — снять админа.",
         "en": "Write it as a reply to the person's message: /promote makes them a group admin, /demote removes them.",
     },
+    "pick_person": {
+        "uz": "Admin qilinadigan odamni tanlang",
+        "ru": "Выберите, кого сделать админом",
+        "en": "Choose who to make an admin",
+    },
     "gadm_promoted": {
         "uz": "✅ {name} endi guruh admini: xabarlarni o'chira oladi, a'zolarni cheklay oladi, xabarni qadaydi va odam qo'sha oladi.",
         "ru": "✅ {name} теперь админ группы: может удалять сообщения, ограничивать участников, закреплять и приглашать.",

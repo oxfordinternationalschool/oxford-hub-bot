@@ -1,9 +1,12 @@
 """School admins make people admins of the class groups through the bot."""
-from aiogram.methods import PromoteChatMember
+from aiogram.methods import DeleteMessage, PromoteChatMember, SavePreparedKeyboardButton
 
 from test_flow import ADMIN, GROUP, STUDENT, TEACHER, setup_school
 from test_media_announce import GROUP_A, GROUP_B, school
 from test_webapp_api import ok
+
+STRANGER = 77  # never started the bot
+OTHER_ADMIN = 8
 
 
 async def reply_with(h, uid, command, target_uid):
@@ -61,21 +64,59 @@ async def test_teachers_cannot_promote(h):
     assert h.api.sent(kind=PromoteChatMember) == [] and h.api.sent(GROUP) == []
 
 
-async def test_mini_app_shows_and_changes_admin_in_groups(wh):
+async def test_mini_app_shows_and_changes_admin_in_ticked_groups(wh):
     await school(wh)
     await wh.register(TEACHER)
     wh.api.set_member(GROUP_B, TEACHER, "left")
 
-    statuses = {g["chat_id"]: g["status"] for g in await ok("staff.group_admin", {"user_id": TEACHER})}
+    statuses = {g["chat_id"]: g["status"] for g in await ok("admins.status", {"user_id": TEACHER})}
     assert statuses == {GROUP_A: "member", GROUP_B: "absent"}
 
-    results = {r["chat_id"]: r for r in await ok("staff.set_group_admin",
+    results = {r["chat_id"]: r for r in await ok("admins.set",
                                                   {"user_id": TEACHER, "chat_ids": [GROUP_A, GROUP_B], "value": True})}
     assert results[GROUP_A]["result"] == "ok" and results[GROUP_A]["message"] is None
     assert results[GROUP_B]["result"] == "not_member" and "guruhda yo'q" in results[GROUP_B]["message"]
-    assert "<" not in results[GROUP_B]["message"]
-    statuses = {g["chat_id"]: g["status"] for g in await ok("staff.group_admin", {"user_id": TEACHER})}
+    assert "User3" in results[GROUP_B]["message"] and "<" not in results[GROUP_B]["message"]
+    assert [p.chat_id for p in wh.api.sent(kind=PromoteChatMember)] == [GROUP_A]  # only the groups given
+    statuses = {g["chat_id"]: g["status"] for g in await ok("admins.status", {"user_id": TEACHER})}
     assert statuses[GROUP_A] == "admin"
 
-    [r] = await ok("staff.set_group_admin", {"user_id": TEACHER, "chat_ids": [GROUP_A], "value": False})
+    [r] = await ok("admins.set", {"user_id": TEACHER, "chat_ids": [GROUP_A], "value": False})
     assert r["result"] == "ok"
+
+
+async def test_anyone_can_be_picked_in_telegram_and_made_admin(wh):
+    """The person never started the bot: the admin picks them in Telegram's own people picker."""
+    await school(wh)
+    await wh.register(OTHER_ADMIN)
+    await ok("staff.set_perm", {"user_id": OTHER_ADMIN, "perm": "admin", "value": True})
+    button = await ok("admins.pick")
+    [saved] = wh.api.sent(kind=SavePreparedKeyboardButton)
+    assert saved.user_id == ADMIN and button["id"].startswith("pkb")
+    request = saved.button.request_users
+    assert request.request_id == button["request_id"] and request.user_is_bot is False and request.max_quantity == 1
+    assert await ok("admins.picked", {"request_id": button["request_id"]}) is None  # not chosen yet
+
+    # Telegram reports the choice to the bot, in the admin's private chat.
+    await wh.private_media(ADMIN, users_shared={"request_id": button["request_id"], "users": [
+        {"user_id": STRANGER, "first_name": "Anvar", "last_name": "Qodirov", "username": "anvar_q"}]})
+    assert wh.api.sent(ADMIN, kind=DeleteMessage)  # the "you shared …" note is cleaned up
+    person = await ok("admins.picked", {"request_id": button["request_id"]})
+    assert person == {"id": STRANGER, "name": "Anvar Qodirov", "username": "anvar_q"}
+    assert await ok("admins.picked", {"request_id": button["request_id"]}, uid=OTHER_ADMIN) is None
+
+    wh.api.set_member(GROUP_A, 999, "administrator", can_promote_members=False)
+    [r] = await ok("admins.set", {"user_id": STRANGER, "chat_ids": [GROUP_A], "value": True})
+    assert r["result"] == "no_right" and "Anvar Qodirov" not in r["message"]  # that text names no one
+    [r] = await ok("admins.set", {"user_id": STRANGER, "chat_ids": [GROUP_B], "value": True})
+    assert r["result"] == "ok"
+
+
+async def test_group_sheet_lists_its_admins(wh):
+    await school(wh)
+    wh.api.set_member(GROUP_A, 50, "creator")
+    wh.api.set_member(GROUP_A, 51, "administrator", can_be_edited=False)
+    await ok("admins.set", {"user_id": 52, "chat_ids": [GROUP_A], "value": True})
+
+    admins = await ok("groups.admins", {"chat_id": GROUP_A})
+    assert [(a["id"], a["status"]) for a in admins] == [(50, "owner"), (52, "admin"), (51, "admin_other")]  # no bots

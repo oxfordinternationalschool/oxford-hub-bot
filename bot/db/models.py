@@ -159,6 +159,22 @@ class StoryAccount(Base):
     updated_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
+class PickedUser(Base):
+    """A person an admin picked in Telegram's own people picker, opened from the Mini App.
+    Telegram tells the bot in a private message; the Mini App reads it back by the request id.
+    The person doesn't have to have started the bot."""
+
+    __tablename__ = "picked_users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admin_id: Mapped[int] = mapped_column(BigInteger)
+    request_id: Mapped[int] = mapped_column(BigInteger)
+    user_id: Mapped[int] = mapped_column(BigInteger)
+    name: Mapped[str] = mapped_column(String(255))
+    username: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
 class FsmState(Base):
     """Conversation state (e.g. an announcement draft). Kept in the DB because on Vercel
     each update may be handled by a different short-lived process."""

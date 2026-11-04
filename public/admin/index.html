@@ -79,7 +79,13 @@
     background: var(--accent-soft); color: var(--accent); font-size: 17px; }
   .lead.ok { background: var(--ok-soft); color: var(--ok); } .lead.warn { background: var(--warn-soft); color: var(--warn); }
   .side-btns { display: flex; gap: 8px; }
-  .lead.bad { background: var(--danger-soft); color: var(--danger); } .lead svg.i { width: 19px; height: 19px; }
+  .lead.bad { background: var(--danger-soft); color: var(--danger); }
+  .tick { width: 26px; height: 26px; margin: 5px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center;
+    flex: none; color: var(--on-accent); opacity: .7; }
+  .tick.on { background: var(--accent); border-color: var(--accent); opacity: 1; }
+  .tick.done { background: var(--ok); border-color: var(--ok); opacity: 1; }
+  .tick.off { border-style: dashed; opacity: .3; }
+  .tick svg.i { width: 15px; height: 15px; } .lead svg.i { width: 19px; height: 19px; }
   .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
     color: #fff; font-weight: 700; font-size: 15px; }
   .empty { padding: 28px 16px; color: var(--muted); text-align: center; font-size: 14px; }
@@ -332,8 +338,18 @@ const T = {
     no_users: "Hech kim topilmadi", rights: "Huquqlar", user_roles: "Xodim rollari", add_role: "Rol berish",
     gadm_title: "Sinf guruhlarida admin", gadm_load: "Guruhlarni ko'rish", gadm_no_groups: "Faol guruh yo'q",
     gadm_hint: "Bot bu odamni guruh admini qiladi. U xabarlarni o'chira oladi, a'zolarni cheklay oladi, xabarni qadaydi va odam qo'sha oladi. Yangi admin tayinlay olmaydi, guruh nomini ham o'zgartira olmaydi. Odam o'sha guruhda bo'lishi kerak.",
-    gadm_all: "{n} ta guruhda admin qilish", gadm_all_confirm: "{name} {n} ta guruhda admin qilinsinmi?",
     gadm_done: "{n} ta guruhda bajarildi", gadm_failed: "Bu guruhlarda bo'lmadi:",
+    more_admins: "Guruh adminlari", more_admins_d: "Istalgan odamni sinf guruhida admin qilish",
+    ga_pick: "Odamni tanlash", ga_pick_other: "Boshqa odamni tanlash",
+    ga_pick_hint: "Telegram'dagi kontakt va chatlaringizdan odamni tanlaysiz. U botga ulangan bo'lishi shart emas, lekin admin qilinadigan guruhda a'zo bo'lishi kerak.",
+    ga_where: "Qaysi guruhlarda admin bo'lsin?", ga_tick: "Guruhlarni belgilang", ga_promote: "Belgilangan {n} ta guruhda admin qilish",
+    ga_select_all: "Hammasini belgilash", ga_clear: "Belgini olib tashlash",
+    ga_confirm: "{name} shu guruhlarda admin qilinsinmi?\n{groups}", ga_remove: "Olib tashlash",
+    ga_remove_confirm: "{name} {group} guruhida adminlikdan olinsinmi?",
+    ga_nowhere: "Bu odam belgilash mumkin bo'lgan guruhda yo'q: u admin qilinishi uchun avval guruhga a'zo bo'lishi kerak.",
+    ga_pick_failed: "Tanlangan odam haqida xabar kelmadi. Qayta urinib ko'ring.", ga_update_tg: "Odam tanlash uchun Telegram'ni yangilang.",
+    grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
+    grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     gst_owner: "Guruh egasi", gst_admin: "Admin", gst_admin_other: "Admin (boshqa admin tayinlagan)", gst_member: "A'zo",
     gst_absent: "Guruhda yo'q", gst_unknown: "Tekshirib bo'lmadi",
     role: "Rol", floor: "Qavat", all_floors: "Barcha qavatlar", add: "Qo'shish", main_admin: "Bosh admin", you: "Siz",
@@ -401,8 +417,18 @@ const T = {
     no_users: "Никого не найдено", rights: "Права", user_roles: "Роли сотрудника", add_role: "Назначить роль",
     gadm_title: "Админ в группах классов", gadm_load: "Показать группы", gadm_no_groups: "Нет активных групп",
     gadm_hint: "Бот сделает человека админом группы. Он сможет удалять сообщения, ограничивать участников, закреплять сообщения и приглашать людей. Назначать админов и менять название группы он не сможет. Человек должен состоять в группе.",
-    gadm_all: "Сделать админом в {n} группах", gadm_all_confirm: "Сделать {name} админом в {n} группах?",
     gadm_done: "Готово в {n} группах", gadm_failed: "Не получилось в этих группах:",
+    more_admins: "Админы групп", more_admins_d: "Сделать любого человека админом группы класса",
+    ga_pick: "Выбрать человека", ga_pick_other: "Выбрать другого",
+    ga_pick_hint: "Вы выбираете человека из своих контактов и чатов в Telegram. Ему не нужно подключаться к боту, но он должен состоять в группе, где станет админом.",
+    ga_where: "В каких группах сделать админом?", ga_tick: "Отметьте группы", ga_promote: "Сделать админом в {n} отмеченных группах",
+    ga_select_all: "Отметить все", ga_clear: "Снять отметки",
+    ga_confirm: "Сделать {name} админом в этих группах?\n{groups}", ga_remove: "Снять",
+    ga_remove_confirm: "Снять {name} с админов группы {group}?",
+    ga_nowhere: "Этот человек не состоит ни в одной группе, где его можно отметить: чтобы стать админом, он должен быть участником группы.",
+    ga_pick_failed: "Не пришли данные о выбранном человеке. Попробуйте ещё раз.", ga_update_tg: "Чтобы выбрать человека, обновите Telegram.",
+    grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
+    grp_add_confirm: "Сделать {name} админом группы {group}?",
     gst_owner: "Владелец группы", gst_admin: "Админ", gst_admin_other: "Админ (назначил другой админ)", gst_member: "Участник",
     gst_absent: "Нет в группе", gst_unknown: "Не удалось проверить",
     role: "Роль", floor: "Этаж", all_floors: "Все этажи", add: "Добавить", main_admin: "Главный админ", you: "Вы",
@@ -470,8 +496,18 @@ const T = {
     no_users: "Nobody found", rights: "Rights", user_roles: "Staff roles", add_role: "Give a role",
     gadm_title: "Admin in class groups", gadm_load: "Show groups", gadm_no_groups: "No active groups",
     gadm_hint: "The bot makes this person a group admin. They can delete messages, restrict members, pin messages and invite people. They can't appoint admins or rename the group. The person must be in the group.",
-    gadm_all: "Make admin in {n} groups", gadm_all_confirm: "Make {name} an admin in {n} groups?",
     gadm_done: "Done in {n} groups", gadm_failed: "Didn't work in these groups:",
+    more_admins: "Group admins", more_admins_d: "Make anyone an admin of a class group",
+    ga_pick: "Choose a person", ga_pick_other: "Choose someone else",
+    ga_pick_hint: "You choose the person from your Telegram contacts and chats. They don't have to use the bot, but they must be a member of the group they become an admin of.",
+    ga_where: "Which groups should they be an admin of?", ga_tick: "Tick the groups", ga_promote: "Make admin in {n} ticked groups",
+    ga_select_all: "Tick all", ga_clear: "Untick all",
+    ga_confirm: "Make {name} an admin of these groups?\n{groups}", ga_remove: "Remove",
+    ga_remove_confirm: "Remove {name} as an admin of {group}?",
+    ga_nowhere: "This person isn't in any group you could tick: they must be a member of a group to become its admin.",
+    ga_pick_failed: "The chosen person didn't come through. Please try again.", ga_update_tg: "Please update Telegram to choose a person.",
+    grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
+    grp_add_confirm: "Make {name} an admin of {group}?",
     gst_owner: "Group owner", gst_admin: "Admin", gst_admin_other: "Admin (appointed by another admin)", gst_member: "Member",
     gst_absent: "Not in the group", gst_unknown: "Couldn't check",
     role: "Role", floor: "Floor", all_floors: "All floors", add: "Add", main_admin: "Main admin", you: "You",
@@ -734,7 +770,7 @@ const groupLabel = (g) => g.class_name || g.title;
 // ---------------------------------------------------------------- navigation
 const NAV = [["home", "home"], ["announce", "megaphone"], ["calls", "bell"], ["staff", "users"], ["more", "grid"]];
 const state = { tab: "home", sub: null, callsFilter: "pending", staffFilter: "all", staffQuery: "", statsDays: 7,
-  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", annStory: false, invitePreset: null };
+  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", annStory: false, invitePreset: null, adminPerson: null };
 
 function renderNav() {
   const pending = (cached("dashboard") || {}).pending || [];
@@ -1366,15 +1402,107 @@ const SCREENS = {
       side: count != null ? String(count) : null, onclick: () => go("more", sub), chevron: true });
     return [
       pageHead(t("nav_more")),
-      card(item("groups", "school", "", d.groups), item("roles", "tag", "warn", d.roles), item("floors", "layers", "ok", d.floors)),
+      card(item("groups", "school", "", d.groups), item("admins", "users", "ok"), item("roles", "tag", "warn", d.roles),
+        item("floors", "layers", "ok", d.floors)),
       el("div", { class: "mt" }),
       card(item("invites", "link", ""), item("stats", "chart", "warn")),
     ];
   },
 };
 
+// ---------------------------------------------------------------- group admins (shared)
+const GST_KIND = { owner: "acc", admin: "ok", admin_other: "ok", member: "", absent: "warn", unknown: "bad" };
+
+/** Telegram's own people picker (any contact or chat member, whether or not they use the bot).
+ * Telegram reports the choice to the bot, and the Mini App reads it back. Resolves to {id, name, username} or null. */
+async function pickPerson() {
+  if (!canTg("9.6") || !tg.requestChat) { await alertMsg(t("ga_update_tg")); return null; }
+  const { id, request_id } = await api("admins.pick");
+  const sent = await new Promise((ok) => { try { tg.requestChat(id, (done) => ok(!!done)); } catch { ok(false); } });
+  if (!sent) return null;
+  for (let i = 0; i < 15; i++) {
+    const person = await api("admins.picked", { request_id });
+    if (person) return person;
+    await new Promise((r) => setTimeout(r, 700));
+  }
+  throw new Error(t("ga_pick_failed"));
+}
+
+async function setAdmin(person, groups, value) {
+  const results = await api("admins.set", { user_id: person.id, chat_ids: groups.map((g) => g.chat_id), value });
+  for (const r of results) if (r.result === "ok") groups.find((g) => g.chat_id === r.chat_id).status = value ? "admin" : "member";
+  return results;
+}
+
+async function reportResults(results) {
+  const failed = results.filter((r) => r.result !== "ok");
+  haptic(failed.length ? "warning" : "ok");
+  if (results.length > failed.length) toast(t("gadm_done", { n: results.length - failed.length }));
+  if (failed.length) await alertMsg((results.length > 1 ? t("gadm_failed") + "\n" : "") + failed.map((r) => (results.length > 1 ? r.label + ": " : "") + r.message).join("\n"));
+}
+
+/** One person's admin status in every class group. The admin ticks the groups to make them an
+ * admin in (nothing is ticked to begin with) and confirms; where the bot made them an admin, it can undo it. */
+function adminPanel(person) {
+  const box = el("div", { class: "card" }, el("div", { class: "skel", style: "height:56px;margin:12px" }), el("div", { class: "skel", style: "height:56px;margin:12px" }));
+  let list = [];
+  const chosen = new Set();
+  const remove = async (g) => {
+    if (!(await confirmMsg(t("ga_remove_confirm", { name: person.name, group: g.label })))) return;
+    await reportResults(await setAdmin(person, [g], false)); draw();
+  };
+  const promote = async () => {
+    const groups = list.filter((g) => chosen.has(g.chat_id));
+    if (!(await confirmMsg(t("ga_confirm", { name: person.name, groups: groups.map((g) => g.label).join(", ") })))) return;
+    const results = await setAdmin(person, groups, true);
+    chosen.clear(); draw(); await reportResults(results);
+  };
+  const draw = () => {
+    const members = list.filter((g) => g.status === "member");
+    const rows = list.map((g) => {
+      const on = chosen.has(g.chat_id);
+      const kind = g.status === "member" ? (on ? " on" : "") : g.status === "admin" || g.status === "admin_other" || g.status === "owner" ? " done" : " off";
+      return row({
+        lead: el("span", { class: "tick" + kind }, on || kind === " done" ? icon("check") : null),
+        title: g.label, sub: badge(t("gst_" + g.status), GST_KIND[g.status]),
+        side: g.status === "admin" ? el("button", { class: "btn danger sm", type: "button", onclick: (e) => act(e.currentTarget, () => remove(g)) }, t("ga_remove")) : null,
+        onclick: g.status === "member" ? () => { on ? chosen.delete(g.chat_id) : chosen.add(g.chat_id); haptic(); draw(); } : null,
+      });
+    });
+    const allOn = members.length && members.every((g) => chosen.has(g.chat_id));
+    const go = el("button", { class: "btn block", type: "button", disabled: !chosen.size, onclick: () => act(go, promote) },
+      chosen.size ? t("ga_promote", { n: chosen.size }) : t("ga_tick"));
+    box.replaceChildren(...(rows.length ? rows : [empty(t("gadm_no_groups"), "school")]),
+      el("div", { style: "padding:8px 16px 16px" },
+        !members.length ? el("div", { class: "hint", style: "margin:0" }, t("ga_nowhere")) : [
+          members.length > 1 ? el("button", { class: "btn soft sm", type: "button", style: "margin-bottom:10px", onclick: () => {
+            members.forEach((g) => (allOn ? chosen.delete(g.chat_id) : chosen.add(g.chat_id))); haptic(); draw();
+          } }, allOn ? t("ga_clear") : t("ga_select_all")) : null,
+          go]));
+  };
+  api("admins.status", { user_id: person.id })
+    .then((l) => { list = l; draw(); })
+    .catch((e) => box.replaceChildren(empty(e.message || t("error"), "alert")));
+  return box;
+}
+
+const personCard = (person) => card(row({ lead: avatar(person.name, person.id), title: person.name,
+  sub: [person.username ? "@" + person.username : null, "ID " + person.id].filter(Boolean).join(" · ") }));
+
 // ---------------------------------------------------------------- "More" sub-screens
 const SUBS = {
+  async admins() {
+    const person = state.adminPerson;
+    const pick = el("button", { class: "btn block" + (person ? " soft mt" : ""), type: "button", onclick: () => act(pick, async () => {
+      const p = await pickPerson();
+      if (p) { state.adminPerson = p; haptic("ok"); render(); }
+    }) }, icon("users"), person ? t("ga_pick_other") : t("ga_pick"));
+    if (!person) return [pageHead(t("more_admins"), t("more_admins_d")),
+      card(el("div", { style: "padding:16px" }, el("div", { class: "hint", style: "margin:0 0 14px" }, t("ga_pick_hint")), pick))];
+    return [pageHead(t("more_admins"), t("more_admins_d")), personCard(person), header(t("ga_where")), adminPanel(person),
+      el("div", { class: "hint", style: "margin:10px 2px 0" }, t("gadm_hint")), pick];
+  },
+
   async groups() {
     const [groups, floors] = await Promise.all([load("groups", "groups.list"), load("floors", "floors.list")]);
     const refresh = el("button", { class: "icon-btn", type: "button", "aria-label": t("refresh"), onclick: () => act(refresh, async () => {
@@ -1536,39 +1664,11 @@ function openUser(u, roles, floors) {
     invalidate("users", "roles"); haptic("ok"); toast(t("saved")); drawRoles();
   }) }, icon("plus"), t("add"));
 
-  // Admin rights in the class groups, given by the bot.
-  const GST_KIND = { owner: "acc", admin: "ok", admin_other: "ok", member: "", absent: "warn", unknown: "bad" };
-  const gadmBox = el("div", { class: "card" });
-  const setGroupAdmin = async (groups, value) => {
-    const results = await api("staff.set_group_admin", { user_id: u.id, chat_ids: groups.map((g) => g.chat_id), value });
-    for (const r of results) if (r.result === "ok") groups.find((g) => g.chat_id === r.chat_id).status = value ? "admin" : "member";
-    return results;
-  };
-  const drawGadm = (list) => {
-    const members = list.filter((g) => g.status === "member");
-    const rows = list.map((g) => row({
-      flat: true, title: g.label, sub: badge(t("gst_" + g.status), GST_KIND[g.status]),
-      side: g.status === "admin" || g.status === "member" ? toggle(g.status === "admin", (value, input) => act(null, async () => {
-        const [r] = await setGroupAdmin([g], value);
-        if (r.result !== "ok") { input.checked = !value; throw new Error(r.message); }
-        haptic("ok"); toast(t("saved")); drawGadm(list);
-      })) : null,
-    }));
-    const all = members.length > 1 ? el("button", { class: "btn soft block", type: "button", style: "margin:4px 0 0", onclick: () => act(all, async () => {
-      if (!(await confirmMsg(t("gadm_all_confirm", { name: u.name, n: members.length })))) return;
-      const failed = (await setGroupAdmin(members, true)).filter((r) => r.result !== "ok");
-      drawGadm(list);
-      haptic(failed.length ? "warning" : "ok");
-      toast(t("gadm_done", { n: members.length - failed.length }));
-      if (failed.length) await alertMsg(t("gadm_failed") + "\n" + failed.map((r) => `${r.label}: ${r.message}`).join("\n"));
-    }) }, icon("plus"), t("gadm_all", { n: members.length })) : null;
-    gadmBox.replaceChildren(...(rows.length ? rows : [empty(t("gadm_no_groups"), "users")]),
-      all ? el("div", { style: "padding:4px 16px 16px" }, all) : null);
-  };
-  const gadmLoad = el("button", { class: "btn soft block mt", type: "button", onclick: () => act(gadmLoad, async () => {
-    drawGadm(await api("staff.group_admin", { user_id: u.id }));
-  }) }, icon("users"), t("gadm_load"));
-  gadmBox.replaceChildren(el("div", { style: "padding:2px 16px 16px" }, el("div", { class: "hint" }, t("gadm_hint")), gadmLoad));
+  // Admin rights in the class groups, given by the bot; loaded on demand (one Telegram check per group).
+  const gadmBox = el("div");
+  const gadmLoad = el("button", { class: "btn soft block", type: "button", onclick: () => gadmBox.replaceChildren(adminPanel(u)) },
+    icon("school"), t("gadm_load"));
+  gadmBox.replaceChildren(el("div", { class: "hint", style: "margin:0 2px 10px" }, t("gadm_hint")), gadmLoad);
 
   openSheet(u.name,
     el("div", { style: "display:flex;align-items:center;gap:12px;margin:4px 0 6px" }, avatar(u.name, u.id),
@@ -1592,8 +1692,24 @@ function openGroup(g, floors) {
     await api("groups.update", args);
     invalidate("groups", "floors", "dashboard"); haptic("ok"); toast(t("saved")); closeSheet(); render();
   }) }, t("save"));
+  const adminsBox = el("div", { class: "card" }, el("div", { class: "skel", style: "height:56px;margin:12px" }));
+  const loadAdmins = () => api("groups.admins", { chat_id: g.chat_id }).then((admins) => adminsBox.replaceChildren(...(admins.length ? admins.map((a) => row({
+    lead: avatar(a.name, a.id), title: a.name,
+    sub: [a.username ? "@" + a.username + " " : null, badge(t("gst_" + a.status), GST_KIND[a.status])],
+    side: a.status === "admin" ? el("button", { class: "btn danger sm", type: "button", onclick: (e) => act(e.currentTarget, async () => {
+      if (!(await confirmMsg(t("ga_remove_confirm", { name: a.name, group: groupLabel(g) })))) return;
+      await reportResults(await setAdmin(a, [{ chat_id: g.chat_id, label: groupLabel(g) }], false)); loadAdmins();
+    }) }, t("ga_remove")) : null,
+  })) : [empty(t("grp_admins_none"), "users")]))).catch((e) => adminsBox.replaceChildren(empty(e.message || t("error"), "alert")));
+  loadAdmins();
+  const addAdmin = el("button", { class: "btn soft block mt", type: "button", onclick: () => act(addAdmin, async () => {
+    const p = await pickPerson();
+    if (!p || !(await confirmMsg(t("grp_add_confirm", { name: p.name, group: groupLabel(g) })))) return;
+    await reportResults(await setAdmin(p, [{ chat_id: g.chat_id, label: groupLabel(g) }], true)); loadAdmins();
+  }) }, icon("plus"), t("grp_add_admin"));
   openSheet(groupLabel(g), el("div", { class: "hint", style: "margin:0 2px" }, g.title),
-    field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang), save);
+    field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang), save,
+    header(t("grp_admins")), adminsBox, addAdmin);
 }
 
 function openRole(r) {

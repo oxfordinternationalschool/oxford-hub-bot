@@ -3,7 +3,7 @@
 Sinf guruhlarini boshqarish uchun bot (Telegram'da: **Oxford Hub**, [@OIS_HubBot](https://t.me/OIS_HubBot)):
 
 - **📢 E'lonlar**: bir klikda barcha guruhlarga, parallel bo'yicha (masalan, hamma 9-sinflarga) yoki tanlangan guruhlarga yuboriladi. Pin qilish mumkin, kerak bo'lsa hamma guruhlardan bir klikda o'chiriladi.
-- **🧹 Xodimni chaqirish**: o'qituvchi guruhda `#cleaner suv to'kildi` deb yozadi va xabar shu roldagi xodimning shaxsiy chatiga boradi. Xodim «Qabul qilaman» va «Bajarildi» tugmalarini bosadi, guruhda esa holat ko'rinib turadi.
+- **🧹 Xodimni chaqirish**: o'qituvchi guruhda `#cleaner suv to'kildi` deb yozadi va xabar shu roldagi xodimning shaxsiy chatiga boradi. Xodim «Qabul qilaman» va «Bajarildi» tugmalarini bosadi. Sinf chaqiruvni ko'rmaydi: holat faqat o'qituvchiga ko'rinadi.
 - **🏢 Qavatlar**: qavat bo'yicha ishlaydigan rollar (masalan, cleaner) faqat sinf joylashgan qavatdagi xodimga boradi.
 - **⚠️ Eskalatsiya**: chaqiruvni 5 daqiqa ichida hech kim qabul qilmasa (shoshilinch chaqiruvda 2 daqiqa), adminlarga xabar boradi.
 - **🌐 3 til**: o'zbekcha, ruscha va inglizcha. Har kim o'z tilini tanlaydi, guruh tili esa alohida sozlanadi.
@@ -83,9 +83,24 @@ Bot havola beradi. Uni xodimga yuborasiz, xodim havolani bosadi va avtomatik ro'
 | `#doctor! bola yiqildi` | 🚨 shoshilinch chaqiruv |
 | biror xabarga reply qilib `#inspector` | o'sha xabar ham inspektorga boradi |
 
+**Chaqiruvni sinf ko'rmaydi.**
+- Guruhdagi **/** menyusidan tanlangan buyruq (`/cleaner`) Telegram'da yashirin buyruq: uni faqat bot ko'radi.
+- Teg yozilgan xabarni (`#cleaner ...`) bot xodimga yuborgach guruhdan o'chiradi. Buning uchun botda "Xabarlarni o'chirish" huquqi bo'lishi kerak.
+- Rasm yoki fayl biriktirilgan chaqiruv guruhda qoladi.
+- Chaqiruv holati ("qabul qildi", "bajarildi") faqat o'qituvchining o'ziga ko'rinadi.
+
+Rollar menyusi rol qo'shilganda yoki o'zgarganda o'zi yangilanadi.
+
 **E'lon beruvchi** (shaxsiy chatda): tayyor e'lonni botga yuboring yoki forward qiling → **📢 Guruhlarga yuborish** → guruhlarni tanlang → 📤 Yuborish. E'lon guruhlarga aynan o'zidek boradi: formatlangan matn, rasm, video, fayl, ovozli xabar va **albom** ham. `/announce` buyrug'idan keyin yuborilgan xabarda guruhlar ro'yxati darhol ochiladi.
 
 **Admin**: barcha buyruqlar ro'yxati `/admin` da. Statistika uchun `/stats 7` ni yozing.
+
+**Guruh adminlarini tayinlash.** Botda guruhda "Yangi admin qo'shish" huquqi bo'lishi kerak.
+- Guruhning o'zida odamning xabariga javoban `/promote` yozsangiz admin qiladi, `/demote` yozsangiz adminlikdan oladi.
+- Mini App'da: **Yana → Guruh adminlari → Odamni tanlash**. Odam Telegram'ning o'z oynasidan tanlanadi va botga ulangan bo'lishi shart emas. Keyin guruhlarni belgilab, tasdiqlaysiz.
+- Guruh oynasida o'sha guruhning adminlari ro'yxati chiqadi, u yerdan admin qo'shish yoki olib tashlash ham mumkin.
+- Odam xabarlarni o'chirish, a'zolarni cheklash, qadash va odam qo'shish huquqini oladi. Yangi admin tayinlash huquqi berilmaydi.
+- Telegram cheklovlari: odam guruh a'zosi bo'lishi kerak. Bot faqat o'zi tayinlagan adminlarni olib tashlay oladi.
 
 ## 4. Vercel + Supabase'ga joylashtirish (24/7)
 
@@ -146,7 +161,7 @@ Agar 3-qadam bajarilmasa, buyruq nima qilish kerakligini aytadi: Supabase'da `pg
 - Vercel'da ishlayotgan paytda `run.bat` ni ishga tushirsangiz, bot to'xtaydi va ogohlantiradi, chunki ikki joyda bir vaqtda ishlay olmaydi. Kompyuterda sinash kerak bo'lsa, `python -m bot --force-polling` buyrug'ini ishlating. Keyin Vercel'ga qaytarish uchun `setup_webhook` buyrug'ini qayta bajaring.
 - Kodni o'zgartirib GitHub'ga yuklasangiz, Vercel o'zi qayta joylaydi. `setup_webhook` ni qayta bajarish shart emas. Faqat bazaga yangi jadval yoki ustun qo'shilgan bo'lsa, uni bir marta qayta bajaring: tezlik uchun bot ishlash paytida jadvallarni tekshirmaydi.
 - Bot Vercel'ning Frankfurt (`fra1`) serverida, Supabase bazasi bilan bir hududda ishlaydi (`vercel.json` dagi `regions`). Supabase loyihasi boshqa hududda bo'lsa, buni ham o'shanga moslang.
-- "Faqat o'qituvchilar chaqira oladi" ogohlantirishi guruhdan taxminan 1 daqiqada o'chadi, chunki u Supabase Cron bilan birga ishlaydi.
+- "Faqat o'qituvchilar chaqira oladi" ogohlantirishi faqat o'sha o'quvchiga ko'rinadi. Telegram buni rad etsa, ogohlantirish hammaga ko'rinadi va taxminan 1 daqiqada o'chadi (Supabase Cron orqali).
 - **Narxlar:** Vercel'ning bepul Hobby tarifi faqat shaxsiy va notijorat loyihalar uchun. Xususiy maktab uchun Pro tarifi talab qilinishi mumkin. Supabase'ning bepul loyihasi uzoq vaqt ishlatilmasa, pauzaga tushadi.
 
 ## 5. Admin Mini App
@@ -161,7 +176,8 @@ Telegram ichida ochiladigan boshqaruv paneli. U faqat adminlarga ko'rinadi va fa
 | E'lon | Matn yozish, hamma/parallel/tanlangan guruhlarga yuborish, pin qilish, yuborilganlarni hammasidan o'chirish |
 | Chaqiruvlar | Kutilayotgan va barcha chaqiruvlar, osilib qolganini yopish |
 | Xodimlar | Qidirish, admin/e'lon beruvchi/o'qituvchi huquqlarini yoqib-o'chirish, rol va qavat berish yoki olish |
-| Guruhlar | Sinf, qavat va tilni o'zgartirish, Telegram'dan tekshirish (bot hali admin ekanmi) |
+| Guruhlar | Sinf, qavat va tilni o'zgartirish, Telegram'dan tekshirish (bot hali admin ekanmi), guruh adminlari ro'yxati, admin qo'shish yoki olib tashlash |
+| Guruh adminlari | Istalgan odamni (botga ulanmagan bo'lsa ham) tanlab, belgilangan guruhlarda admin qilish |
 | Rollar | Yaratish, emoji/nom/qo'shimcha teglarni o'zgartirish, qavat bo'yicha yo'naltirish, o'chirish |
 | Qavatlar | Qo'shish, nomini o'zgartirish, o'chirish |
 | Havolalar | Taklif havolasi yaratish (nusxa olish yoki ulashish), bekor qilish |

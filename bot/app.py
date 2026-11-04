@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from bot.config import settings
 from bot.db.session import make_engine, reset_sessionmaker, use_sessionmaker
-from bot.handlers import admin, admin_panel, announce, calls, groups, start
+from bot.handlers import admin, admin_panel, announce, calls, groups, start, stories
 from bot.middlewares import DbMiddleware
 from bot.services.calls import run_periodic
 from bot.services.menus import COMMANDS, as_commands
@@ -56,6 +56,7 @@ def get_dispatcher() -> Dispatcher:
             admin.router,
             admin_panel.router,
             announce.router,
+            stories.router,
             groups.router,
             calls.router,
             start.fallback_router,

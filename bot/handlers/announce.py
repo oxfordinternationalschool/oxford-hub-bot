@@ -1,4 +1,5 @@
 import contextlib
+import html
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatType, ContentType
@@ -15,10 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.callbacks import AnnCb, AnnDelCb, FwdCb
 from bot.db.models import AlbumLead, Announcement, Group, MediaDraft, User
 from bot.filters import CanAnnounce, can_announce, is_admin
+from bot.handlers.stories import report_keyboard
 from bot.i18n import t
 from bot.services.broadcast import CopySender, broadcast, delete_announcement, save_announcement
 from bot.services.common import group_sort_key, q
 from bot.services.media import describe_media, media_preview
+from bot.services.stories import story_account, story_caption, story_photo
 
 router = Router(name="announce")
 router.message.filter(F.chat.type == ChatType.PRIVATE)
@@ -242,7 +245,10 @@ async def _do_send(status_msg: Message, session: AsyncSession, bot: Bot, user: U
     ids, drafts = await _source(session, user, data["src_chat"], data["src_msg"])
     send = CopySender(bot, data["src_chat"], ids)
     result = await broadcast(bot, session, chat_ids, pin, send=send)
-    ann = await save_announcement(session, user.id, pin, media_preview(drafts, data.get("preview", "")), result)
+    photo = story_photo(drafts)
+    caption = next((d.caption for d in drafts if d.caption), "")
+    ann = await save_announcement(session, user.id, pin, media_preview(drafts, data.get("preview", "")), result,
+                                  story_file_id=photo, story_caption=story_caption(html.escape(caption, quote=False), caption))
 
     labels = {g.chat_id: g.label for g in await active_groups(session)}
     lines = [t(lang, "ann_report", sent=result.chats_reached, total=len(chat_ids))]
@@ -255,10 +261,11 @@ async def _do_send(status_msg: Message, session: AsyncSession, bot: Bot, user: U
     if send.forwarded:
         lines.append(t(lang, "ann_forwarded"))
 
-    kb = InlineKeyboardBuilder()
+    markup = None
     if result.sent:
-        kb.button(text=t(lang, "ann_delete_all"), callback_data=AnnDelCb(ann_id=ann.id))
-    await status_msg.edit_text("\n".join(lines), reply_markup=kb.as_markup() if result.sent else None)
+        story = "offer" if photo and await story_account(session) else None
+        markup = report_keyboard(lang, ann.id, story)
+    await status_msg.edit_text("\n".join(lines), reply_markup=markup)
 
 
 @router.callback_query(AnnDelCb.filter())

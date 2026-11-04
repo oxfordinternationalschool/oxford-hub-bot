@@ -169,6 +169,20 @@ Telegram ichida ochiladigan boshqaruv paneli. U faqat adminlarga ko'rinadi va fa
 
 Tayyor e'lonni (albom ham bo'ladi) botning o'ziga yuborib ham tarqatish mumkin (3-bo'lim). Botga yuborilgan rasm va videolar Mini App'dagi biriktirmalarda ham ko'rinadi.
 
+### Maktab akkauntiga story
+
+Rasmli e'lonni maktabning Telegram akkauntiga **story** qilib ham qo'yish mumkin. Bot story'ni faqat ulangan akkaunt nomidan qo'ya oladi. Kanal yoki guruh story'siga qo'yishga Telegram botlarga ruxsat bermaydi. Telegram Premium kerak emas.
+
+1. BotFather → @OIS_HubBot → **Bot Settings → Secretary Mode** ni yoqing.
+2. Maktab akkauntida: **Settings → Telegram Business → Chatbots** → `@OIS_HubBot` ni qo'shing. Ruxsatlardan faqat **Manage stories** ni qoldiring.
+3. Adminlarga "🔗 … akkaunti botni ulab qo'ydi" degan xabar keladi → **✅ Ha, maktab akkaunti** ni bosing.
+
+Shundan keyin:
+- **botda** rasmli e'lon yuborilgach, hisobot ostida **📲 Story qilib qo'yish** tugmasi chiqadi. U yerda 6, 12, 24 yoki 48 soatni tanlaysiz;
+- **Mini App'da** rasm biriktirilgan bo'lsa, **Story ham qo'yish** tugmasi chiqadi. Story 24 soat turadi.
+
+Rasm story o'lchamiga (1080×1920) avtomatik moslanadi: rasm o'rtada, orqasida uning xiralashtirilgan nusxasi. Video story qilinmaydi, chunki Telegram story videosi uchun alohida format talab qiladi.
+
 **Vercel'da** Mini App o'zi ishlaydi: sahifa `https://SIZNING-LOYIHA.vercel.app/admin/` manzilida bo'ladi. `setup_webhook` buyrug'i adminlarga **Panel** tugmasini qo'yadi. Vercel loyiha manzilini botga o'zi beradi. Boshqa manzil (masalan, o'z domeningiz) ishlatilsa, Vercel'da `WEBAPP_URL` o'zgaruvchisini qo'shing.
 
 **Kompyuterda sinash (ixtiyoriy).** Telegram Mini App'ni faqat HTTPS manzildan ochadi, shuning uchun kompyuterda tunnel kerak bo'ladi:

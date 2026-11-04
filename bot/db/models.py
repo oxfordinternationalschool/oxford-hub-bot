@@ -134,6 +134,25 @@ class Announcement(Base):
     deleted: Mapped[bool] = mapped_column(default=False)
     # First characters of the text, for the history list in the admin Mini App.
     preview: Mapped[str | None] = mapped_column(String(200))
+    # Its first photo and text (HTML), so it can also be posted as a story later.
+    story_file_id: Mapped[str | None] = mapped_column(String(255))
+    story_caption: Mapped[str | None] = mapped_column(Text)
+
+
+class StoryAccount(Base):
+    """A Telegram account that connected the bot in its settings (Secretary Mode). Once an admin
+    approves it as the school's account, announcements can be posted there as stories."""
+
+    __tablename__ = "story_accounts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    connection_id: Mapped[str] = mapped_column(String(128), unique=True)
+    user_id: Mapped[int] = mapped_column(BigInteger)
+    name: Mapped[str] = mapped_column(String(255))
+    can_post: Mapped[bool] = mapped_column(default=False)  # the account gave the "Manage stories" right
+    is_enabled: Mapped[bool] = mapped_column(default=True)
+    approved: Mapped[bool] = mapped_column(default=False)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
 class FsmState(Base):

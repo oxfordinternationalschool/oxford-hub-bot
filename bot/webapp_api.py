@@ -39,6 +39,7 @@ from bot.services.common import find_floor, group_sort_key, parse_class
 from bot.services.menus import set_user_menu
 from bot.services.rich_text import to_telegram_html
 from bot.services.roles import is_valid_key, trigger_cache
+from bot.services.stories import post_story, story_account, story_caption, story_photo
 from bot.services.users import add_staff_role
 
 log = logging.getLogger(__name__)
@@ -226,7 +227,9 @@ async def _count(session: AsyncSession, model, *where) -> int:
 @op("me")
 async def op_me(ctx: Ctx, args: dict):
     me = await ctx.bot.me()
-    return {"id": ctx.user.id, "name": ctx.user.full_name, "lang": ctx.user.lang, "bot": me.username}
+    account = await story_account(ctx.session)
+    return {"id": ctx.user.id, "name": ctx.user.full_name, "lang": ctx.user.lang, "bot": me.username,
+            "story_account": account.name if account else None}
 
 
 @op("dashboard")
@@ -636,7 +639,21 @@ async def op_announce_send(ctx: Ctx, args: dict):
     preview = media_preview(drafts, plain)
     send = announcement_sender(ctx.bot, drafts, html_text, plain, layout)
     result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
-    ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result)
+    photo = story_photo(drafts)
+    ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result,
+                                  story_file_id=photo, story_caption=story_caption(html_text, plain))
+    # Optionally also a 24-hour story on the school's account (the photo only; Telegram has no channel stories for bots).
+    story = None
+    if args.get("story") is True:
+        account = await story_account(ctx.session)
+        story = "unavailable"
+        if account and photo and result.sent:
+            try:
+                await post_story(ctx.bot, account, photo, ann.story_caption, 24)
+                story = "ok"
+            except (TelegramAPIError, OSError):
+                log.exception("Story for announcement %s failed", ann.id)
+                story = "failed"
 
     def labels(cids: list[int]) -> list[str]:
         return [groups[c].label if c in groups else str(c) for c in cids]
@@ -647,6 +664,7 @@ async def op_announce_send(ctx: Ctx, args: dict):
         "total": len(chat_ids),
         "failed": labels(result.failed),
         "pin_failed": labels(result.pin_failed),
+        "story": story,
     }
 
 

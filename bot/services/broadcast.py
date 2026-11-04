@@ -88,9 +88,11 @@ async def broadcast(bot: Bot, session: AsyncSession, chat_ids: list[int], pin: b
 
 
 async def save_announcement(
-    session: AsyncSession, author_id: int, pin: bool, preview: str, result: BroadcastResult
+    session: AsyncSession, author_id: int, pin: bool, preview: str, result: BroadcastResult,
+    story_file_id: str | None = None, story_caption: str | None = None,
 ) -> Announcement:
-    ann = Announcement(author_id=author_id, pinned=pin, preview=preview[:200])
+    ann = Announcement(author_id=author_id, pinned=pin, preview=preview[:200],
+                       story_file_id=story_file_id, story_caption=story_caption)
     session.add(ann)
     await session.flush()
     for chat_id, message_id in result.sent:

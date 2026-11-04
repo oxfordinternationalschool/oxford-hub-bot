@@ -1,3 +1,4 @@
+import io
 import itertools
 import json
 import os
@@ -13,19 +14,31 @@ import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, CopyMessages, ForwardMessage, ForwardMessages, GetFile, GetMe, GetWebhookInfo, SendDocument,
-    SendMediaGroup, SendMessage, SendPhoto, SendRichMessage, SendVideo, SendVoice,
+    CopyMessage, CopyMessages, ForwardMessage, ForwardMessages, GetFile, GetMe, GetWebhookInfo, PostStory,
+    SendDocument, SendMediaGroup, SendMessage, SendPhoto, SendRichMessage, SendVideo, SendVoice,
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
-    Chat, Document, File, InputMediaPhoto, Message, MessageId, PhotoSize, Update, User, Video, Voice, WebhookInfo,
+    Chat, Document, File, InputMediaPhoto, Message, MessageId, PhotoSize, Story, Update, User, Video, Voice,
+    WebhookInfo,
 )
+from PIL import Image
 
 from bot.app import get_dispatcher
 from bot.db.session import init_db, make_engine, reset_sessionmaker, use_sessionmaker
 from bot.services.roles import trigger_cache
 
 BOT_USER = {"id": 999, "is_bot": True, "first_name": "Bot", "username": "school_bot"}
+
+
+def _jpeg(size=(640, 480)) -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", size, (30, 90, 160)).save(out, "JPEG")
+    return out.getvalue()
+
+
+# What every file "downloaded" from the fake Telegram contains: a real (landscape) photo.
+FAKE_FILE = _jpeg()
 SECRET = "test-secret-0123456789"
 
 
@@ -69,6 +82,8 @@ class FakeSession(BaseSession):
             return MessageId(message_id=next(self._ids))
         if isinstance(method, (CopyMessages, ForwardMessages)):
             return [MessageId(message_id=next(self._ids)) for _ in method.message_ids]
+        if isinstance(method, PostStory):
+            return Story(chat=Chat(id=77, type="private"), id=next(self._ids))
         if isinstance(method, ForwardMessage):
             return Message(message_id=next(self._ids), date=datetime.now(), chat=Chat(id=method.chat_id, type="group"))
         return True
@@ -86,7 +101,7 @@ class FakeSession(BaseSession):
         return Message(message_id=n, date=datetime.now(), chat=Chat(id=chat_id, type="group"), **media)
 
     async def stream_content(self, *args, **kwargs):
-        yield b"tiny jpeg bytes"
+        yield FAKE_FILE
 
     async def close(self):
         pass
@@ -149,6 +164,13 @@ class Harness:
             message["reply_to_message"] = reply_to
         await self._send("callback_query", {
             "id": str(next(self._ids)), "from": self._user(uid), "chat_instance": "ci", "data": data, "message": message,
+        })
+
+    async def business_connection(self, uid, conn_id="bc1", enabled=True, stories=True):
+        """`uid` connects the bot in their Telegram settings (Secretary Mode)."""
+        await self._send("business_connection", {
+            "id": conn_id, "user": self._user(uid), "user_chat_id": uid, "date": int(time.time()),
+            "is_enabled": enabled, "rights": {"can_manage_stories": stories},
         })
 
     async def bot_added(self, chat_id, by_uid, title="7-B sinf", status="member"):

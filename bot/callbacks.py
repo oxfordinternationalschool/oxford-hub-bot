@@ -26,6 +26,18 @@ class FwdCb(CallbackData, prefix="fwd"):
     m: int  # that message's id
 
 
+class StoryCb(CallbackData, prefix="story"):
+    ann: int  # announcement id
+    h: int = 0  # hours the story stays up; 0 = ask
+
+
+class StoryAccCb(CallbackData, prefix="storyacc"):
+    """An admin's answer to "is this the school's account?"."""
+
+    a: str  # "ok" | "no"
+    id: int  # StoryAccount id
+
+
 class AnnDelCb(CallbackData, prefix="anndel"):
     ann_id: int
 

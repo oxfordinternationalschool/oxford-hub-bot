@@ -731,6 +731,76 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "↪️ Telegram не разрешил скопировать это сообщение, поэтому оно переслано.",
         "en": "↪️ Telegram wouldn't copy this message, so it was forwarded instead.",
     },
+    # ---------- Stories on the school account ----------
+    "story_connected": {
+        "uz": (
+            "🔗 <b>{name}</b> akkaunti botni ulab qo'ydi.\n{right}\n\n"
+            "Bu maktab akkauntimi? Tasdiqlasangiz, rasmli e'lonlarni shu akkauntga story qilib qo'yish mumkin bo'ladi."
+        ),
+        "ru": (
+            "🔗 Аккаунт <b>{name}</b> подключил бота.\n{right}\n\n"
+            "Это аккаунт школы? Если подтвердите, объявления с фото можно будет публиковать в нём как истории."
+        ),
+        "en": (
+            "🔗 The account <b>{name}</b> connected the bot.\n{right}\n\n"
+            "Is this the school's account? Once you confirm, photo announcements can be posted there as stories."
+        ),
+    },
+    "story_status": {"uz": "🔗 <b>{name}</b>\n{right}", "ru": "🔗 <b>{name}</b>\n{right}", "en": "🔗 <b>{name}</b>\n{right}"},
+    "story_right_yes": {
+        "uz": "✅ Story qo'yish ruxsati bor.",
+        "ru": "✅ Разрешение на истории есть.",
+        "en": "✅ The bot may post stories.",
+    },
+    "story_right_no": {
+        "uz": (
+            "⚠️ Story qo'yish ruxsati berilmagan. Shu akkauntda: Settings → Telegram Business → Chatbots → "
+            "@{bot} → «Manage stories» ni yoqing."
+        ),
+        "ru": (
+            "⚠️ Нет разрешения на истории. В этом аккаунте: Настройки → Telegram для бизнеса → Чат-боты → "
+            "@{bot} → включите «Управление историями»."
+        ),
+        "en": (
+            "⚠️ The bot may not post stories. On that account: Settings → Telegram Business → Chatbots → "
+            "@{bot} → turn on “Manage stories”."
+        ),
+    },
+    "story_acc_yes": {"uz": "✅ Ha, maktab akkaunti", "ru": "✅ Да, аккаунт школы", "en": "✅ Yes, the school's"},
+    "story_acc_no": {"uz": "❌ Yo'q", "ru": "❌ Нет", "en": "❌ No"},
+    "story_approved": {
+        "uz": "✅ <b>{name}</b> — maktab akkaunti. Rasmli e'lon yuborilgach, ostida «📲 Story qilib qo'yish» tugmasi chiqadi.",
+        "ru": "✅ <b>{name}</b> — аккаунт школы. После отправки объявления с фото под ним появится «📲 В истории».",
+        "en": "✅ <b>{name}</b> is the school's account. After a photo announcement is sent, “📲 Post as a story” appears under it.",
+    },
+    "story_rejected": {
+        "uz": "❌ <b>{name}</b> ishlatilmaydi.",
+        "ru": "❌ <b>{name}</b> не используется.",
+        "en": "❌ <b>{name}</b> won't be used.",
+    },
+    "story_disconnected": {
+        "uz": "🔌 <b>{name}</b> akkaunti botni uzdi. E'lonlarni story qilib qo'yib bo'lmaydi.",
+        "ru": "🔌 Аккаунт <b>{name}</b> отключил бота. Публиковать истории нельзя.",
+        "en": "🔌 <b>{name}</b> disconnected the bot. Stories can't be posted.",
+    },
+    "story_btn": {"uz": "📲 Story qilib qo'yish", "ru": "📲 В истории", "en": "📲 Post as a story"},
+    "story_hours": {"uz": "{h} soat", "ru": "{h} ч", "en": "{h} h"},
+    "story_posting": {"uz": "⏳ Story tayyorlanmoqda…", "ru": "⏳ Готовлю историю…", "en": "⏳ Preparing the story…"},
+    "story_done": {
+        "uz": "📲 Story qo'yildi: {name}, {h} soat.",
+        "ru": "📲 История опубликована: {name}, {h} ч.",
+        "en": "📲 Story posted: {name}, {h} h.",
+    },
+    "story_failed": {
+        "uz": "❌ Story qo'yilmadi: {error}",
+        "ru": "❌ История не опубликована: {error}",
+        "en": "❌ The story wasn't posted: {error}",
+    },
+    "story_unavailable": {
+        "uz": "Story uchun maktab akkaunti ulanmagan yoki e'londa rasm yo'q.",
+        "ru": "Аккаунт школы для историй не подключён, или в объявлении нет фото.",
+        "en": "No school account is connected for stories, or the announcement has no photo.",
+    },
     "ann_delete_all": {
         "uz": "🗑 Hamma guruhlardan o'chirish",
         "ru": "🗑 Удалить из всех групп",

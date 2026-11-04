@@ -307,6 +307,8 @@ const T = {
     ann_grade: "{g}-sinflar", ann_pick: "Guruhlarni tanlash", ann_picked: "{n} ta guruh tanlandi", ann_none_picked: "Guruh tanlanmagan",
     ann_pin: "Guruhda pin qilish", ann_send: "Yuborish", ann_send_n: "{n} ta guruhga yuborish", sending: "⏳ Yuborilmoqda…", timeout: "Server javob bermadi. Internetni tekshirib qayta urinib ko'ring — e'lon yuborilgan bo'lishi mumkin, avval «Yuborilganlar»ni tekshiring.",
     ann_confirm: "E'lon {n} ta guruhga yuborilsinmi?", ann_sent: "Yuborildi: {sent}/{total}",
+    story_toggle: "Story ham qo'yish", story_sub: "24 soat · {name}", story_ok: "story qo'yildi",
+    story_not_posted: "📲 Story qo'yilmadi. Botdagi e'lon hisobotidan qayta urinib ko'ring.",
     ann_failed: "Yuborilmadi: {list}", ann_pin_failed: "Pin qilinmadi: {list}", ann_history: "Yuborilganlar",
     ann_none: "Hali e'lon yuborilmagan", ann_delete: "Hammasidan o'chirish", ann_delete_confirm: "Bu e'lon barcha guruhlardan o'chirilsinmi?",
     ann_deleted: "O'chirildi: {n}/{total}", ann_deleted_badge: "o'chirilgan", ann_groups: "{n} guruh",
@@ -367,6 +369,8 @@ const T = {
     ann_grade: "{g}-е классы", ann_pick: "Выбрать группы", ann_picked: "Выбрано групп: {n}", ann_none_picked: "Группы не выбраны",
     ann_pin: "Закрепить в группе", ann_send: "Отправить", ann_send_n: "Отправить в {n} групп", sending: "⏳ Отправляю…", timeout: "Сервер не ответил. Проверьте интернет и попробуйте снова — объявление могло уйти, сначала проверьте «Отправленные».",
     ann_confirm: "Отправить объявление в {n} групп?", ann_sent: "Отправлено: {sent}/{total}",
+    story_toggle: "Также в истории", story_sub: "24 ч · {name}", story_ok: "история опубликована",
+    story_not_posted: "📲 История не опубликована. Попробуйте ещё раз позже.",
     ann_failed: "Не отправлено: {list}", ann_pin_failed: "Не закреплено: {list}", ann_history: "Отправленные",
     ann_none: "Объявлений ещё не было", ann_delete: "Удалить везде", ann_delete_confirm: "Удалить это объявление из всех групп?",
     ann_deleted: "Удалено: {n}/{total}", ann_deleted_badge: "удалено", ann_groups: "групп: {n}",
@@ -427,6 +431,8 @@ const T = {
     ann_grade: "Grade {g}", ann_pick: "Choose groups", ann_picked: "{n} groups selected", ann_none_picked: "No groups selected",
     ann_pin: "Pin in the group", ann_send: "Send", ann_send_n: "Send to {n} group(s)", sending: "⏳ Sending…", timeout: "The server didn't answer. Check the connection and try again — it may have been sent, so check “Sent” first.",
     ann_confirm: "Send the announcement to {n} groups?", ann_sent: "Sent: {sent}/{total}",
+    story_toggle: "Also post as a story", story_sub: "24 h · {name}", story_ok: "story posted",
+    story_not_posted: "📲 The story wasn't posted. Please try again later.",
     ann_failed: "Failed: {list}", ann_pin_failed: "Not pinned: {list}", ann_history: "Sent",
     ann_none: "No announcements yet", ann_delete: "Delete everywhere", ann_delete_confirm: "Delete this announcement from all groups?",
     ann_deleted: "Deleted: {n}/{total}", ann_deleted_badge: "deleted", ann_groups: "{n} groups",
@@ -492,6 +498,7 @@ const ICONS = {
   copy: "M9 9h11v11H9zM5 15H4V4h11v1", share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13",
   trash: "M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3", inbox: "M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z",
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
+  story: "M12 3a9 9 0 1 1-6.4 2.6M3.5 8.5a9 9 0 0 1 2-2.9M8.5 3.7a9 9 0 0 1 1.8-.6M12 8v8M8 12h8",
 };
 function icon(name, extra = "") {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -705,7 +712,7 @@ const groupLabel = (g) => g.class_name || g.title;
 // ---------------------------------------------------------------- navigation
 const NAV = [["home", "home"], ["announce", "megaphone"], ["calls", "bell"], ["staff", "users"], ["more", "grid"]];
 const state = { tab: "home", sub: null, callsFilter: "pending", staffFilter: "all", staffQuery: "", statsDays: 7,
-  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", invitePreset: null };
+  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", annStory: false, invitePreset: null };
 
 function renderNav() {
   const pending = (cached("dashboard") || {}).pending || [];
@@ -997,7 +1004,8 @@ const SCREENS = {
   },
 
   async announce() {
-    const [groups, history] = await Promise.all([load("groups", "groups.list"), load("annHistory", "announce.history")]);
+    const [groups, history, me] = await Promise.all([load("groups", "groups.list"), load("annHistory", "announce.history"),
+      load("me", "me")]);
     if (!groups.length) return [pageHead(t("ann_title")), card(empty(t("groups_hint"), "school"))];
     const sel = state.annSelected;
     for (const id of [...sel]) if (!groups.some((g) => g.chat_id === id)) sel.delete(id);
@@ -1008,6 +1016,13 @@ const SCREENS = {
     const counter = el("span", {});
     const sendBtn = el("button", { class: "btn block", type: "button" });
     const pickedLabel = el("div", { class: "sub" });
+    // A story goes to the school's Telegram account, and only a photo can become one.
+    const storyBox = el("div", {});
+    const storyOn = () => state.annStory && !!me.story_account && state.annMedia.some((d) => d.kind === "photo");
+    const drawStory = () => storyBox.replaceChildren(me.story_account && state.annMedia.some((d) => d.kind === "photo")
+      ? row({ lead: lead("story", "ok"), title: t("story_toggle"), sub: t("story_sub", { name: me.story_account }),
+          side: toggle(state.annStory, (v) => { state.annStory = v; haptic(); }) })
+      : "");
     const current = () => editorToTg(editor);
     const updateUi = () => {
       const { html, plain } = current();
@@ -1100,6 +1115,7 @@ const SCREENS = {
         : el("div", { class: "att-btns" },
             el("button", { class: "btn ghost", type: "button", onclick: () => fileInput.click() }, icon("plus"), t("att_phone")),
             el("button", { class: "btn ghost", type: "button", onclick: openAttach }, icon("inbox"), t("att_bot"))));
+      drawStory();
       saveAnnDraft();
     };
     fileInput.addEventListener("change", () => act(null, async () => {
@@ -1215,16 +1231,17 @@ const SCREENS = {
     const doSend = async () => {
       const { html } = current();
       const r = await api("announce.send", { html, chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id),
-        layout: effectiveLayout() });
-      haptic(r.failed.length ? "warning" : "ok");
-      toast(t("ann_sent", { sent: r.sent, total: r.total }));
+        layout: effectiveLayout(), story: storyOn() });
+      haptic(r.failed.length || (r.story && r.story !== "ok") ? "warning" : "ok");
+      toast(t("ann_sent", { sent: r.sent, total: r.total }) + (r.story === "ok" ? " · " + t("story_ok") : ""));
       state.annHtml = ""; state.annMedia = []; sel.clear(); saveAnnDraft(); invalidate("annHistory");
       await render();
-      if (r.failed.length || r.pin_failed.length) {
+      if (r.failed.length || r.pin_failed.length || (r.story && r.story !== "ok")) {
         await alertMsg([
           t("ann_sent", { sent: r.sent, total: r.total }),
           r.failed.length ? t("ann_failed", { list: r.failed.join(", ") }) : "",
           r.pin_failed.length ? t("ann_pin_failed", { list: r.pin_failed.join(", ") }) : "",
+          r.story && r.story !== "ok" ? t("story_not_posted") : "",
         ].filter(Boolean).join("\n"));
       }
     };
@@ -1249,7 +1266,8 @@ const SCREENS = {
       header(t("ann_to")),
       quickChips,
       card(row({ lead: lead("school"), title: t("ann_pick"), sub: pickedLabel, onclick: openGroupPicker, chevron: true }),
-        row({ lead: lead("tag", "warn"), title: t("ann_pin"), side: toggle(state.annPin, (v) => { state.annPin = v; saveAnnDraft(); haptic(); }) })),
+        row({ lead: lead("tag", "warn"), title: t("ann_pin"), side: toggle(state.annPin, (v) => { state.annPin = v; saveAnnDraft(); haptic(); }) }),
+        storyBox),
       el("div", { class: "btns mt" }, el("button", { class: "btn ghost", type: "button", style: "flex:none;padding:0 16px", onclick: openPreview },
         icon("search"), t("preview")), sendBtn),
       header(t("ann_history")),

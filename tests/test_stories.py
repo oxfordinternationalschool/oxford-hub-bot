@@ -5,7 +5,10 @@ from aiogram.methods import EditMessageReplyMarkup, EditMessageText, PostStory
 from aiogram.types import BufferedInputFile
 from PIL import Image
 
+from bot.services import stories
 from bot.services.stories import story_image
+from bot.webhook import app
+from conftest import call_asgi
 from test_forward_announce import prompts, send_to_all
 from test_media_announce import GROUP_A, PHOTO, school, upload
 from test_webapp_api import ADMIN, TEACHER, ok
@@ -104,3 +107,33 @@ async def test_mini_app_can_add_a_24h_story(wh):
     result = await ok("announce.send", {"html": "Story so'ralmagan", "chat_ids": [GROUP_A], "pin": False,
                                         "media_ids": [photo["id"]]})
     assert result["story"] is None and len(wh.api.sent(kind=PostStory)) == 1
+
+
+async def test_story_editor_link_serves_the_picture(wh, monkeypatch):
+    """Channels and groups: the Mini App opens Telegram's story editor with this picture."""
+    await school(wh)
+    photo = await upload("tadbir.jpg", "image/jpeg")
+    await ok("announce.send", {"html": "<b>Bayram</b> &amp; tadbir", "chat_ids": [GROUP_A], "pin": False,
+                               "media_ids": [photo["id"]]})
+    await ok("announce.send", {"html": "Faqat matn", "chat_ids": [GROUP_A], "pin": False})
+    text_only, with_photo = await ok("announce.history")  # newest first
+    assert text_only["story_url"] is None
+    assert with_photo["story_text"] == "Bayram & tadbir"
+
+    query = with_photo["story_url"].split("?", 1)[1]
+    status, body, content_type = await call_asgi(app, {}, method="GET", query=query, raw=True)
+    assert status == 200 and content_type == "image/jpeg"
+    with Image.open(io.BytesIO(body)) as img:
+        assert img.size == (1080, 1920)
+
+    ann_id, expires, _ = query.removeprefix("story=").split(".")
+    forged = f"story={ann_id}.{expires}.{'0' * 32}"
+    assert (await call_asgi(app, {}, method="GET", query=forged, raw=True))[0] == 404
+    monkeypatch.setattr(stories.time, "time", lambda: int(expires) + 1)  # the link has expired
+    assert (await call_asgi(app, {}, method="GET", query=query, raw=True))[0] == 404
+
+
+def test_editor_text_is_plain_and_short():
+    assert stories.editor_text("<b>Diqqat</b> 5 &lt; 6") == "Diqqat 5 < 6"
+    long = stories.editor_text("a" * 500)
+    assert len(long) == 200 and long.endswith("…")

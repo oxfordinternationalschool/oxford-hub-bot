@@ -183,6 +183,8 @@ Shundan keyin:
 
 Rasm story o'lchamiga (1080×1920) avtomatik moslanadi: rasm o'rtada, orqasida uning xiralashtirilgan nusxasi. Video story qilinmaydi, chunki Telegram story videosi uchun alohida format talab qiladi.
 
+**Kanal yoki guruhga story.** Bot buni o'zi qila olmaydi: Telegram botlarga ruxsat bermaydi. Buning o'rniga Mini App → E'lon → **Yuborilganlar** ro'yxatida rasmli e'lon yonidagi yashil tugmani bosing. Telegram'ning o'z story muharriri e'lon rasmi va matni bilan ochiladi, story'ni u yerdan o'zingiz joylaysiz. Kanalni tanlash imkoni bo'lsa, kanalga ham qo'yiladi. Kanal story qo'yishi uchun Telegram boost talab qiladi.
+
 **Vercel'da** Mini App o'zi ishlaydi: sahifa `https://SIZNING-LOYIHA.vercel.app/admin/` manzilida bo'ladi. `setup_webhook` buyrug'i adminlarga **Panel** tugmasini qo'yadi. Vercel loyiha manzilini botga o'zi beradi. Boshqa manzil (masalan, o'z domeningiz) ishlatilsa, Vercel'da `WEBAPP_URL` o'zgaruvchisini qo'shing.
 
 **Kompyuterda sinash (ixtiyoriy).** Telegram Mini App'ni faqat HTTPS manzildan ochadi, shuning uchun kompyuterda tunnel kerak bo'ladi:

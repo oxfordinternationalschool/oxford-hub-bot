@@ -39,7 +39,7 @@ from bot.services.common import find_floor, group_sort_key, parse_class
 from bot.services.menus import set_user_menu
 from bot.services.rich_text import to_telegram_html
 from bot.services.roles import is_valid_key, trigger_cache
-from bot.services.stories import post_story, story_account, story_caption, story_photo
+from bot.services.stories import editor_text, post_story, story_account, story_caption, story_link, story_photo
 from bot.services.users import add_staff_role
 
 log = logging.getLogger(__name__)
@@ -688,6 +688,9 @@ async def op_announce_history(ctx: Ctx, args: dict):
         "groups": counts.get(a.id, 0),
         "pinned": a.pinned,
         "deleted": a.deleted,
+        # For Telegram's story editor (channels and groups, where the bot can't post stories itself).
+        "story_url": story_link(a.id) if a.story_file_id else None,
+        "story_text": editor_text(a.story_caption) if a.story_file_id else None,
     } for a in anns]
 
 

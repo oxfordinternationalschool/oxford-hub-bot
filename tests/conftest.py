@@ -187,7 +187,9 @@ class Harness:
         await self.callback(uid, "lang:uz")
 
 
-async def call_asgi(app, headers: dict[str, str], body: bytes = b"", method: str = "POST"):
+async def call_asgi(app, headers: dict[str, str], body: bytes = b"", method: str = "POST", query: str = "",
+                    raw: bool = False):
+    """(status, body text), or with `raw` (status, body bytes, content type)."""
     sent = []
 
     async def receive():
@@ -197,10 +199,12 @@ async def call_asgi(app, headers: dict[str, str], body: bytes = b"", method: str
         sent.append(message)
 
     scope = {
-        "type": "http", "method": method, "path": "/api",
+        "type": "http", "method": method, "path": "/api", "query_string": query.encode(),
         "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()],
     }
     await app(scope, receive, send)
+    if raw:
+        return sent[0]["status"], sent[1]["body"], dict(sent[0]["headers"])[b"content-type"].decode()
     return sent[0]["status"], sent[1]["body"].decode()
 
 
@@ -236,12 +240,14 @@ async def wh(tmp_path, monkeypatch):
     import dataclasses
 
     import bot.app as app_module
+    import bot.services.stories as stories_module
     import bot.webhook as webhook_module
 
     db_url = f"sqlite+aiosqlite:///{tmp_path / 'vercel.db'}"
     patched = dataclasses.replace(app_module.settings, database_url=db_url, webhook_secret=SECRET)
     monkeypatch.setattr(app_module, "settings", patched)
     monkeypatch.setattr(webhook_module, "settings", patched)
+    monkeypatch.setattr(stories_module, "settings", patched)
     api = FakeSession()
     monkeypatch.setattr(app_module, "make_bot", lambda: Bot("999:TEST", session=api))
 

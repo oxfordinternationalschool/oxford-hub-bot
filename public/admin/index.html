@@ -78,6 +78,7 @@
   .lead { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: none;
     background: var(--accent-soft); color: var(--accent); font-size: 17px; }
   .lead.ok { background: var(--ok-soft); color: var(--ok); } .lead.warn { background: var(--warn-soft); color: var(--warn); }
+  .side-btns { display: flex; gap: 8px; }
   .lead.bad { background: var(--danger-soft); color: var(--danger); } .lead svg.i { width: 19px; height: 19px; }
   .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
     color: #fff; font-weight: 700; font-size: 15px; }
@@ -308,6 +309,7 @@ const T = {
     ann_pin: "Guruhda pin qilish", ann_send: "Yuborish", ann_send_n: "{n} ta guruhga yuborish", sending: "⏳ Yuborilmoqda…", timeout: "Server javob bermadi. Internetni tekshirib qayta urinib ko'ring — e'lon yuborilgan bo'lishi mumkin, avval «Yuborilganlar»ni tekshiring.",
     ann_confirm: "E'lon {n} ta guruhga yuborilsinmi?", ann_sent: "Yuborildi: {sent}/{total}",
     story_toggle: "Story ham qo'yish", story_sub: "24 soat · {name}", story_ok: "story qo'yildi",
+    story_share: "Telegram'da story qilish (kanalga ham)", story_update_tg: "Buning uchun Telegram'ni yangilang.",
     story_not_posted: "📲 Story qo'yilmadi. Botdagi e'lon hisobotidan qayta urinib ko'ring.",
     ann_failed: "Yuborilmadi: {list}", ann_pin_failed: "Pin qilinmadi: {list}", ann_history: "Yuborilganlar",
     ann_none: "Hali e'lon yuborilmagan", ann_delete: "Hammasidan o'chirish", ann_delete_confirm: "Bu e'lon barcha guruhlardan o'chirilsinmi?",
@@ -370,6 +372,7 @@ const T = {
     ann_pin: "Закрепить в группе", ann_send: "Отправить", ann_send_n: "Отправить в {n} групп", sending: "⏳ Отправляю…", timeout: "Сервер не ответил. Проверьте интернет и попробуйте снова — объявление могло уйти, сначала проверьте «Отправленные».",
     ann_confirm: "Отправить объявление в {n} групп?", ann_sent: "Отправлено: {sent}/{total}",
     story_toggle: "Также в истории", story_sub: "24 ч · {name}", story_ok: "история опубликована",
+    story_share: "Сделать историю в Telegram (и в канале)", story_update_tg: "Для этого обновите Telegram.",
     story_not_posted: "📲 История не опубликована. Попробуйте ещё раз позже.",
     ann_failed: "Не отправлено: {list}", ann_pin_failed: "Не закреплено: {list}", ann_history: "Отправленные",
     ann_none: "Объявлений ещё не было", ann_delete: "Удалить везде", ann_delete_confirm: "Удалить это объявление из всех групп?",
@@ -432,6 +435,7 @@ const T = {
     ann_pin: "Pin in the group", ann_send: "Send", ann_send_n: "Send to {n} group(s)", sending: "⏳ Sending…", timeout: "The server didn't answer. Check the connection and try again — it may have been sent, so check “Sent” first.",
     ann_confirm: "Send the announcement to {n} groups?", ann_sent: "Sent: {sent}/{total}",
     story_toggle: "Also post as a story", story_sub: "24 h · {name}", story_ok: "story posted",
+    story_share: "Make a Telegram story (a channel too)", story_update_tg: "Please update Telegram for this.",
     story_not_posted: "📲 The story wasn't posted. Please try again later.",
     ann_failed: "Failed: {list}", ann_pin_failed: "Not pinned: {list}", ann_history: "Sent",
     ann_none: "No announcements yet", ann_delete: "Delete everywhere", ann_delete_confirm: "Delete this announcement from all groups?",
@@ -1247,16 +1251,26 @@ const SCREENS = {
     };
     updateUi();
 
+    // Telegram's own story editor, with the announcement's photo: from there the admin can post it
+    // wherever Telegram allows (a channel included), which the bot itself may not do.
+    const shareStory = (a) => {
+      if (!canTg("7.8")) return alertMsg(t("story_update_tg"));
+      haptic();
+      tg.shareToStory(location.origin + a.story_url, a.story_text ? { text: a.story_text } : undefined);
+    };
     const historyRows = history.slice(0, 5).map((a) => row({
       lead: lead("megaphone", a.deleted ? "bad" : ""),
       title: (a.preview || "—").slice(0, 80),
       sub: [`${fmtTime(a.created_at)} · ${t("ann_groups", { n: a.groups })}`, a.deleted ? [" ", badge(t("ann_deleted_badge"), "bad")] : null],
-      side: a.deleted || !a.groups ? null : el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--danger-soft);color:var(--danger)",
-        type: "button", "aria-label": t("ann_delete"), onclick: (e) => act(e.currentTarget, async () => {
-          if (!(await confirmMsg(t("ann_delete_confirm")))) return;
-          const r = await api("announce.delete", { id: a.id });
-          invalidate("annHistory"); haptic("ok"); toast(t("ann_deleted", { n: r.deleted, total: r.total })); render();
-        }) }, icon("trash")),
+      side: el("div", { class: "side-btns" },
+        a.story_url ? el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--ok-soft);color:var(--ok)",
+          type: "button", "aria-label": t("story_share"), title: t("story_share"), onclick: () => shareStory(a) }, icon("story")) : null,
+        a.deleted || !a.groups ? null : el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--danger-soft);color:var(--danger)",
+          type: "button", "aria-label": t("ann_delete"), onclick: (e) => act(e.currentTarget, async () => {
+            if (!(await confirmMsg(t("ann_delete_confirm")))) return;
+            const r = await api("announce.delete", { id: a.id });
+            invalidate("annHistory"); haptic("ok"); toast(t("ann_deleted", { n: r.deleted, total: r.total })); render();
+          }) }, icon("trash"))),
     }));
 
     return [

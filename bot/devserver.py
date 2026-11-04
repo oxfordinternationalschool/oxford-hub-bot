@@ -17,7 +17,9 @@ PUBLIC = Path(__file__).resolve().parent.parent / "public"
 
 async def api(request: web.Request) -> web.Response:
     headers = {k.lower(): v for k, v in request.headers.items()}
-    status, body, content_type = await handle(request.method, headers, await request.read())
+    status, body, content_type = await handle(request.method, headers, await request.read(), request.query_string)
+    if isinstance(body, bytes):
+        return web.Response(status=status, body=body, content_type=content_type)
     return web.Response(status=status, text=body, content_type=content_type.split(";")[0], charset="utf-8")
 
 

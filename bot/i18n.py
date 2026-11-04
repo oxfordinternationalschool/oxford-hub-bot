@@ -640,6 +640,26 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Это группа старого типа: в ней Telegram не разрешает ботам назначать админов.",
         "en": "This is an old-style group: Telegram doesn't let bots appoint admins there.",
     },
+    "gadm_joined": {
+        "uz": "✅ {name} taklif havolasi orqali «{group}» guruhiga kirdi va admin qilindi.",
+        "ru": "✅ {name} вступил(а) в группу «{group}» по ссылке-приглашению и стал(а) админом.",
+        "en": "✅ {name} joined «{group}» through the invite link and is now an admin.",
+    },
+    "gadm_joined_failed": {
+        "uz": "⚠️ {name} taklif havolasi orqali «{group}» guruhiga kirdi, lekin admin qilinmadi.\n{reason}",
+        "ru": "⚠️ {name} вступил(а) в группу «{group}» по ссылке-приглашению, но админом не стал(а).\n{reason}",
+        "en": "⚠️ {name} joined «{group}» through the invite link but wasn't made an admin.\n{reason}",
+    },
+    "gadm_wrong_person": {
+        "uz": "⚠️ «{group}» guruhiga {name} uchun berilgan havola orqali boshqa odam kirdi: {who}. U admin qilinmadi.",
+        "ru": "⚠️ По ссылке в группу «{group}», выданной для {name}, вступил другой человек: {who}. Админом он не стал.",
+        "en": "⚠️ Someone else joined «{group}» through the link made for {name}: {who}. They weren't made an admin.",
+    },
+    "gadm_invite_failed": {
+        "uz": "Taklif havolasini yaratib bo'lmadi: botga bu guruhda «Foydalanuvchilarni taklif qilish» huquqini bering.",
+        "ru": "Не удалось создать ссылку-приглашение: дайте боту в этой группе право «Приглашение пользователей».",
+        "en": "Couldn't create an invite link: give the bot the \"Invite users\" right in this group.",
+    },
     "gadm_error": {
         "uz": "Telegram rad etdi. Birozdan keyin qayta urinib ko'ring.",
         "ru": "Telegram отказал. Попробуйте чуть позже.",

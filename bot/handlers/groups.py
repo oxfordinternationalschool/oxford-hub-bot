@@ -2,6 +2,7 @@ import logging
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandObject
 from aiogram.types import ChatMemberUpdated, Message
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +12,7 @@ from bot.db.models import Floor, User
 from bot.filters import IsAdmin, is_admin
 from bot.i18n import t
 from bot.services.common import ensure_group, find_floor, migrate_group, notify_admins, parse_class, q
-from bot.services.group_admins import OK, set_group_admin
+from bot.services.group_admins import OK, invite_used, person_name, set_group_admin
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +60,34 @@ async def on_bot_membership(event: ChatMemberUpdated, session: AsyncSession, use
             await bot.send_message(event.chat.id, t(group.lang, "make_me_admin"))
     elif not group.bot_is_admin:
         await notify_admins(bot, session, "adm_group_not_admin", title=q(group.title))
+
+
+@router.chat_member(F.chat.type.in_(GROUP_TYPES), F.invite_link)
+async def on_join_by_link(event: ChatMemberUpdated, session: AsyncSession, bot: Bot):
+    """Someone joined through an admin invite made in the Mini App: they become an admin.
+    The link is for one person; if someone else got hold of it, they stay a plain member."""
+    joined = event.old_chat_member.status in GONE and event.new_chat_member.status not in GONE
+    if not joined:
+        return
+    pending = await invite_used(session, event.chat.id, event.invite_link.invite_link)
+    if pending is None:
+        return
+    group = await ensure_group(session, event.chat)
+    person = event.new_chat_member.user
+    expected = q(await person_name(session, pending.user_id))
+    admin = await session.get(User, pending.created_by)
+    lang = admin.lang if admin else group.lang
+    if person.id != pending.user_id:
+        text = t(lang, "gadm_wrong_person", name=expected, group=q(group.label), who=q(person.full_name))
+    else:
+        result = await set_group_admin(bot, event.chat.id, person.id, True)
+        text = (t(lang, "gadm_joined", name=q(person.full_name), group=q(group.label)) if result == OK else
+                t(lang, "gadm_joined_failed", name=q(person.full_name), group=q(group.label),
+                  reason=t(lang, f"gadm_{result}", name=q(person.full_name))))
+    try:
+        await bot.send_message(pending.created_by, text)
+    except TelegramAPIError as e:
+        log.info("Cannot tell admin %s about the join: %s", pending.created_by, e)
 
 
 @router.message(F.migrate_to_chat_id)

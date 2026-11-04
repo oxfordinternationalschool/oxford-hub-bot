@@ -37,7 +37,8 @@ from bot.services.media import (
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
 from bot.services.group_admins import (
-    group_status, member_status, new_request_id, person_name, picked_user, picker_button, set_group_admin,
+    admin_invite, group_status, member_status, new_request_id, pending_invites, person_name, picked_user, picker_button,
+    set_group_admin,
 )
 from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.rich_text import to_telegram_html
@@ -534,7 +535,23 @@ async def op_admins_status(ctx: Ctx, args: dict):
     user_id = _user_id(args)
     groups = await _active_groups(ctx)
     statuses = await _for_groups(groups, lambda g: group_status(ctx.bot, g.chat_id, user_id), limit=8)
-    return [{"chat_id": g.chat_id, "label": g.label, "status": s} for g, s in zip(groups, statuses)]
+    invites = await pending_invites(ctx.session, user_id)
+    return [{
+        "chat_id": g.chat_id, "label": g.label, "status": s,
+        "invite": invites[g.chat_id].invite_link if s == "absent" and g.chat_id in invites else None,
+    } for g, s in zip(groups, statuses)]
+
+
+@op("admins.invite")
+async def op_admins_invite(ctx: Ctx, args: dict):
+    """A one-use invite link for someone not in the group yet; they become an admin as they join."""
+    user_id = _user_id(args)
+    group = await _get(ctx, Group, _int(args, "chat_id"))
+    name = await person_name(ctx.session, user_id)
+    pending = await admin_invite(ctx.bot, ctx.session, group.chat_id, user_id, name, by=ctx.user.id)
+    if pending is None:
+        raise ctx.error("gadm_invite_failed")
+    return {"link": pending.invite_link, "expires_at": _iso(pending.expires_at)}
 
 
 @op("admins.set")

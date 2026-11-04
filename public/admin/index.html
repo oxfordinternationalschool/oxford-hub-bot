@@ -341,12 +341,15 @@ const T = {
     gadm_done: "{n} ta guruhda bajarildi", gadm_failed: "Bu guruhlarda bo'lmadi:",
     more_admins: "Guruh adminlari", more_admins_d: "Istalgan odamni sinf guruhida admin qilish",
     ga_pick: "Odamni tanlash", ga_pick_other: "Boshqa odamni tanlash",
-    ga_pick_hint: "Telegram'dagi kontakt va chatlaringizdan odamni tanlaysiz. U botga ulangan bo'lishi shart emas, lekin admin qilinadigan guruhda a'zo bo'lishi kerak.",
+    ga_pick_hint: "Telegram'dagi kontakt va chatlaringizdan odamni tanlaysiz. U botga ulangan bo'lishi shart emas. Guruhda bo'lmasa, unga taklif havolasi yuborasiz: kirishi bilan admin bo'ladi.",
     ga_where: "Qaysi guruhlarda admin bo'lsin?", ga_tick: "Guruhlarni belgilang", ga_promote: "Belgilangan {n} ta guruhda admin qilish",
     ga_select_all: "Hammasini belgilash", ga_clear: "Belgini olib tashlash",
     ga_confirm: "{name} shu guruhlarda admin qilinsinmi?\n{groups}", ga_remove: "Olib tashlash",
     ga_remove_confirm: "{name} {group} guruhida adminlikdan olinsinmi?",
-    ga_nowhere: "Bu odam belgilash mumkin bo'lgan guruhda yo'q: u admin qilinishi uchun avval guruhga a'zo bo'lishi kerak.",
+    ga_nowhere: "Bu odam hali hech qaysi guruhda a'zo emas. «Guruhda yo'q» yonidagi «Taklif havolasi» bilan unga havola yuboring: guruhga kirishi bilan admin bo'ladi.",
+    ga_invite: "Taklif havolasi", ga_invite_sent: "Havola orqali kirishi bilan admin bo'ladi (7 kun amal qiladi)",
+    ga_invite_text: "{group} guruhiga qo'shiling",
+    grp_invite_confirm: "{name} bu guruhda yo'q. Unga {group} guruhi uchun taklif havolasi yuborilsinmi? Havola orqali kirishi bilan admin bo'ladi.",
     ga_pick_failed: "Tanlangan odam haqida xabar kelmadi. Qayta urinib ko'ring.", ga_update_tg: "Odam tanlash uchun Telegram'ni yangilang.",
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
@@ -420,12 +423,15 @@ const T = {
     gadm_done: "Готово в {n} группах", gadm_failed: "Не получилось в этих группах:",
     more_admins: "Админы групп", more_admins_d: "Сделать любого человека админом группы класса",
     ga_pick: "Выбрать человека", ga_pick_other: "Выбрать другого",
-    ga_pick_hint: "Вы выбираете человека из своих контактов и чатов в Telegram. Ему не нужно подключаться к боту, но он должен состоять в группе, где станет админом.",
+    ga_pick_hint: "Вы выбираете человека из своих контактов и чатов в Telegram. Ему не нужно подключаться к боту. Если его нет в группе, отправьте ему ссылку-приглашение: вступив по ней, он станет админом.",
     ga_where: "В каких группах сделать админом?", ga_tick: "Отметьте группы", ga_promote: "Сделать админом в {n} отмеченных группах",
     ga_select_all: "Отметить все", ga_clear: "Снять отметки",
     ga_confirm: "Сделать {name} админом в этих группах?\n{groups}", ga_remove: "Снять",
     ga_remove_confirm: "Снять {name} с админов группы {group}?",
-    ga_nowhere: "Этот человек не состоит ни в одной группе, где его можно отметить: чтобы стать админом, он должен быть участником группы.",
+    ga_nowhere: "Этот человек пока не состоит ни в одной группе. Отправьте ему ссылку кнопкой «Ссылка-приглашение» рядом с «Нет в группе»: вступив по ней, он станет админом.",
+    ga_invite: "Ссылка-приглашение", ga_invite_sent: "Станет админом, как только вступит по ссылке (действует 7 дней)",
+    ga_invite_text: "Вступайте в группу {group}",
+    grp_invite_confirm: "{name} нет в этой группе. Отправить ссылку-приглашение в группу {group}? Вступив по ней, он станет админом.",
     ga_pick_failed: "Не пришли данные о выбранном человеке. Попробуйте ещё раз.", ga_update_tg: "Чтобы выбрать человека, обновите Telegram.",
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
@@ -499,12 +505,15 @@ const T = {
     gadm_done: "Done in {n} groups", gadm_failed: "Didn't work in these groups:",
     more_admins: "Group admins", more_admins_d: "Make anyone an admin of a class group",
     ga_pick: "Choose a person", ga_pick_other: "Choose someone else",
-    ga_pick_hint: "You choose the person from your Telegram contacts and chats. They don't have to use the bot, but they must be a member of the group they become an admin of.",
+    ga_pick_hint: "You choose the person from your Telegram contacts and chats. They don't have to use the bot. If they aren't in the group, send them an invite link: once they join through it, they become an admin.",
     ga_where: "Which groups should they be an admin of?", ga_tick: "Tick the groups", ga_promote: "Make admin in {n} ticked groups",
     ga_select_all: "Tick all", ga_clear: "Untick all",
     ga_confirm: "Make {name} an admin of these groups?\n{groups}", ga_remove: "Remove",
     ga_remove_confirm: "Remove {name} as an admin of {group}?",
-    ga_nowhere: "This person isn't in any group you could tick: they must be a member of a group to become its admin.",
+    ga_nowhere: "This person isn't in any of the groups yet. Send them a link with «Invite link» next to «Not in the group»: once they join through it, they become an admin.",
+    ga_invite: "Invite link", ga_invite_sent: "Becomes an admin on joining through the link (valid 7 days)",
+    ga_invite_text: "Join the {group} group",
+    grp_invite_confirm: "{name} isn't in this group. Send them an invite link to {group}? Once they join through it, they become an admin.",
     ga_pick_failed: "The chosen person didn't come through. Please try again.", ga_update_tg: "Please update Telegram to choose a person.",
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
@@ -656,8 +665,8 @@ async function copyText(text) {
   }
   haptic("ok"); toast(t("copied"));
 }
-function share(link) {
-  const url = "https://t.me/share/url?url=" + encodeURIComponent(link);
+function share(link, text) {
+  const url = "https://t.me/share/url?url=" + encodeURIComponent(link) + (text ? "&text=" + encodeURIComponent(text) : "");
   if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
 }
 
@@ -1462,10 +1471,22 @@ function adminPanel(person) {
     const rows = list.map((g) => {
       const on = chosen.has(g.chat_id);
       const kind = g.status === "member" ? (on ? " on" : "") : g.status === "admin" || g.status === "admin_other" || g.status === "owner" ? " done" : " off";
+      let side = null;
+      if (g.status === "admin") side = el("button", { class: "btn danger sm", type: "button", onclick: (e) => act(e.currentTarget, () => remove(g)) }, t("ga_remove"));
+      // Not in the group: a link for them alone; joining through it makes them an admin.
+      else if (g.status === "absent" && g.invite) side = el("div", { class: "btns" },
+        el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--surface-2)", type: "button", "aria-label": t("copy"), onclick: () => copyText(g.invite) }, icon("copy")),
+        el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--accent-soft);color:var(--accent)", type: "button", "aria-label": t("share"),
+          onclick: () => share(g.invite, t("ga_invite_text", { group: g.label })) }, icon("share")));
+      else if (g.status === "absent") side = el("button", { class: "btn soft sm", type: "button", onclick: (e) => act(e.currentTarget, async () => {
+        g.invite = (await api("admins.invite", { user_id: person.id, chat_id: g.chat_id })).link;
+        haptic("ok"); draw(); share(g.invite, t("ga_invite_text", { group: g.label }));
+      }) }, t("ga_invite"));
       return row({
         lead: el("span", { class: "tick" + kind }, on || kind === " done" ? icon("check") : null),
-        title: g.label, sub: badge(t("gst_" + g.status), GST_KIND[g.status]),
-        side: g.status === "admin" ? el("button", { class: "btn danger sm", type: "button", onclick: (e) => act(e.currentTarget, () => remove(g)) }, t("ga_remove")) : null,
+        title: g.label,
+        sub: [badge(t("gst_" + g.status), GST_KIND[g.status]), g.invite ? el("div", { style: "margin-top:4px" }, t("ga_invite_sent")) : null],
+        side,
         onclick: g.status === "member" ? () => { on ? chosen.delete(g.chat_id) : chosen.add(g.chat_id); haptic(); draw(); } : null,
       });
     });
@@ -1705,7 +1726,15 @@ function openGroup(g, floors) {
   const addAdmin = el("button", { class: "btn soft block mt", type: "button", onclick: () => act(addAdmin, async () => {
     const p = await pickPerson();
     if (!p || !(await confirmMsg(t("grp_add_confirm", { name: p.name, group: groupLabel(g) })))) return;
-    await reportResults(await setAdmin(p, [{ chat_id: g.chat_id, label: groupLabel(g) }], true)); loadAdmins();
+    const results = await setAdmin(p, [{ chat_id: g.chat_id, label: groupLabel(g) }], true);
+    if (results[0] && results[0].result === "not_member") {
+      // Not in the group yet: offer a link for them alone; joining through it makes them an admin.
+      if (!(await confirmMsg(t("grp_invite_confirm", { name: p.name, group: groupLabel(g) })))) return;
+      const { link } = await api("admins.invite", { user_id: p.id, chat_id: g.chat_id });
+      haptic("ok"); share(link, t("ga_invite_text", { group: groupLabel(g) }));
+      return;
+    }
+    await reportResults(results); loadAdmins();
   }) }, icon("plus"), t("grp_add_admin"));
   openSheet(groupLabel(g), el("div", { class: "hint", style: "margin:0 2px" }, g.title),
     field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang), save,

@@ -175,6 +175,22 @@ class PickedUser(Base):
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
+class PendingAdmin(Base):
+    """A one-person invite link to a group: whoever it was made for becomes an admin as soon
+    as they join through it (the bot sees the join as a chat_member update)."""
+
+    __tablename__ = "pending_admins"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    user_id: Mapped[int] = mapped_column(BigInteger)
+    invite_link: Mapped[str] = mapped_column(String(255), index=True)
+    created_by: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    expires_at: Mapped[datetime]
+    used: Mapped[bool | None] = mapped_column(default=False)
+
+
 class FsmState(Base):
     """Conversation state (e.g. an announcement draft). Kept in the DB because on Vercel
     each update may be handled by a different short-lived process."""

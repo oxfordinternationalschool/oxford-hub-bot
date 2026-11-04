@@ -14,14 +14,14 @@ import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, CopyMessages, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages,
+    CopyMessage, CopyMessages, CreateChatInviteLink, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages,
     GetChatAdministrators, GetChatMember, SavePreparedKeyboardButton,
     GetFile, GetMe, GetWebhookInfo, PostStory, PromoteChatMember, SendDocument, SendMediaGroup, SendMessage, SendPhoto,
     SendRichMessage, SendVideo, SendVoice,
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
-    Chat, ChatMemberAdministrator, ChatMemberLeft, ChatMemberMember, ChatMemberOwner, Document, File, InputMediaPhoto, Message, MessageId,
+    Chat, ChatInviteLink, ChatMemberAdministrator, ChatMemberLeft, ChatMemberMember, ChatMemberOwner, Document, File, InputMediaPhoto, Message, MessageId,
     PhotoSize, PreparedKeyboardButton, Story, Update, User, Video, Voice, WebhookInfo,
 )
 from PIL import Image
@@ -56,6 +56,7 @@ class FakeSession(BaseSession):
         self.reject_delete = False  # simulate a group where the bot may not delete messages
         self.reject_ephemeral_edit = False  # simulate an ephemeral message that has expired
         self.reject_ephemeral = False  # simulate Telegram refusing ephemeral messages
+        self.reject_invite = False  # simulate a group where the bot may not invite users
         self.ephemeral_ids = itertools.count(1)
         # (chat_id, user_id) -> chat member fields; the bot is an admin with every right, others are members.
         self.members: dict[tuple[int, int], dict] = {}
@@ -88,6 +89,12 @@ class FakeSession(BaseSession):
             ids = [BOT_USER["id"]] + [uid for (cid, uid), m in self.members.items()
                                       if cid == method.chat_id and m["status"] in ("administrator", "creator")]
             return [self.member(method.chat_id, uid) for uid in ids]
+        if isinstance(method, CreateChatInviteLink):
+            if self.reject_invite:
+                raise TelegramBadRequest(method=method, message="Bad Request: not enough rights to invite users")
+            return ChatInviteLink(invite_link=f"https://t.me/+link{next(self._ids)}", creator=User(**BOT_USER),
+                                  creates_join_request=False, is_primary=False, is_revoked=False, name=method.name,
+                                  member_limit=method.member_limit, expire_date=method.expire_date)
         if isinstance(method, SavePreparedKeyboardButton):
             return PreparedKeyboardButton(id=f"pkb{next(self._ids)}")
         if isinstance(method, PromoteChatMember):
@@ -237,6 +244,20 @@ class Harness:
             "old_chat_member": {"status": "left", "user": BOT_USER},
             "new_chat_member": {"status": status, "user": BOT_USER},
         })
+
+    async def joined(self, chat_id, uid, link=None, title="7-B sinf"):
+        """`uid` joins the group, through `link` if given (a chat_member update)."""
+        body = {
+            "chat": {"id": chat_id, "type": "supergroup", "title": title},
+            "from": self._user(uid), "date": int(time.time()),
+            "old_chat_member": {"status": "left", "user": self._user(uid)},
+            "new_chat_member": {"status": "member", "user": self._user(uid)},
+        }
+        if link:
+            body["invite_link"] = {"invite_link": link, "creator": BOT_USER, "creates_join_request": False,
+                                   "is_primary": False, "is_revoked": False}
+        self.api.members.pop((chat_id, uid), None)  # a member from now on
+        await self._send("chat_member", body)
 
     async def register(self, uid, start_arg=""):
         """/start + pick Uzbek, as a real user would."""

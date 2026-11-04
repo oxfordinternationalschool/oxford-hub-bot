@@ -10,7 +10,7 @@ lets the admin pick them in Telegram's own people picker (a "prepared keyboard b
 """
 import logging
 import secrets
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
@@ -20,11 +20,12 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import utcnow
-from bot.db.models import PickedUser, User
+from bot.db.models import PendingAdmin, PickedUser, User
 
 log = logging.getLogger(__name__)
 
 PICK_TTL = timedelta(days=1)
+INVITE_TTL = timedelta(days=7)
 
 GRANTED = ("can_delete_messages", "can_restrict_members", "can_invite_users", "can_pin_messages",
            "can_manage_video_chats")
@@ -92,6 +93,51 @@ async def set_group_admin(bot: Bot, chat_id: int, user_id: int, make_admin: bool
         log.warning("Cannot change admin %s in %s: %s", user_id, chat_id, e)
         return ERROR
     return OK
+
+
+# ---------- An invite link that makes its person an admin on joining ----------
+
+async def admin_invite(bot: Bot, session: AsyncSession, chat_id: int, user_id: int, name: str, by: int) -> PendingAdmin | None:
+    """A one-use invite link for `user_id`, who isn't in the group yet (the same one again while it is valid).
+    None if Telegram refuses (the bot needs the right to invite users)."""
+    now = utcnow()
+    pending = await session.scalar(select(PendingAdmin).where(
+        PendingAdmin.chat_id == chat_id, PendingAdmin.user_id == user_id,
+        PendingAdmin.used.is_not(True), PendingAdmin.expires_at > now + timedelta(hours=1),
+    ).order_by(PendingAdmin.id.desc()).limit(1))
+    if pending is not None:
+        return pending
+    expires = now + INVITE_TTL
+    try:
+        link = await bot.create_chat_invite_link(
+            chat_id, name=f"Admin: {name}"[:32], member_limit=1, expire_date=expires.replace(tzinfo=timezone.utc),
+        )
+    except TelegramAPIError as e:
+        log.info("Cannot create an admin invite for %s in %s: %s", user_id, chat_id, e)
+        return None
+    pending = PendingAdmin(chat_id=chat_id, user_id=user_id, invite_link=link.invite_link, created_by=by, expires_at=expires)
+    session.add(pending)
+    await session.commit()
+    return pending
+
+
+async def pending_invites(session: AsyncSession, user_id: int) -> dict[int, PendingAdmin]:
+    """chat_id -> the person's valid admin invite there."""
+    rows = (await session.scalars(select(PendingAdmin).where(
+        PendingAdmin.user_id == user_id, PendingAdmin.used.is_not(True), PendingAdmin.expires_at > utcnow(),
+    ).order_by(PendingAdmin.id))).all()
+    return {p.chat_id: p for p in rows}
+
+
+async def invite_used(session: AsyncSession, chat_id: int, link: str) -> PendingAdmin | None:
+    """The pending admin invite someone just joined through, marked used (each link works once)."""
+    pending = await session.scalar(select(PendingAdmin).where(
+        PendingAdmin.chat_id == chat_id, PendingAdmin.invite_link == link, PendingAdmin.used.is_not(True),
+    ))
+    if pending is not None:
+        pending.used = True
+        await session.commit()
+    return pending
 
 
 # ---------- Picking a person in Telegram's own picker (from the Mini App) ----------

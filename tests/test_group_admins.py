@@ -1,9 +1,9 @@
 """School admins make people admins of the class groups through the bot."""
-from aiogram.methods import DeleteMessage, PromoteChatMember, SavePreparedKeyboardButton
+from aiogram.methods import CreateChatInviteLink, DeleteMessage, PromoteChatMember, SavePreparedKeyboardButton
 
 from test_flow import ADMIN, GROUP, STUDENT, TEACHER, setup_school
 from test_media_announce import GROUP_A, GROUP_B, school
-from test_webapp_api import ok
+from test_webapp_api import api, ok
 
 STRANGER = 77  # never started the bot
 OTHER_ADMIN = 8
@@ -120,3 +120,60 @@ async def test_group_sheet_lists_its_admins(wh):
 
     admins = await ok("groups.admins", {"chat_id": GROUP_A})
     assert [(a["id"], a["status"]) for a in admins] == [(50, "owner"), (52, "admin"), (51, "admin_other")]  # no bots
+
+
+async def pick(wh, uid=STRANGER, first="Anvar", last="Qodirov"):
+    """The admin picks `uid` in Telegram's people picker."""
+    button = await ok("admins.pick")
+    await wh.private_media(ADMIN, users_shared={"request_id": button["request_id"], "users": [
+        {"user_id": uid, "first_name": first, "last_name": last}]})
+    return await ok("admins.picked", {"request_id": button["request_id"]})
+
+
+async def test_invite_link_makes_the_person_an_admin_as_they_join(wh):
+    await school(wh)
+    person = await pick(wh)
+    wh.api.set_member(GROUP_A, STRANGER, "left")
+
+    link = (await ok("admins.invite", {"user_id": STRANGER, "chat_id": GROUP_A}))["link"]
+    [created] = wh.api.sent(kind=CreateChatInviteLink)
+    assert created.chat_id == GROUP_A and created.member_limit == 1 and created.name == "Admin: Anvar Qodirov"
+    assert (await ok("admins.invite", {"user_id": STRANGER, "chat_id": GROUP_A}))["link"] == link  # the same one again
+    assert len(wh.api.sent(kind=CreateChatInviteLink)) == 1
+    status = {g["chat_id"]: g for g in await ok("admins.status", {"user_id": person["id"]})}
+    assert status[GROUP_A]["status"] == "absent" and status[GROUP_A]["invite"] == link
+    assert status[GROUP_B]["invite"] is None
+
+    wh.api.requests.clear()
+    await wh.joined(GROUP_A, STRANGER, link, title="7-A sinf")
+    [promote] = wh.api.sent(kind=PromoteChatMember)
+    assert promote.chat_id == GROUP_A and promote.user_id == STRANGER and promote.can_manage_chat
+    assert "admin qilindi" in wh.api.sent(ADMIN)[-1].text and "7-A" in wh.api.sent(ADMIN)[-1].text
+
+    await wh.joined(GROUP_A, STRANGER, link)  # the link works once
+    assert len(wh.api.sent(kind=PromoteChatMember)) == 1
+
+
+async def test_someone_else_with_the_link_stays_a_member(wh):
+    await school(wh)
+    await pick(wh)
+    wh.api.set_member(GROUP_A, STRANGER, "left")
+    link = (await ok("admins.invite", {"user_id": STRANGER, "chat_id": GROUP_A}))["link"]
+    await wh.joined(GROUP_A, 88, link)
+    assert wh.api.sent(kind=PromoteChatMember) == []
+    assert "boshqa odam kirdi: User88" in wh.api.sent(ADMIN)[-1].text
+
+
+async def test_ordinary_joins_are_ignored(wh):
+    await school(wh)
+    wh.api.requests.clear()
+    await wh.joined(GROUP_A, 88)
+    await wh.joined(GROUP_A, 89, "https://t.me/+someone_elses")
+    assert wh.api.sent(kind=PromoteChatMember) == [] and wh.api.sent(ADMIN) == []
+
+
+async def test_invite_needs_the_invite_right(wh):
+    await school(wh)
+    wh.api.reject_invite = True
+    status, body = await api("admins.invite", {"user_id": STRANGER, "chat_id": GROUP_A})
+    assert status == 400 and "taklif qilish" in body["message"]

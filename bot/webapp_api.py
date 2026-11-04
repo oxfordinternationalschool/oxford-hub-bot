@@ -36,7 +36,8 @@ from bot.services.media import (
 )
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
-from bot.services.menus import set_user_menu
+from bot.services.group_admins import group_status, set_group_admin
+from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.rich_text import to_telegram_html
 from bot.services.roles import is_valid_key, trigger_cache
 from bot.services.stories import editor_text, post_story, story_account, story_caption, story_link, story_photo
@@ -279,6 +280,7 @@ async def op_roles_create(ctx: Ctx, args: dict):
     role, text = await views.create_role(ctx.session, ctx.lang, parts + name.split())
     if role is None:
         raise ApiError(400, "invalid", _plain(text))
+    await sync_group_commands(ctx.bot, ctx.session)
     return {"id": role.id}
 
 
@@ -308,6 +310,7 @@ async def op_roles_update(ctx: Ctx, args: dict):
         role.aliases = " ".join(clean)
     await ctx.session.commit()
     trigger_cache.invalidate()
+    await sync_group_commands(ctx.bot, ctx.session)
     return {"id": role.id}
 
 
@@ -315,6 +318,7 @@ async def op_roles_update(ctx: Ctx, args: dict):
 async def op_roles_delete(ctx: Ctx, args: dict):
     role = await _get(ctx, Role, _int(args, "id"), "role_not_found")
     await views.delete_role(ctx.session, role)
+    await sync_group_commands(ctx.bot, ctx.session)
     return {}
 
 
@@ -476,6 +480,45 @@ async def op_staff_remove_role(ctx: Ctx, args: dict):
     ))
     await ctx.session.commit()
     return await _user_out(ctx, target)
+
+
+async def _for_groups(groups: list[Group], fn, limit: int) -> list:
+    """Runs fn(group) for every group, a few at a time (only Telegram calls, no database)."""
+    gate = asyncio.Semaphore(limit)
+
+    async def one(group: Group):
+        async with gate:
+            return await fn(group)
+
+    return await asyncio.gather(*(one(g) for g in groups))
+
+
+async def _active_groups(ctx: Ctx) -> list[Group]:
+    return sorted((await ctx.session.scalars(select(Group).where(Group.is_active))).all(), key=group_sort_key)
+
+
+@op("staff.group_admin")
+async def op_staff_group_admin(ctx: Ctx, args: dict):
+    """Where the person is an admin, a member, or absent, in every class group."""
+    target = await _get(ctx, User, _int(args, "user_id"), "user_not_found")
+    groups = await _active_groups(ctx)
+    statuses = await _for_groups(groups, lambda g: group_status(ctx.bot, g.chat_id, target.id), limit=8)
+    return [{"chat_id": g.chat_id, "label": g.label, "status": s} for g, s in zip(groups, statuses)]
+
+
+@op("staff.set_group_admin")
+async def op_staff_set_group_admin(ctx: Ctx, args: dict):
+    target = await _get(ctx, User, _int(args, "user_id"), "user_not_found")
+    make_admin = _bool(args, "value")
+    chat_ids = args.get("chat_ids")
+    if not isinstance(chat_ids, list) or not chat_ids or not all(isinstance(c, int) for c in chat_ids):
+        raise ApiError(400, "bad_args", "chat_ids")
+    groups = [g for g in await _active_groups(ctx) if g.chat_id in set(chat_ids)]
+    results = await _for_groups(groups, lambda g: set_group_admin(ctx.bot, g.chat_id, target.id, make_admin), limit=5)
+    return [{
+        "chat_id": g.chat_id, "label": g.label, "result": r,
+        "message": None if r == "ok" else html.unescape(_plain(t(ctx.lang, f"gadm_{r}", name=html.escape(target.full_name)))),
+    } for g, r in zip(groups, results)]
 
 
 # ---------- Invites ----------

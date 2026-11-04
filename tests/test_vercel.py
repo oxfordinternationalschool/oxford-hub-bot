@@ -63,6 +63,7 @@ async def test_cron_tick_deletes_due_notices(wh):
     await wh.register(ADMIN)
     await wh.private(ADMIN, "/addrole cleaner 🧹 Tozalovchi")
     await wh.bot_added(GROUP, ADMIN)
+    wh.api.reject_ephemeral = True  # no private notice possible, so a visible one that is deleted later
     await wh.group(GROUP, STUDENT, "#cleaner")
     async with wh.sessionmaker() as s:
         pending = await s.scalar(PendingDelete.__table__.select())

@@ -11,6 +11,7 @@ from bot.db.models import Floor, User
 from bot.filters import IsAdmin, is_admin
 from bot.i18n import t
 from bot.services.common import ensure_group, find_floor, migrate_group, notify_admins, parse_class, q
+from bot.services.group_admins import OK, set_group_admin
 
 log = logging.getLogger(__name__)
 
@@ -100,6 +101,21 @@ async def cmd_grouplang(message: Message, command: CommandObject, session: Async
     group.lang = code
     await session.commit()
     await message.reply(t(group.lang, "lang_set"))
+
+
+@router.message(Command("promote", "demote"), IsAdmin())
+async def cmd_promote(message: Message, command: CommandObject, session: AsyncSession, bot: Bot):
+    """A school admin replies to someone's message with /promote (or /demote)."""
+    group = await ensure_group(session, message.chat)
+    reply = message.reply_to_message
+    target = reply.from_user if reply and not reply.forum_topic_created else None
+    if target is None or target.id == bot.id:
+        await message.reply(t(group.lang, "gadm_usage"))
+        return
+    make_admin = command.command.lower() == "promote"
+    result = await set_group_admin(bot, message.chat.id, target.id, make_admin)
+    key = ("gadm_promoted" if make_admin else "gadm_demoted") if result == OK else f"gadm_{result}"
+    await message.reply(t(group.lang, key, name=q(target.full_name)))
 
 
 @router.message(Command("groupinfo"), IsAdmin())

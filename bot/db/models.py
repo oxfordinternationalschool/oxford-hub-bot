@@ -107,6 +107,10 @@ class Call(Base):
     accepted_by: Mapped[int | None] = mapped_column(BigInteger)
     trigger_message_id: Mapped[int]
     group_message_id: Mapped[int | None]
+    # Hidden calls: the class never saw the call (an ephemeral command, or the bot deleted the
+    # tag message), and its status is shown only to the teacher, as an ephemeral message.
+    hidden: Mapped[bool | None] = mapped_column(default=False)
+    status_ephemeral_id: Mapped[int | None]
     escalated: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     accepted_at: Mapped[datetime | None]

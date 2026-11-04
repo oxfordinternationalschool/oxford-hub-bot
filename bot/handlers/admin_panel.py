@@ -19,6 +19,7 @@ from bot.handlers.announce import AnnounceSG, active_groups
 from bot.i18n import t
 from bot.services import admin_views as views
 from bot.services.common import q
+from bot.services.menus import sync_group_commands
 
 router = Router(name="admin_panel")
 router.message.filter(F.chat.type == ChatType.PRIVATE, IsAdmin())
@@ -152,10 +153,11 @@ async def on_role_delete(cb: CallbackQuery, callback_data: AdmCb, session: Async
 
 
 @router.callback_query(AdmCb.filter(F.s == "role_del_ok"))
-async def on_role_delete_ok(cb: CallbackQuery, callback_data: AdmCb, session: AsyncSession, lang: str):
+async def on_role_delete_ok(cb: CallbackQuery, callback_data: AdmCb, session: AsyncSession, lang: str, bot: Bot):
     role = await session.get(Role, callback_data.v)
     if role is not None:
         await views.delete_role(session, role)
+        await sync_group_commands(bot, session)
     await _show(cb, *await _roles_screen(session, lang))
 
 
@@ -166,11 +168,12 @@ async def on_role_add(cb: CallbackQuery, state: FSMContext, lang: str):
 
 
 @router.message(AdminSG.add_role, F.text)
-async def on_role_input(message: Message, state: FSMContext, session: AsyncSession, lang: str):
+async def on_role_input(message: Message, state: FSMContext, session: AsyncSession, lang: str, bot: Bot):
     role, text = await views.create_role(session, lang, message.text.split())
     if role is None:
         await message.answer(text + "\n\n" + t(lang, "ask_role_input"))
         return
+    await sync_group_commands(bot, session)
     await state.clear()
     kb = _builder()
     kb.button(text=role.title, callback_data=AdmCb(s="role", v=role.id))

@@ -330,6 +330,12 @@ const T = {
     m_photo: "Rasm", m_video: "Video", m_voice: "Ovozli xabar", m_audio: "Audio", m_document: "Fayl", m_video_note: "Video xabar", m_animation: "GIF",
     search: "Ism yoki @username", perm_admin: "Admin", perm_announcer: "E'lon beruvchi", perm_teacher: "O'qituvchi",
     no_users: "Hech kim topilmadi", rights: "Huquqlar", user_roles: "Xodim rollari", add_role: "Rol berish",
+    gadm_title: "Sinf guruhlarida admin", gadm_load: "Guruhlarni ko'rish", gadm_no_groups: "Faol guruh yo'q",
+    gadm_hint: "Bot bu odamni guruh admini qiladi. U xabarlarni o'chira oladi, a'zolarni cheklay oladi, xabarni qadaydi va odam qo'sha oladi. Yangi admin tayinlay olmaydi, guruh nomini ham o'zgartira olmaydi. Odam o'sha guruhda bo'lishi kerak.",
+    gadm_all: "{n} ta guruhda admin qilish", gadm_all_confirm: "{name} {n} ta guruhda admin qilinsinmi?",
+    gadm_done: "{n} ta guruhda bajarildi", gadm_failed: "Bu guruhlarda bo'lmadi:",
+    gst_owner: "Guruh egasi", gst_admin: "Admin", gst_admin_other: "Admin (boshqa admin tayinlagan)", gst_member: "A'zo",
+    gst_absent: "Guruhda yo'q", gst_unknown: "Tekshirib bo'lmadi",
     role: "Rol", floor: "Qavat", all_floors: "Barcha qavatlar", add: "Qo'shish", main_admin: "Bosh admin", you: "Siz",
     saved: "Saqlandi", staff_hint: "Ro'yxatda botga /start yozganlar bor. Yangi xodimga taklif havolasini yuboring.",
     no_roles_yet: "Avval «Rollar» bo'limida rol yarating.", invite_staff: "Taklif havolasi",
@@ -393,6 +399,12 @@ const T = {
     m_photo: "Фото", m_video: "Видео", m_voice: "Голосовое", m_audio: "Аудио", m_document: "Файл", m_video_note: "Видеосообщение", m_animation: "GIF",
     search: "Имя или @username", perm_admin: "Админ", perm_announcer: "Публикует объявления", perm_teacher: "Учитель",
     no_users: "Никого не найдено", rights: "Права", user_roles: "Роли сотрудника", add_role: "Назначить роль",
+    gadm_title: "Админ в группах классов", gadm_load: "Показать группы", gadm_no_groups: "Нет активных групп",
+    gadm_hint: "Бот сделает человека админом группы. Он сможет удалять сообщения, ограничивать участников, закреплять сообщения и приглашать людей. Назначать админов и менять название группы он не сможет. Человек должен состоять в группе.",
+    gadm_all: "Сделать админом в {n} группах", gadm_all_confirm: "Сделать {name} админом в {n} группах?",
+    gadm_done: "Готово в {n} группах", gadm_failed: "Не получилось в этих группах:",
+    gst_owner: "Владелец группы", gst_admin: "Админ", gst_admin_other: "Админ (назначил другой админ)", gst_member: "Участник",
+    gst_absent: "Нет в группе", gst_unknown: "Не удалось проверить",
     role: "Роль", floor: "Этаж", all_floors: "Все этажи", add: "Добавить", main_admin: "Главный админ", you: "Вы",
     saved: "Сохранено", staff_hint: "В списке — те, кто написал боту /start. Новому сотруднику отправьте ссылку-приглашение.",
     no_roles_yet: "Сначала создайте роль в разделе «Роли».", invite_staff: "Ссылка-приглашение",
@@ -456,6 +468,12 @@ const T = {
     m_photo: "Photo", m_video: "Video", m_voice: "Voice message", m_audio: "Audio", m_document: "File", m_video_note: "Video message", m_animation: "GIF",
     search: "Name or @username", perm_admin: "Admin", perm_announcer: "Announcer", perm_teacher: "Teacher",
     no_users: "Nobody found", rights: "Rights", user_roles: "Staff roles", add_role: "Give a role",
+    gadm_title: "Admin in class groups", gadm_load: "Show groups", gadm_no_groups: "No active groups",
+    gadm_hint: "The bot makes this person a group admin. They can delete messages, restrict members, pin messages and invite people. They can't appoint admins or rename the group. The person must be in the group.",
+    gadm_all: "Make admin in {n} groups", gadm_all_confirm: "Make {name} an admin in {n} groups?",
+    gadm_done: "Done in {n} groups", gadm_failed: "Didn't work in these groups:",
+    gst_owner: "Group owner", gst_admin: "Admin", gst_admin_other: "Admin (appointed by another admin)", gst_member: "Member",
+    gst_absent: "Not in the group", gst_unknown: "Couldn't check",
     role: "Role", floor: "Floor", all_floors: "All floors", add: "Add", main_admin: "Main admin", you: "You",
     saved: "Saved", staff_hint: "People who sent /start to the bot appear here. Send new staff an invite link.",
     no_roles_yet: "Create a role in “Roles” first.", invite_staff: "Invite link",
@@ -1518,10 +1536,45 @@ function openUser(u, roles, floors) {
     invalidate("users", "roles"); haptic("ok"); toast(t("saved")); drawRoles();
   }) }, icon("plus"), t("add"));
 
+  // Admin rights in the class groups, given by the bot.
+  const GST_KIND = { owner: "acc", admin: "ok", admin_other: "ok", member: "", absent: "warn", unknown: "bad" };
+  const gadmBox = el("div", { class: "card" });
+  const setGroupAdmin = async (groups, value) => {
+    const results = await api("staff.set_group_admin", { user_id: u.id, chat_ids: groups.map((g) => g.chat_id), value });
+    for (const r of results) if (r.result === "ok") groups.find((g) => g.chat_id === r.chat_id).status = value ? "admin" : "member";
+    return results;
+  };
+  const drawGadm = (list) => {
+    const members = list.filter((g) => g.status === "member");
+    const rows = list.map((g) => row({
+      flat: true, title: g.label, sub: badge(t("gst_" + g.status), GST_KIND[g.status]),
+      side: g.status === "admin" || g.status === "member" ? toggle(g.status === "admin", (value, input) => act(null, async () => {
+        const [r] = await setGroupAdmin([g], value);
+        if (r.result !== "ok") { input.checked = !value; throw new Error(r.message); }
+        haptic("ok"); toast(t("saved")); drawGadm(list);
+      })) : null,
+    }));
+    const all = members.length > 1 ? el("button", { class: "btn soft block", type: "button", style: "margin:4px 0 0", onclick: () => act(all, async () => {
+      if (!(await confirmMsg(t("gadm_all_confirm", { name: u.name, n: members.length })))) return;
+      const failed = (await setGroupAdmin(members, true)).filter((r) => r.result !== "ok");
+      drawGadm(list);
+      haptic(failed.length ? "warning" : "ok");
+      toast(t("gadm_done", { n: members.length - failed.length }));
+      if (failed.length) await alertMsg(t("gadm_failed") + "\n" + failed.map((r) => `${r.label}: ${r.message}`).join("\n"));
+    }) }, icon("plus"), t("gadm_all", { n: members.length })) : null;
+    gadmBox.replaceChildren(...(rows.length ? rows : [empty(t("gadm_no_groups"), "users")]),
+      all ? el("div", { style: "padding:4px 16px 16px" }, all) : null);
+  };
+  const gadmLoad = el("button", { class: "btn soft block mt", type: "button", onclick: () => act(gadmLoad, async () => {
+    drawGadm(await api("staff.group_admin", { user_id: u.id }));
+  }) }, icon("users"), t("gadm_load"));
+  gadmBox.replaceChildren(el("div", { style: "padding:2px 16px 16px" }, el("div", { class: "hint" }, t("gadm_hint")), gadmLoad));
+
   openSheet(u.name,
     el("div", { style: "display:flex;align-items:center;gap:12px;margin:4px 0 6px" }, avatar(u.name, u.id),
       el("div", { class: "hint", style: "margin:0" }, [u.username ? "@" + u.username : null, "ID " + u.id, u.is_me ? t("you") : null].filter(Boolean).join(" · "))),
     header(t("rights")), card(["admin", "announcer", "teacher"].map(permRow)),
+    header(t("gadm_title")), gadmBox,
     header(t("user_roles")), rolesBox,
     header(t("add_role")),
     roles.length ? card(el("div", { style: "padding:2px 16px 16px" }, field(t("role"), roleSel), floors.length ? field(t("floor"), floorSel) : null, addBtn))

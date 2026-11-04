@@ -96,25 +96,31 @@ TEXTS: dict[str, dict[str, str]] = {
             "<b>👩‍🏫 Xodimni chaqirish</b>\n"
             "Sinf guruhida rol tegini yozing:\n"
             "<code>#cleaner partada suv to'kilgan</code>\n"
-            "<code>/cleaner</code> — buyruq ko'rinishida ham ishlaydi\n"
             "<code>#doctor!</code> — 🚨 shoshilinch chaqiruv\n"
-            "Biror xabarga javob (reply) qilib yozsangiz, o'sha xabar ham xodimga yuboriladi."
+            "Biror xabarga javob (reply) qilib yozsangiz, o'sha xabar ham xodimga yuboriladi.\n\n"
+            "🤫 Chaqiruvni sinf ko'rmaydi: bot teg yozilgan xabarni o'chiradi, holatini esa faqat sizga ko'rsatadi. "
+            "Guruhdagi <b>/</b> menyusidan tanlangan buyruq (<code>/cleaner</code>) esa umuman ko'rinmaydi. "
+            "Rasm yoki fayl biriktirilgan chaqiruv guruhda qoladi."
         ),
         "ru": (
             "<b>👩‍🏫 Вызов сотрудника</b>\n"
             "Напишите тег роли в группе класса:\n"
             "<code>#cleaner на парте пролита вода</code>\n"
-            "<code>/cleaner</code> — можно и командой\n"
             "<code>#doctor!</code> — 🚨 срочный вызов\n"
-            "Если написать ответом (reply) на сообщение, оно тоже будет отправлено сотруднику."
+            "Если написать ответом (reply) на сообщение, оно тоже будет отправлено сотруднику.\n\n"
+            "🤫 Класс не видит вызов: бот удаляет сообщение с тегом, а его статус показывает только вам. "
+            "Команда из меню <b>/</b> в группе (<code>/cleaner</code>) не видна вовсе. "
+            "Вызов с фото или файлом остаётся в группе."
         ),
         "en": (
             "<b>👩‍🏫 Calling staff</b>\n"
             "Write the role tag in a class group:\n"
             "<code>#cleaner water spilled on a desk</code>\n"
-            "<code>/cleaner</code> — works as a command too\n"
             "<code>#doctor!</code> — 🚨 urgent call\n"
-            "If you write it as a reply to a message, that message is sent to the staff member too."
+            "If you write it as a reply to a message, that message is sent to the staff member too.\n\n"
+            "🤫 The class doesn't see the call: the bot deletes the tag message and shows its status to you only. "
+            "A command picked from the group's <b>/</b> menu (<code>/cleaner</code>) isn't visible at all. "
+            "A call with a photo or file attached stays in the group."
         ),
     },
     "help_roles": {
@@ -160,7 +166,8 @@ TEXTS: dict[str, dict[str, str]] = {
             "<code>/unassign 123456789 cleaner</code> — rolni olib qo'yish\n\n"
             "<b>Guruhlar</b>\n"
             "/groups — ulangan guruhlar\n"
-            "Guruh ichida: <code>/setclass 7-B</code> · <code>/setfloor 2-qavat</code> · <code>/grouplang ru</code> · /groupinfo\n\n"
+            "Guruh ichida: <code>/setclass 7-B</code> · <code>/setfloor 2-qavat</code> · <code>/grouplang ru</code> · /groupinfo\n"
+            "Kimningdir xabariga javoban: /promote — guruh admini qilish · /demote — adminlikdan olish\n\n"
             "<b>Statistika</b>\n"
             "<code>/stats 7</code> — oxirgi 7 kunlik chaqiruvlar"
         ),
@@ -187,7 +194,8 @@ TEXTS: dict[str, dict[str, str]] = {
             "<code>/unassign 123456789 cleaner</code> — снять роль\n\n"
             "<b>Группы</b>\n"
             "/groups — подключённые группы\n"
-            "Внутри группы: <code>/setclass 7-B</code> · <code>/setfloor 2-этаж</code> · <code>/grouplang ru</code> · /groupinfo\n\n"
+            "Внутри группы: <code>/setclass 7-B</code> · <code>/setfloor 2-этаж</code> · <code>/grouplang ru</code> · /groupinfo\n"
+            "Ответом на чьё-то сообщение: /promote — сделать админом группы · /demote — снять админа\n\n"
             "<b>Статистика</b>\n"
             "<code>/stats 7</code> — вызовы за последние 7 дней"
         ),
@@ -214,7 +222,8 @@ TEXTS: dict[str, dict[str, str]] = {
             "<code>/unassign 123456789 cleaner</code> — take a role away\n\n"
             "<b>Groups</b>\n"
             "/groups — connected groups\n"
-            "Inside a group: <code>/setclass 7-B</code> · <code>/setfloor Floor 2</code> · <code>/grouplang ru</code> · /groupinfo\n\n"
+            "Inside a group: <code>/setclass 7-B</code> · <code>/setfloor Floor 2</code> · <code>/grouplang ru</code> · /groupinfo\n"
+            "As a reply to someone's message: /promote — make them a group admin · /demote — remove them as admin\n\n"
             "<b>Statistics</b>\n"
             "<code>/stats 7</code> — calls over the last 7 days"
         ),
@@ -573,6 +582,63 @@ TEXTS: dict[str, dict[str, str]] = {
         "uz": "<b>{title}</b>\nSinf: {cls}\nQavat: {floor}\nTil: {lang}\nBot admin: {admin}\nID: <code>{id}</code>",
         "ru": "<b>{title}</b>\nКласс: {cls}\nЭтаж: {floor}\nЯзык: {lang}\nБот админ: {admin}\nID: <code>{id}</code>",
         "en": "<b>{title}</b>\nClass: {cls}\nFloor: {floor}\nLanguage: {lang}\nBot is admin: {admin}\nID: <code>{id}</code>",
+    },
+
+    # ---------- Group admins (/promote, /demote and the Mini App) ----------
+    "gadm_usage": {
+        "uz": "Odamning xabariga javob (reply) qilib yozing: /promote — guruh admini qilish, /demote — adminlikdan olish.",
+        "ru": "Напишите ответом (reply) на сообщение человека: /promote — сделать админом группы, /demote — снять админа.",
+        "en": "Write it as a reply to the person's message: /promote makes them a group admin, /demote removes them.",
+    },
+    "gadm_promoted": {
+        "uz": "✅ {name} endi guruh admini: xabarlarni o'chira oladi, a'zolarni cheklay oladi, xabarni qadaydi va odam qo'sha oladi.",
+        "ru": "✅ {name} теперь админ группы: может удалять сообщения, ограничивать участников, закреплять и приглашать.",
+        "en": "✅ {name} is now a group admin: they can delete messages, restrict members, pin and invite people.",
+    },
+    "gadm_demoted": {
+        "uz": "✅ {name} endi admin emas.",
+        "ru": "✅ {name} больше не админ.",
+        "en": "✅ {name} is no longer an admin.",
+    },
+    "gadm_already_admin": {
+        "uz": "{name} allaqachon admin.",
+        "ru": "{name} уже админ.",
+        "en": "{name} is already an admin.",
+    },
+    "gadm_not_admin": {
+        "uz": "{name} admin emas edi.",
+        "ru": "{name} и так не админ.",
+        "en": "{name} wasn't an admin.",
+    },
+    "gadm_owner": {
+        "uz": "{name} — guruh egasi, uning huquqlarini o'zgartirib bo'lmaydi.",
+        "ru": "{name} — владелец группы, его права изменить нельзя.",
+        "en": "{name} owns the group; their rights can't be changed.",
+    },
+    "gadm_not_member": {
+        "uz": "{name} bu guruhda yo'q. Avval uni guruhga qo'shing.",
+        "ru": "{name} нет в этой группе. Сначала добавьте его в группу.",
+        "en": "{name} isn't in this group. Add them to the group first.",
+    },
+    "gadm_not_ours": {
+        "uz": "{name}ni bot emas, boshqa admin tayinlagan. Telegram uni faqat o'sha admin yoki guruh egasiga olib tashlashga ruxsat beradi.",
+        "ru": "{name} назначен не ботом, а другим админом. Telegram разрешает снять его только тому админу или владельцу группы.",
+        "en": "{name} was made an admin by someone else, not the bot. Telegram lets only that admin or the group owner remove them.",
+    },
+    "gadm_no_right": {
+        "uz": "Menda bu guruhda «Yangi admin qo'shish» huquqi yo'q. Guruh sozlamalarida menga shu huquqni bering.",
+        "ru": "У меня нет права «Добавление администраторов» в этой группе. Дайте мне его в настройках группы.",
+        "en": "I don't have the \"Add new admins\" right in this group. Give it to me in the group settings.",
+    },
+    "gadm_basic_group": {
+        "uz": "Bu eski turdagi guruh: Telegram bunday guruhda bot orqali admin tayinlashga ruxsat bermaydi.",
+        "ru": "Это группа старого типа: в ней Telegram не разрешает ботам назначать админов.",
+        "en": "This is an old-style group: Telegram doesn't let bots appoint admins there.",
+    },
+    "gadm_error": {
+        "uz": "Telegram rad etdi. Birozdan keyin qayta urinib ko'ring.",
+        "ru": "Telegram отказал. Попробуйте чуть позже.",
+        "en": "Telegram refused. Please try again a bit later.",
     },
 
     # ---------- Calls ----------

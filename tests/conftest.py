@@ -14,13 +14,14 @@ import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, CopyMessages, ForwardMessage, ForwardMessages, GetFile, GetMe, GetWebhookInfo, PostStory,
-    SendDocument, SendMediaGroup, SendMessage, SendPhoto, SendRichMessage, SendVideo, SendVoice,
+    CopyMessage, CopyMessages, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages, GetChatMember,
+    GetFile, GetMe, GetWebhookInfo, PostStory, PromoteChatMember, SendDocument, SendMediaGroup, SendMessage, SendPhoto,
+    SendRichMessage, SendVideo, SendVoice,
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
-    Chat, Document, File, InputMediaPhoto, Message, MessageId, PhotoSize, Story, Update, User, Video, Voice,
-    WebhookInfo,
+    Chat, ChatMemberAdministrator, ChatMemberLeft, ChatMemberMember, ChatMemberOwner, Document, File, InputMediaPhoto, Message, MessageId,
+    PhotoSize, Story, Update, User, Video, Voice, WebhookInfo,
 )
 from PIL import Image
 
@@ -51,6 +52,12 @@ class FakeSession(BaseSession):
         self._ids = itertools.count(1000)
         self.reject_rich = False  # simulate a chat where Telegram refuses rich messages
         self.reject_copy = False  # simulate a message Telegram won't let bots copy
+        self.reject_delete = False  # simulate a group where the bot may not delete messages
+        self.reject_ephemeral_edit = False  # simulate an ephemeral message that has expired
+        self.reject_ephemeral = False  # simulate Telegram refusing ephemeral messages
+        self.ephemeral_ids = itertools.count(1)
+        # (chat_id, user_id) -> chat member fields; the bot is an admin with every right, others are members.
+        self.members: dict[tuple[int, int], dict] = {}
 
     async def make_request(self, bot, method, timeout=None):
         self.requests.append(method)
@@ -59,12 +66,26 @@ class FakeSession(BaseSession):
         if isinstance(method, GetWebhookInfo):
             return WebhookInfo(url="", has_custom_certificate=False, pending_update_count=0)
         if isinstance(method, SendMessage):
+            if method.ephemeral_message_parameters or (method.reply_parameters and method.reply_parameters.ephemeral_message_id):
+                if self.reject_ephemeral:
+                    raise TelegramBadRequest(method=method, message="Bad Request: not enough rights to send ephemeral messages")
+                return Message(message_id=0, ephemeral_message_id=next(self.ephemeral_ids), date=datetime.now(),
+                               chat=Chat(id=method.chat_id, type="supergroup"), text=method.text)
             return Message(
                 message_id=next(self._ids),
                 date=datetime.now(),
                 chat=Chat(id=method.chat_id, type="private"),
                 text=method.text,
             )
+        if isinstance(method, DeleteMessage) and self.reject_delete:
+            raise TelegramBadRequest(method=method, message="Bad Request: message can't be deleted")
+        if isinstance(method, EditEphemeralMessageText) and self.reject_ephemeral_edit:
+            raise TelegramBadRequest(method=method, message="Bad Request: message to edit not found")
+        if isinstance(method, GetChatMember):
+            return self.member(method.chat_id, method.user_id)
+        if isinstance(method, PromoteChatMember):
+            self.set_member(method.chat_id, method.user_id, "administrator" if method.can_manage_chat else "member",
+                            can_be_edited=True)
         if isinstance(method, (SendPhoto, SendVoice, SendDocument, SendVideo)):
             return self._media_message(method.chat_id, type(method).__name__[4:].lower())
         if isinstance(method, SendRichMessage):
@@ -87,6 +108,31 @@ class FakeSession(BaseSession):
         if isinstance(method, ForwardMessage):
             return Message(message_id=next(self._ids), date=datetime.now(), chat=Chat(id=method.chat_id, type="group"))
         return True
+
+    def set_member(self, chat_id, user_id, status, **fields):
+        self.members[(chat_id, user_id)] = {"status": status, **fields}
+
+    def member(self, chat_id, user_id):
+        info = dict(self.members.get((chat_id, user_id)) or {})
+        if not info:
+            info = {"status": "administrator", "can_promote_members": True} if user_id == BOT_USER["id"] else {"status": "member"}
+        status = info.pop("status")
+        user = User(**BOT_USER) if user_id == BOT_USER["id"] else User(id=user_id, is_bot=False, first_name=f"User{user_id}")
+        if status == "administrator":
+            rights = dict.fromkeys((
+                "can_be_edited", "is_anonymous", "can_manage_chat", "can_delete_messages", "can_manage_video_chats",
+                "can_restrict_members", "can_promote_members", "can_change_info", "can_invite_users",
+                "can_post_stories", "can_edit_stories", "can_delete_stories", "can_send_welcome_messages",
+                "can_pin_messages",
+            ), True)
+            rights.update(is_anonymous=False, can_be_edited=False)
+            rights.update(info)
+            return ChatMemberAdministrator(user=user, **rights)
+        if status == "left":
+            return ChatMemberLeft(user=user)
+        if status == "creator":
+            return ChatMemberOwner(user=user, is_anonymous=False)
+        return ChatMemberMember(user=user)
 
     def _media_message(self, chat_id, kind):
         n = next(self._ids)
@@ -144,12 +190,16 @@ class Harness:
             "chat": {"id": uid, "type": "private"}, "from": self._user(uid), **media,
         })
 
-    async def group(self, chat_id, uid, text, title="7-B sinf", reply_to=None):
+    async def group(self, chat_id, uid, text, title="7-B sinf", reply_to=None, ephemeral=False, **media):
+        """A group message; `ephemeral` is a command picked from the "/" menu, which only the bot sees.
+        With media (e.g. photo=[...]) the text becomes the caption."""
         msg = {
             "message_id": next(self._ids), "date": int(time.time()),
             "chat": {"id": chat_id, "type": "supergroup", "title": title},
-            "from": self._user(uid), "text": text,
+            "from": self._user(uid), **({"caption": text, **media} if media else {"text": text}),
         }
+        if ephemeral:
+            msg["ephemeral_message_id"], msg["message_id"] = msg["message_id"], 0
         if reply_to:
             msg["reply_to_message"] = reply_to
         await self._send("message", msg)

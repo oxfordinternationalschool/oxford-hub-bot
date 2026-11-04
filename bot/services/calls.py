@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
-from aiogram.types import InlineKeyboardMarkup, Message
+from aiogram.types import EphemeralMessageParameters, InlineKeyboardMarkup, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -40,7 +40,7 @@ async def find_recipients(session: AsyncSession, role: Role, group: Group) -> li
 
 def message_link(chat_id: int, message_id: int) -> str | None:
     s = str(chat_id)
-    if s.startswith("-100"):
+    if message_id and s.startswith("-100"):
         return f"https://t.me/c/{s[4:]}/{message_id}"
     return None
 
@@ -68,7 +68,7 @@ def render_card(
     lines.append(t(lang, "card_time", time=local_time(call.created_at)))
     if call.text:
         lines.append(f"💬 {q(call.text)}")
-    link = message_link(call.chat_id, call.trigger_message_id)
+    link = None if call.hidden else message_link(call.chat_id, call.trigger_message_id)
     if link:
         lines.append(f'🔗 <a href="{link}">{t(lang, "card_open")}</a>')
     lines.append("")
@@ -140,6 +140,7 @@ async def dispatch_call(
     role: Role,
     text: str,
     urgent: bool,
+    hidden: bool = False,
 ) -> None:
     reply = message.reply_to_message
     if reply and not reply.forum_topic_created:
@@ -154,6 +155,7 @@ async def dispatch_call(
         text=text,
         urgent=urgent,
         trigger_message_id=message.message_id,
+        hidden=hidden,
     )
     session.add(call)
     await session.commit()
@@ -162,7 +164,8 @@ async def dispatch_call(
     ctx = await _context(session, call)
 
     # Photos/files attached to the call (or to the message replied to) go along with the card.
-    media_sources = [m.message_id for m in (message, reply) if m is not None and has_media(m)]
+    # An ephemeral message has no regular id (0) and can't be copied.
+    media_sources = [m.message_id for m in (message, reply) if m is not None and m.message_id and has_media(m)]
 
     delivered = 0
     for user in recipients:
@@ -180,15 +183,54 @@ async def dispatch_call(
     else:
         status = t(group.lang, "grp_nostaff", role=q(role.title))
         call.escalated = True
-    try:
-        sent = await message.reply(status)
-        call.group_message_id = sent.message_id
-    except TelegramAPIError as e:
-        log.warning("Cannot reply in group %s: %s", group.chat_id, e)
+    await _post_status(bot, session, message, call, status)
     await session.commit()
 
     if not delivered:
         await _escalate(bot, session, call, ctx, reason_key="esc_nostaff")
+
+
+def to_user(user_id: int) -> EphemeralMessageParameters:
+    """Makes a group message visible only to this user (and the bot)."""
+    return EphemeralMessageParameters(receiver_user_id=user_id)
+
+
+async def _remember_status(session: AsyncSession, call: Call, ephemeral_id: int | None) -> None:
+    # Telegram reuses an ephemeral message's id once it expires; an older call holding the
+    # same id must then stop editing it, or it would overwrite this call's status.
+    if ephemeral_id is not None:
+        await session.execute(update(Call).where(
+            Call.chat_id == call.chat_id, Call.requester_id == call.requester_id,
+            Call.status_ephemeral_id == ephemeral_id, Call.id != call.id,
+        ).values(status_ephemeral_id=None))
+    call.status_ephemeral_id = ephemeral_id
+
+
+async def _post_status(bot: Bot, session: AsyncSession, message: Message, call: Call, text: str) -> None:
+    """The call's status line: for a hidden call, shown to the teacher only; otherwise a reply in the group."""
+    ephemeral_command = message.ephemeral_message_id is not None
+    attempts = []
+    if ephemeral_command:
+        attempts.append(lambda: message.reply(text))  # a reply to an ephemeral message is ephemeral too
+    if call.hidden:
+        # The bot, as a group admin, may send an ephemeral message at any time.
+        attempts.append(lambda: bot.send_message(call.chat_id, text, ephemeral_message_parameters=to_user(call.requester_id)))
+    for attempt in attempts:
+        try:
+            sent = await attempt()
+        except TelegramAPIError as e:
+            log.info("No ephemeral status for call %s: %s", call.id, e)
+            continue
+        await _remember_status(session, call, sent.ephemeral_message_id)
+        return
+    if ephemeral_command:
+        return  # nobody else saw the call, so it isn't announced to the class either
+    try:
+        # A hidden call's tag message is already deleted, so there is nothing to reply to.
+        sent = await (bot.send_message(call.chat_id, text) if call.hidden else message.reply(text))
+        call.group_message_id = sent.message_id
+    except TelegramAPIError as e:
+        log.warning("Cannot reply in group %s: %s", call.chat_id, e)
 
 
 async def _escalate(bot: Bot, session: AsyncSession, call: Call, ctx: dict, reason_key: str) -> None:
@@ -228,13 +270,30 @@ async def refresh_call(bot: Bot, session: AsyncSession, call: Call) -> None:
             log.warning("Cannot edit card %s: %s", cm.id, e)
 
     group = ctx["group"]
-    if group and call.group_message_id:
+    if group is None:
+        return
+    status = render_group_status(group.lang, call, ctx["role"], ctx["accepter"])
+    if call.status_ephemeral_id:
         try:
-            await bot.edit_message_text(
-                render_group_status(group.lang, call, ctx["role"], ctx["accepter"]),
-                chat_id=call.chat_id,
-                message_id=call.group_message_id,
+            await bot.edit_ephemeral_message_text(
+                chat_id=call.chat_id, receiver_user_id=call.requester_id,
+                ephemeral_message_id=call.status_ephemeral_id, text=status,
             )
+        except TelegramAPIError as e:
+            if "not modified" in str(e):
+                return
+            # Gone (ephemeral messages expire, or vanish when the app restarts): send the news anew.
+            log.info("Cannot edit ephemeral status of call %s: %s", call.id, e)
+            try:
+                sent = await bot.send_message(call.chat_id, status, ephemeral_message_parameters=to_user(call.requester_id))
+            except TelegramAPIError as e:
+                log.warning("Cannot send ephemeral status of call %s: %s", call.id, e)
+                return
+            await _remember_status(session, call, sent.ephemeral_message_id)
+            await session.commit()
+    elif call.group_message_id:
+        try:
+            await bot.edit_message_text(status, chat_id=call.chat_id, message_id=call.group_message_id)
         except TelegramAPIError as e:
             if "not modified" not in str(e):
                 log.warning("Cannot edit group status for call %s: %s", call.id, e)

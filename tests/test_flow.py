@@ -2,7 +2,7 @@
 import re
 from datetime import timedelta
 
-from aiogram.methods import CopyMessage, EditMessageText, LeaveChat, SendMessage
+from aiogram.methods import CopyMessage, EditEphemeralMessageText, EditMessageText, LeaveChat, SendMessage
 from sqlalchemy import select, update
 
 from bot.config import utcnow
@@ -50,7 +50,7 @@ async def test_call_routed_by_floor_and_status_updates(h):
     assert "chaqirildi" in h.api.sent(GROUP)[-1].text
 
     await h.callback(CLEANER2, "call:acc:1")
-    group_edit = [r for r in h.api.requests if isinstance(r, EditMessageText) and r.chat_id == GROUP]
+    group_edit = [r for r in h.api.requests if isinstance(r, EditEphemeralMessageText) and r.chat_id == GROUP]
     assert "qabul qildi" in group_edit[-1].text
 
     # Someone else cannot finish it.

@@ -12,7 +12,7 @@ from bot.config import utcnow
 from bot.db.models import Call, CallMessage, Role, User
 from bot.filters import can_call, is_admin
 from bot.i18n import t
-from bot.services.calls import dispatch_call, refresh_call, schedule_delete, set_status
+from bot.services.calls import dispatch_call, has_media, refresh_call, schedule_delete, set_status, to_user
 from bot.services.common import ensure_group
 from bot.services.roles import parse_triggers, trigger_cache
 
@@ -34,18 +34,45 @@ async def on_group_message(message: Message, session: AsyncSession, user: User |
 
     group = await ensure_group(session, message.chat)
     if not can_call(user):
-        with contextlib.suppress(TelegramAPIError):
-            notice = await message.reply(t(group.lang, "only_teachers"))
-            await schedule_delete(session, message.chat.id, notice.message_id, after_seconds=20)
+        await _only_teachers(bot, session, message, t(group.lang, "only_teachers"))
         return
 
+    # A command from the "/" menu is ephemeral, so the class never sees it. A tag message is
+    # deleted instead (its text and the quoted reply go into the call card); one with a photo
+    # or file stays, since the staff may need to open it later.
+    hidden = message.ephemeral_message_id is not None or await _delete_tag_message(message)
     for role_id in parsed.role_ids:
         role = await session.get(Role, role_id)
         if role is not None:
             await dispatch_call(
                 bot, session, message=message, group=group, role=role,
-                text=parsed.text, urgent=parsed.urgent,
+                text=parsed.text, urgent=parsed.urgent, hidden=hidden,
             )
+
+
+async def _delete_tag_message(message: Message) -> bool:
+    if has_media(message):
+        return False
+    try:
+        await message.delete()
+    except TelegramAPIError:
+        return False  # the bot lacks the right to delete messages: the call stays visible
+    return True
+
+
+async def _only_teachers(bot: Bot, session: AsyncSession, message: Message, text: str) -> None:
+    """Tells a student, and only them, that calling staff is for teachers."""
+    with contextlib.suppress(TelegramAPIError):
+        if message.ephemeral_message_id is not None:
+            await message.reply(text)
+            return
+        try:
+            await bot.send_message(message.chat.id, text, ephemeral_message_parameters=to_user(message.from_user.id))
+            return
+        except TelegramAPIError:
+            pass
+        notice = await message.reply(text)
+        await schedule_delete(session, message.chat.id, notice.message_id, after_seconds=20)
 
 
 @router.callback_query(CallCb.filter())

@@ -10,7 +10,7 @@ from bot.filters import IsAdmin
 from bot.i18n import t
 from bot.services import admin_views as views
 from bot.services.common import chunk_lines, find_floor, q, resolve_user, user_link
-from bot.services.menus import set_user_menu
+from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.roles import is_valid_key, trigger_cache
 from bot.services.users import user_badges
 
@@ -35,19 +35,22 @@ async def cmd_roles(message: Message, session: AsyncSession, lang: str):
 
 
 @router.message(Command("addrole"))
-async def cmd_addrole(message: Message, command: CommandObject, session: AsyncSession, lang: str):
-    _, text = await views.create_role(session, lang, _args(command))
+async def cmd_addrole(message: Message, command: CommandObject, session: AsyncSession, lang: str, bot: Bot):
+    role, text = await views.create_role(session, lang, _args(command))
+    if role is not None:
+        await sync_group_commands(bot, session)
     await message.answer(text)
 
 
 @router.message(Command("delrole"))
-async def cmd_delrole(message: Message, command: CommandObject, session: AsyncSession, lang: str):
+async def cmd_delrole(message: Message, command: CommandObject, session: AsyncSession, lang: str, bot: Bot):
     args = _args(command)
     role = await views.role_by_key(session, args[0]) if args else None
     if role is None:
         await message.answer(t(lang, "role_not_found"))
         return
     await views.delete_role(session, role)
+    await sync_group_commands(bot, session)
     await message.answer(t(lang, "role_deleted", title=q(role.title)))
 
 
@@ -67,7 +70,7 @@ async def cmd_rolefloor(message: Message, command: CommandObject, session: Async
 
 
 @router.message(Command("alias"))
-async def cmd_alias(message: Message, command: CommandObject, session: AsyncSession, lang: str):
+async def cmd_alias(message: Message, command: CommandObject, session: AsyncSession, lang: str, bot: Bot):
     args = _args(command)
     if len(args) < 2:
         await message.answer(t(lang, "usage_alias"))
@@ -89,11 +92,12 @@ async def cmd_alias(message: Message, command: CommandObject, session: AsyncSess
     role.aliases = " ".join(aliases)
     await session.commit()
     trigger_cache.invalidate()
+    await sync_group_commands(bot, session)
     await message.answer(t(lang, "alias_set", title=q(role.title), triggers=views.triggers_text(role)))
 
 
 @router.message(Command("unalias"))
-async def cmd_unalias(message: Message, command: CommandObject, session: AsyncSession, lang: str):
+async def cmd_unalias(message: Message, command: CommandObject, session: AsyncSession, lang: str, bot: Bot):
     args = _args(command)
     if len(args) != 2:
         await message.answer(t(lang, "usage_alias"))
@@ -106,6 +110,7 @@ async def cmd_unalias(message: Message, command: CommandObject, session: AsyncSe
     role.aliases = " ".join(a for a in role.aliases.split() if a != word)
     await session.commit()
     trigger_cache.invalidate()
+    await sync_group_commands(bot, session)
     await message.answer(t(lang, "alias_set", title=q(role.title), triggers=views.triggers_text(role)))
 
 

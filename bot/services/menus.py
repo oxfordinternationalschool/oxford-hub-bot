@@ -1,14 +1,17 @@
 """The "/" command menu. Everyone gets the basic list; admins get their own, longer one."""
 import logging
+import re
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import BotCommand, BotCommandScopeChat, MenuButtonDefault, MenuButtonWebApp, WebAppInfo
+from aiogram.types import (
+    BotCommand, BotCommandScopeAllGroupChats, BotCommandScopeChat, MenuButtonDefault, MenuButtonWebApp, WebAppInfo,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import settings
-from bot.db.models import User
+from bot.db.models import Role, User
 from bot.i18n import t
 
 log = logging.getLogger(__name__)
@@ -68,3 +71,34 @@ async def set_user_menu(bot: Bot, user: User, webapp_url: str | None = None) -> 
 async def sync_admin_menus(bot: Bot, session: AsyncSession, webapp_url: str | None = None) -> None:
     for admin in (await session.scalars(select(User).where(User.is_admin))).all():
         await set_user_menu(bot, admin, webapp_url)
+
+
+COMMAND_RE = re.compile(r"^[a-z0-9_]{1,32}$")  # what Telegram accepts as a command name
+MAX_COMMANDS = 100
+
+
+def call_commands(roles: list[Role]) -> list[BotCommand]:
+    """The staff-call triggers that can be commands. Ephemeral: picked from the "/" menu in a
+    group, the command is seen only by the bot, not by the class."""
+    out: list[BotCommand] = []
+    seen: set[str] = set()
+    for role in roles:
+        for word in (w.lower() for w in role.triggers):
+            if COMMAND_RE.match(word) and word not in seen:
+                seen.add(word)
+                out.append(BotCommand(command=word, description=role.title[:256], is_ephemeral=True))
+    return out[:MAX_COMMANDS]
+
+
+async def sync_group_commands(bot: Bot, session: AsyncSession) -> None:
+    """Refreshes the group "/" menu; called whenever roles or their trigger words change."""
+    roles = list((await session.scalars(select(Role).order_by(Role.id))).all())
+    commands = call_commands(roles)
+    scope = BotCommandScopeAllGroupChats()
+    try:
+        if commands:
+            await bot.set_my_commands(commands, scope=scope)
+        else:
+            await bot.delete_my_commands(scope=scope)
+    except TelegramAPIError as e:
+        log.warning("Cannot update the group command menu: %s", e)

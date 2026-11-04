@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from bot.app import get_dispatcher, make_bot, set_commands
 from bot.config import settings
 from bot.db.session import ensure_schema, make_engine
-from bot.services.menus import sync_admin_menus
+from bot.services.menus import sync_admin_menus, sync_group_commands
 
 CRON_JOB = "oxford-bot-tick"
 SECRET_RE = re.compile(r"^[A-Za-z0-9_-]{16,256}$")
@@ -80,6 +80,8 @@ async def main(base_url: str) -> None:
         async with async_sessionmaker(engine)() as session:
             # Gives every admin the "Panel" button that opens the Mini App.
             await sync_admin_menus(bot, session, webapp_url=f"{base_url}/admin/")
+            # Staff-call commands in the groups' "/" menu, hidden from the class (ephemeral).
+            await sync_group_commands(bot, session)
         info = await bot.get_webhook_info()
         me = await bot.me()
         print(f"   ✅ @{me.username} → {info.url}")

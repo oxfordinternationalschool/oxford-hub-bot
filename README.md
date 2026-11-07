@@ -177,7 +177,7 @@ Telegram ichida ochiladigan boshqaruv paneli. U faqat adminlarga ko'rinadi va fa
 | E'lon | Matn yozish, hamma/parallel/tanlangan guruhlarga yuborish, pin qilish, yuborilganlarni hammasidan o'chirish |
 | Chaqiruvlar | Kutilayotgan va barcha chaqiruvlar, osilib qolganini yopish |
 | Xodimlar | Qidirish, admin/e'lon beruvchi/o'qituvchi huquqlarini yoqib-o'chirish, rol va qavat berish yoki olish |
-| Guruhlar | Sinf, qavat va tilni o'zgartirish, Telegram'dan tekshirish (bot hali admin ekanmi), guruh adminlari ro'yxati, admin qo'shish yoki olib tashlash |
+| Guruhlar | Sinf, qavat va tilni o'zgartirish, Telegram'dan tekshirish (bot hali admin ekanmi), guruh adminlari ro'yxati, admin qo'shish yoki olib tashlash, guruhni botdan olib tashlash (bot chiqadi; qayta qo'shilsa, sozlamalari bilan qaytadi) |
 | Guruh adminlari | Istalgan odamni (botga ulanmagan bo'lsa ham) tanlab, belgilangan guruhlarda admin qilish |
 | Rollar | Yaratish, emoji/nom/qo'shimcha teglarni o'zgartirish, qavat bo'yicha yo'naltirish, o'chirish |
 | Qavatlar | Qo'shish, nomini o'zgartirish, o'chirish |

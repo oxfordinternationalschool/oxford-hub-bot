@@ -177,3 +177,16 @@ async def test_invite_needs_the_invite_right(wh):
     wh.api.reject_invite = True
     status, body = await api("admins.invite", {"user_id": STRANGER, "chat_id": GROUP_A})
     assert status == 400 and "taklif qilish" in body["message"]
+
+
+async def test_admin_removes_a_group_from_the_bot(wh):
+    from aiogram.methods import LeaveChat
+    await school(wh)
+    groups = await ok("groups.remove", {"chat_id": GROUP_A})
+    assert [g["chat_id"] for g in groups] == [GROUP_B]
+    [leave] = wh.api.sent(kind=LeaveChat)
+    assert leave.chat_id == GROUP_A
+
+    # Adding the bot back brings the group back.
+    await wh.bot_added(GROUP_A, ADMIN, title="7-A sinf")
+    assert {g["chat_id"] for g in await ok("groups.list")} == {GROUP_A, GROUP_B}

@@ -405,6 +405,21 @@ async def op_groups_update(ctx: Ctx, args: dict):
     return _group_json(group)
 
 
+@op("groups.remove")
+async def op_groups_remove(ctx: Ctx, args: dict):
+    """Takes a group off the bot: the bot leaves it, and it gets no announcements or calls.
+    Only the bot leaves; the Telegram group and its messages stay. Its class, floor and
+    history are kept, so adding the bot back brings the group back as it was."""
+    group = await _get(ctx, Group, _int(args, "chat_id"))
+    try:
+        await ctx.bot.leave_chat(group.chat_id)
+    except TelegramAPIError as e:
+        log.info("Leaving %s: %s", group.chat_id, e)  # already out of it: just take it off the list
+    group.is_active = False
+    await ctx.session.commit()
+    return await _groups(ctx)
+
+
 @op("groups.refresh")
 async def op_groups_refresh(ctx: Ctx, args: dict):
     """Re-checks with Telegram whether the bot is still in each group and still an admin."""

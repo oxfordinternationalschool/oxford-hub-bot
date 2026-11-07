@@ -353,6 +353,10 @@ const T = {
     ga_pick_failed: "Tanlangan odam haqida xabar kelmadi. Qayta urinib ko'ring.", ga_update_tg: "Odam tanlash uchun Telegram'ni yangilang.",
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
+    grp_remove: "Guruhni botdan olib tashlash",
+    grp_remove_confirm: "{group} guruhini botdan olib tashlaysizmi?\n\nBot guruhdan chiqadi va bu guruhga e'lonlar ham, xodim chaqiruvlari ham ishlamaydi. Telegram guruhining o'zi va xabarlari o'chmaydi. Botni guruhga qayta qo'shsangiz, sinf va qavat sozlamalari bilan qaytadi.",
+    grp_remove_sure: "Rostdan ham {group} guruhidan bot chiqarilsinmi?",
+    grp_removed: "{group}: bot guruhdan chiqdi",
     gst_owner: "Guruh egasi", gst_admin: "Admin", gst_admin_other: "Admin (boshqa admin tayinlagan)", gst_member: "A'zo",
     gst_absent: "Guruhda yo'q", gst_unknown: "Tekshirib bo'lmadi",
     role: "Rol", floor: "Qavat", all_floors: "Barcha qavatlar", add: "Qo'shish", main_admin: "Bosh admin", you: "Siz",
@@ -435,6 +439,10 @@ const T = {
     ga_pick_failed: "Не пришли данные о выбранном человеке. Попробуйте ещё раз.", ga_update_tg: "Чтобы выбрать человека, обновите Telegram.",
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
+    grp_remove: "Убрать группу из бота",
+    grp_remove_confirm: "Убрать группу {group} из бота?\n\nБот выйдет из группы, и в ней перестанут работать объявления и вызовы сотрудников. Сама группа в Telegram и её сообщения не удалятся. Если снова добавить бота, группа вернётся с прежними классом и этажом.",
+    grp_remove_sure: "Точно вывести бота из группы {group}?",
+    grp_removed: "{group}: бот вышел из группы",
     gst_owner: "Владелец группы", gst_admin: "Админ", gst_admin_other: "Админ (назначил другой админ)", gst_member: "Участник",
     gst_absent: "Нет в группе", gst_unknown: "Не удалось проверить",
     role: "Роль", floor: "Этаж", all_floors: "Все этажи", add: "Добавить", main_admin: "Главный админ", you: "Вы",
@@ -517,6 +525,10 @@ const T = {
     ga_pick_failed: "The chosen person didn't come through. Please try again.", ga_update_tg: "Please update Telegram to choose a person.",
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
+    grp_remove: "Remove the group from the bot",
+    grp_remove_confirm: "Remove {group} from the bot?\n\nThe bot leaves the group, and announcements and staff calls stop working there. The Telegram group itself and its messages are not deleted. If you add the bot back, the group returns with its class and floor.",
+    grp_remove_sure: "Really take the bot out of {group}?",
+    grp_removed: "{group}: the bot left the group",
     gst_owner: "Group owner", gst_admin: "Admin", gst_admin_other: "Admin (appointed by another admin)", gst_member: "Member",
     gst_absent: "Not in the group", gst_unknown: "Couldn't check",
     role: "Role", floor: "Floor", all_floors: "All floors", add: "Add", main_admin: "Main admin", you: "You",
@@ -1741,9 +1753,16 @@ function openGroup(g, floors) {
     }
     await reportResults(results); loadAdmins();
   }) }, icon("plus"), t("grp_add_admin"));
+  // Takes the group off the bot (the bot leaves it). Asked twice: the school relies on these groups.
+  const removeGroup = el("button", { class: "btn danger block", type: "button", style: "margin-top:28px", onclick: () => act(removeGroup, async () => {
+    if (!(await confirmMsg(t("grp_remove_confirm", { group: groupLabel(g) })))) return;
+    if (!(await confirmMsg(t("grp_remove_sure", { group: groupLabel(g) })))) return;
+    cache.groups = { data: await api("groups.remove", { chat_id: g.chat_id }), at: Date.now() };
+    invalidate("dashboard"); haptic("ok"); toast(t("grp_removed", { group: groupLabel(g) })); closeSheet(); render();
+  }) }, icon("trash"), t("grp_remove"));
   openSheet(groupLabel(g), el("div", { class: "hint", style: "margin:0 2px" }, g.title),
     field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang), save,
-    header(t("grp_admins")), adminsBox, addAdmin);
+    header(t("grp_admins")), adminsBox, addAdmin, removeGroup);
 }
 
 function openRole(r) {

@@ -35,10 +35,12 @@ async def welcome_text(session: AsyncSession, user: User) -> str:
     lang = user.lang
     lines = [t(lang, "welcome", name=q(user.full_name))]
     badges = await user_badges(session, user, lang)
-    if badges:
-        lines.append(t(lang, "your_roles", roles=", ".join(badges)))
-    else:
-        lines.append(t(lang, "no_roles_yet", id=user.id))
+    if not badges:
+        # Most people without a role are students or parents who found the bot in their group:
+        # nothing here is for them, and staff join through an invite link anyway.
+        lines.append(t(lang, "guest_welcome"))
+        return "\n\n".join(lines)
+    lines.append(t(lang, "your_roles", roles=", ".join(badges)))
     lines.append(t(lang, "see_admin") if user.is_admin else t(lang, "see_help"))
     return "\n\n".join(lines)
 

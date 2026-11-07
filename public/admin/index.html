@@ -309,7 +309,7 @@ const T = {
     s_pending: "Kutilmoqda", s_accepted: "Qabul qilindi", s_done: "Bajarildi", s_closed: "Yopildi",
     urgent: "Shoshilinch", escalated: "Kechikdi", taker: "Qabul qildi",
     close_call: "Yopish", confirm_close: "Bu chaqiruv yopilsinmi?", closed_ok: "Chaqiruv yopildi",
-    f_pending: "Kutilmoqda", f_all: "Hammasi", ago_now: "hozir", ago_min: "{n} daq oldin", ago_h: "{n} soat oldin",
+    f_pending: "Kutilmoqda", f_all: "Hammasi", f_staff: "Xodimlar", f_guests: "Rolsizlar · {n}", ago_now: "hozir", ago_min: "{n} daq oldin", ago_h: "{n} soat oldin",
     ann_title: "Yangi e'lon", ann_ph: "E'lon matnini yozing…", ann_to: "Kimga", ann_all: "Hammasi",
     ann_grade: "{g}-sinflar", ann_pick: "Guruhlarni tanlash", ann_picked: "{n} ta guruh tanlandi", ann_none_picked: "Guruh tanlanmagan",
     ann_pin: "Guruhda pin qilish", ann_send: "Yuborish", ann_send_n: "{n} ta guruhga yuborish", sending: "⏳ Yuborilmoqda…", timeout: "Server javob bermadi. Internetni tekshirib qayta urinib ko'ring — e'lon yuborilgan bo'lishi mumkin, avval «Yuborilganlar»ni tekshiring.",
@@ -407,7 +407,7 @@ const T = {
     s_pending: "Ожидает", s_accepted: "Принят", s_done: "Выполнен", s_closed: "Закрыт",
     urgent: "Срочно", escalated: "Просрочен", taker: "Принял(а)",
     close_call: "Закрыть", confirm_close: "Закрыть этот вызов?", closed_ok: "Вызов закрыт",
-    f_pending: "Ожидают", f_all: "Все", ago_now: "сейчас", ago_min: "{n} мин назад", ago_h: "{n} ч назад",
+    f_pending: "Ожидают", f_all: "Все", f_staff: "Сотрудники", f_guests: "Без роли · {n}", ago_now: "сейчас", ago_min: "{n} мин назад", ago_h: "{n} ч назад",
     ann_title: "Новое объявление", ann_ph: "Напишите текст объявления…", ann_to: "Кому", ann_all: "Все",
     ann_grade: "{g}-е классы", ann_pick: "Выбрать группы", ann_picked: "Выбрано групп: {n}", ann_none_picked: "Группы не выбраны",
     ann_pin: "Закрепить в группе", ann_send: "Отправить", ann_send_n: "Отправить в {n} групп", sending: "⏳ Отправляю…", timeout: "Сервер не ответил. Проверьте интернет и попробуйте снова — объявление могло уйти, сначала проверьте «Отправленные».",
@@ -505,7 +505,7 @@ const T = {
     s_pending: "Waiting", s_accepted: "Taken", s_done: "Done", s_closed: "Closed",
     urgent: "Urgent", escalated: "Overdue", taker: "Taken by",
     close_call: "Close", confirm_close: "Close this call?", closed_ok: "Call closed",
-    f_pending: "Waiting", f_all: "All", ago_now: "now", ago_min: "{n} min ago", ago_h: "{n} h ago",
+    f_pending: "Waiting", f_all: "All", f_staff: "Staff", f_guests: "No role · {n}", ago_now: "now", ago_min: "{n} min ago", ago_h: "{n} h ago",
     ann_title: "New announcement", ann_ph: "Write the announcement…", ann_to: "Send to", ann_all: "All",
     ann_grade: "Grade {g}", ann_pick: "Choose groups", ann_picked: "{n} groups selected", ann_none_picked: "No groups selected",
     ann_pin: "Pin in the group", ann_send: "Send", ann_send_n: "Send to {n} group(s)", sending: "⏳ Sending…", timeout: "The server didn't answer. Check the connection and try again — it may have been sent, so check “Sent” first.",
@@ -721,7 +721,9 @@ function share(link, text) {
 // ---------------------------------------------------------------- UI pieces
 const AVATAR_COLORS = ["#4f46e5", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
 function avatar(name, id) {
-  const initials = (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  const first = (w) => (w.normalize("NFKC").match(/[\p{L}\p{N}]/u) || [])[0];
+  const letters = (name || "").split(/\s+/).map(first).filter(Boolean).slice(0, 2);
+  const initials = letters.length ? letters.join("").toUpperCase() : "👤";
   return el("div", { class: "avatar", style: `background:${AVATAR_COLORS[Math.abs(id || 0) % AVATAR_COLORS.length]}` }, initials);
 }
 const lead = (content, kind = "") => el("div", { class: "lead " + kind }, typeof content === "string" && ICONS[content] ? icon(content) : content);
@@ -1414,16 +1416,22 @@ const SCREENS = {
     const [users, roles, floors] = await Promise.all([load("users", "staff.list"), load("roles", "roles.list"), load("floors", "floors.list")]);
     const list = el("div", { class: "card" });
     const search = el("input", { class: "in", type: "search", placeholder: t("search"), value: state.staffQuery });
-    const filters = [["all", t("f_all")], ["admin", t("perm_admin")], ["teacher", t("perm_teacher")], ["announcer", t("perm_announcer")],
-      ...roles.map((r) => ["role:" + r.id, `${r.emoji} ${r.name}`])];
+    // People with no right or role (students who just pressed Start) are kept apart under "No role";
+    // a search still finds them, so one can be given a role.
+    const isGuest = (u) => !u.is_admin && !u.can_announce && !u.is_teacher && !u.roles.length;
+    const guests = users.filter(isGuest).length;
+    const filters = [["all", t("f_staff")], ["admin", t("perm_admin")], ["teacher", t("perm_teacher")], ["announcer", t("perm_announcer")],
+      ...roles.map((r) => ["role:" + r.id, `${r.emoji} ${r.name}`]), ...(guests ? [["guest", t("f_guests", { n: guests })]] : [])];
     const chips = el("div", { class: "chips mt" });
     const matches = (u) => {
       const f = state.staffFilter;
+      const q = state.staffQuery.trim().toLowerCase().replace(/^@/, "");
+      if (f === "all" && !q && isGuest(u)) return false;
+      if (f === "guest" && !isGuest(u)) return false;
       if (f === "admin" && !u.is_admin) return false;
       if (f === "announcer" && !u.can_announce) return false;
       if (f === "teacher" && !u.is_teacher) return false;
       if (f.startsWith("role:") && !u.roles.some((r) => r.role_id === Number(f.slice(5)))) return false;
-      const q = state.staffQuery.trim().toLowerCase().replace(/^@/, "");
       return !q || u.name.toLowerCase().includes(q) || (u.username || "").toLowerCase().includes(q) || String(u.id).includes(q);
     };
     const summary = (u) => [

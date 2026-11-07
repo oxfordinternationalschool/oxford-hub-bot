@@ -25,12 +25,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "en": "Your roles: {roles}",
     },
     "guest_welcome": {
-        "uz": "Bu bot maktab xodimlari uchun: xodimlarni chaqirish va e'lonlarni guruhlarga yuborish.\n\n"
-              "📢 Maktab e'lonlari sinfingiz guruhida chiqadi, ularni o'sha yerda kuzatib boring.",
-        "ru": "Этот бот — для сотрудников школы: вызов сотрудников и рассылка объявлений по группам.\n\n"
-              "📢 Объявления школы приходят в группу вашего класса — следите за ними там.",
-        "en": "This bot is for school staff: calling staff and sending announcements to the groups.\n\n"
-              "📢 School announcements appear in your class group; follow them there.",
+        "uz": "📢 Maktab e'lonlari sinfingiz guruhida chiqadi, ularni o'sha yerda kuzatib boring.",
+        "ru": "📢 Объявления школы приходят в группу вашего класса — следите за ними там.",
+        "en": "📢 School announcements appear in your class group; follow them there.",
     },
     "see_help": {
         "uz": "Buyruqlar: /help",

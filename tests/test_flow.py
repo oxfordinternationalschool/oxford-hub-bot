@@ -163,5 +163,5 @@ async def test_invite_single_use(h):
 async def test_someone_without_a_role_is_told_the_bot_is_for_staff(h):
     await h.register(9)
     text = h.api.sent(9)[-1].text
-    assert "xodimlari uchun" in text and "sinfingiz guruhida" in text
+    assert "sinfingiz guruhida" in text and "xodim" not in text
     assert "ID" not in text and "/help" not in text

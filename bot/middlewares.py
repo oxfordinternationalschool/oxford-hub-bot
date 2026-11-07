@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
@@ -7,6 +8,9 @@ from aiogram.types import User as TgUser
 from bot.config import LANGS, settings
 from bot.db.models import User
 from bot.db.session import get_sessionmaker
+from bot.services.topics import learn_topic
+
+log = logging.getLogger(__name__)
 
 
 class DbMiddleware(BaseMiddleware):
@@ -52,3 +56,18 @@ class DbMiddleware(BaseMiddleware):
             data["user"] = user
             data["lang"] = user.lang if user else settings.default_lang
             return await handler(event, data)
+
+
+class TopicLearner(BaseMiddleware):
+    """Remembers the topics of groups with topics from the messages written in them
+    (Telegram has no way for bots to list them). Runs before the handlers, for every message."""
+
+    async def __call__(self, handler, event, data):
+        session = data.get("session")
+        if session is not None and getattr(event, "chat", None) is not None and event.chat.type == "supergroup":
+            try:
+                await learn_topic(session, event)
+            except Exception:
+                log.exception("Could not remember a topic")
+                await session.rollback()
+        return await handler(event, data)

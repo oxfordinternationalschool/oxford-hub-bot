@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from bot.config import settings
 from bot.db.session import make_engine, reset_sessionmaker, use_sessionmaker
 from bot.handlers import admin, admin_panel, announce, calls, groups, start, stories
-from bot.middlewares import DbMiddleware
+from bot.middlewares import DbMiddleware, TopicLearner
 from bot.services.calls import run_periodic
 from bot.services.menus import COMMANDS, as_commands
 from bot.storage import SqlStorage
@@ -50,6 +50,7 @@ def get_dispatcher() -> Dispatcher:
     if _dispatcher is None:
         dp = Dispatcher(storage=SqlStorage())
         dp.update.outer_middleware(DbMiddleware())
+        dp.message.outer_middleware(TopicLearner())
         # Order matters: the group catch-all (calls) and the private fallback go last.
         dp.include_routers(
             start.router,

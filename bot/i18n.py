@@ -585,6 +585,16 @@ TEXTS: dict[str, dict[str, str]] = {
     },
 
     # ---------- Group admins (/promote, /demote and the Mini App) ----------
+    "topic_set": {
+        "uz": "✅ Bu guruhga e'lonlar endi «{topic}» mavzusiga boradi.",
+        "ru": "✅ Объявления в эту группу теперь будут приходить в тему «{topic}».",
+        "en": "✅ Announcements to this group will now go to the «{topic}» topic.",
+    },
+    "topic_set_general": {
+        "uz": "✅ Bu guruhga e'lonlar endi General mavzusiga boradi.",
+        "ru": "✅ Объявления в эту группу теперь будут приходить в General.",
+        "en": "✅ Announcements to this group will now go to General.",
+    },
     "gadm_usage": {
         "uz": "Odamning xabariga javob (reply) qilib yozing: /promote — guruh admini qilish, /demote — adminlikdan olish.",
         "ru": "Напишите ответом (reply) на сообщение человека: /promote — сделать админом группы, /demote — снять админа.",

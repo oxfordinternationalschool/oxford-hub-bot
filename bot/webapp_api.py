@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.app import request_scope
 from bot.config import LANGS, settings, utcnow
 from bot.db.models import (
-    Announcement, AnnouncementMessage, Call, Floor, Group, Invite, MediaDraft, Role, StaffRole, User,
+    Announcement, AnnouncementMessage, Call, Floor, ForumTopic, Group, Invite, MediaDraft, Role, StaffRole, User,
 )
 from bot.i18n import t
 from bot.services import admin_views as views
@@ -41,6 +41,7 @@ from bot.services.group_admins import (
     set_group_admin,
 )
 from bot.services.menus import set_user_menu, sync_group_commands
+from bot.services.topics import same_name, topics_by_chat
 from bot.services.rich_text import to_telegram_html
 from bot.services.roles import is_valid_key, trigger_cache
 from bot.services.stories import editor_text, post_story, story_account, story_caption, story_link, story_photo
@@ -210,8 +211,13 @@ async def _calls_json(session: AsyncSession, calls: list[Call]) -> list[dict]:
     } for c in calls]
 
 
-def _group_json(g: Group) -> dict:
+def _group_json(g: Group, topics: list | None = None) -> dict:
+    topics = topics or []
     return {
+        "topics": [{"id": tp.thread_id, "name": tp.name} for tp in topics],
+        "announce_thread_id": g.announce_thread_id,
+        "announce_topic": next((tp.name for tp in topics if tp.thread_id == g.announce_thread_id), None)
+        if g.announce_thread_id else None,
         "chat_id": g.chat_id,
         "title": g.title,
         "class_name": g.class_name,
@@ -375,7 +381,26 @@ async def op_floors_delete(ctx: Ctx, args: dict):
 
 async def _groups(ctx: Ctx) -> list[dict]:
     groups = (await ctx.session.scalars(select(Group).where(Group.is_active))).all()
-    return [_group_json(g) for g in sorted(groups, key=group_sort_key)]
+    topics = await topics_by_chat(ctx.session)
+    return [_group_json(g, topics.get(g.chat_id)) for g in sorted(groups, key=group_sort_key)]
+
+
+@op("groups.topic_all")
+async def op_groups_topic_all(ctx: Ctx, args: dict):
+    """Every group that has a topic of this name sends announcements there; the others are listed."""
+    name = _str(args, "name", 128)
+    topics = await topics_by_chat(ctx.session)
+    done, missing = 0, []
+    for g in (await ctx.session.scalars(select(Group).where(Group.is_active))).all():
+        match = next((tp for tp in topics.get(g.chat_id, []) if same_name(tp.name, name)), None)
+        if match is None:
+            if topics.get(g.chat_id):
+                missing.append(g.label)
+            continue
+        g.announce_thread_id = match.thread_id
+        done += 1
+    await ctx.session.commit()
+    return {"done": done, "missing": sorted(missing), "groups": await _groups(ctx)}
 
 
 @op("groups.list")
@@ -401,8 +426,13 @@ async def op_groups_update(ctx: Ctx, args: dict):
         if lang not in LANGS:
             raise ctx.error("usage_grouplang")
         group.lang = lang
+    if "announce_thread_id" in args:
+        thread_id = _int(args, "announce_thread_id", optional=True)
+        if thread_id is not None and await ctx.session.get(ForumTopic, (group.chat_id, thread_id)) is None:
+            raise ApiError(400, "bad_args", "announce_thread_id")
+        group.announce_thread_id = thread_id
     await ctx.session.commit()
-    return _group_json(group)
+    return _group_json(group, (await topics_by_chat(ctx.session)).get(group.chat_id))
 
 
 @op("groups.remove")

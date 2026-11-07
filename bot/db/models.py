@@ -63,6 +63,8 @@ class Group(Base):
     lang: Mapped[str] = mapped_column(String(2), default="uz")
     is_active: Mapped[bool] = mapped_column(default=True)
     bot_is_admin: Mapped[bool] = mapped_column(default=False)
+    # In a group with topics: the topic announcements go to (None: General).
+    announce_thread_id: Mapped[int | None] = mapped_column(BigInteger)
 
     @property
     def label(self) -> str:
@@ -111,6 +113,7 @@ class Call(Base):
     # tag message), and its status is shown only to the teacher, as an ephemeral message.
     hidden: Mapped[bool | None] = mapped_column(default=False)
     status_ephemeral_id: Mapped[int | None]
+    thread_id: Mapped[int | None] = mapped_column(BigInteger)  # the topic the call was made in
     escalated: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     accepted_at: Mapped[datetime | None]
@@ -156,6 +159,18 @@ class StoryAccount(Base):
     can_post: Mapped[bool] = mapped_column(default=False)  # the account gave the "Manage stories" right
     is_enabled: Mapped[bool] = mapped_column(default=True)
     approved: Mapped[bool] = mapped_column(default=False)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class ForumTopic(Base):
+    """A topic of a group with topics. Telegram doesn't let bots list them, so the bot learns
+    each one from messages written in it (or from its creation and renaming)."""
+
+    __tablename__ = "forum_topics"
+
+    chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    thread_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    name: Mapped[str] = mapped_column(String(128))
     updated_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 

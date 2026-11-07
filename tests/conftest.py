@@ -57,12 +57,15 @@ class FakeSession(BaseSession):
         self.reject_ephemeral_edit = False  # simulate an ephemeral message that has expired
         self.reject_ephemeral = False  # simulate Telegram refusing ephemeral messages
         self.reject_invite = False  # simulate a group where the bot may not invite users
+        self.gone_threads: set[int] = set()  # topics that were deleted
         self.ephemeral_ids = itertools.count(1)
         # (chat_id, user_id) -> chat member fields; the bot is an admin with every right, others are members.
         self.members: dict[tuple[int, int], dict] = {}
 
     async def make_request(self, bot, method, timeout=None):
         self.requests.append(method)
+        if getattr(method, "message_thread_id", None) in self.gone_threads:
+            raise TelegramBadRequest(method=method, message="Bad Request: message thread not found")
         if isinstance(method, GetMe):
             return User(**BOT_USER)
         if isinstance(method, GetWebhookInfo):
@@ -204,7 +207,7 @@ class Harness:
             "chat": {"id": uid, "type": "private"}, "from": self._user(uid), **media,
         })
 
-    async def group(self, chat_id, uid, text, title="7-B sinf", reply_to=None, ephemeral=False, **media):
+    async def group(self, chat_id, uid, text, title="7-B sinf", reply_to=None, ephemeral=False, topic=None, **media):
         """A group message; `ephemeral` is a command picked from the "/" menu, which only the bot sees.
         With media (e.g. photo=[...]) the text becomes the caption."""
         msg = {
@@ -214,6 +217,12 @@ class Harness:
         }
         if ephemeral:
             msg["ephemeral_message_id"], msg["message_id"] = msg["message_id"], 0
+        if topic:  # (thread id, name): written in that topic, as a reply to its creation message
+            thread_id, name = topic
+            msg["chat"]["is_forum"] = True
+            msg.update(message_thread_id=thread_id, is_topic_message=True, reply_to_message={
+                "message_id": thread_id, "date": int(time.time()), "chat": msg["chat"],
+                "forum_topic_created": {"name": name, "icon_color": 7322096}})
         if reply_to:
             msg["reply_to_message"] = reply_to
         await self._send("message", msg)
@@ -301,7 +310,10 @@ class WebhookHarness(Harness):
 
 @pytest.fixture(autouse=True)
 def _fresh_trigger_cache():
+    from bot.services import topics
+
     trigger_cache.invalidate()
+    topics._known.clear()  # each test has a fresh database
 
 
 @pytest.fixture

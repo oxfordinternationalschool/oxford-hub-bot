@@ -95,6 +95,12 @@ Rollar menyusi rol qo'shilganda yoki o'zgarganda o'zi yangilanadi.
 
 **Admin**: barcha buyruqlar ro'yxati `/admin` da. Statistika uchun `/stats 7` ni yozing.
 
+**Mavzuli (topic) guruhlar.** E'lonlar har guruhda tanlangan mavzuga boradi, mavzu tanlanmagan guruhda esa General'ga.
+- Mini App → Yana → Guruhlar → **Hamma guruhda e'lonlar mavzusini tanlash**: masalan, "News" mavzusi bor hamma guruhda e'lonlar shu mavzuga boradi.
+- Bitta guruh uchun: guruh oynasidagi **E'lonlar mavzusi** maydoni orqali yoki guruhning o'sha mavzusida `/settopic` yozib.
+- Telegram botga mavzular ro'yxatini bermaydi. Bot mavzuni unga biror xabar yozilganda ko'radi va eslab qoladi.
+- Tanlangan mavzu o'chirib yuborilsa, e'lon General'ga boradi.
+
 **Guruh adminlarini tayinlash.** Botda guruhda "Yangi admin qo'shish" huquqi bo'lishi kerak.
 - Guruhning o'zida odamning xabariga javoban `/promote` yozsangiz admin qiladi, `/demote` yozsangiz adminlikdan oladi.
 - Mini App'da: **Yana → Guruh adminlari → Odamni tanlash**. Odam Telegram'ning o'z oynasidan tanlanadi va botga ulangan bo'lishi shart emas. Keyin guruhlarni belgilab, tasdiqlaysiz.

@@ -156,6 +156,7 @@ async def dispatch_call(
         urgent=urgent,
         trigger_message_id=message.message_id,
         hidden=hidden,
+        thread_id=message.message_thread_id if message.is_topic_message else None,
     )
     session.add(call)
     await session.commit()
@@ -214,7 +215,8 @@ async def _post_status(bot: Bot, session: AsyncSession, message: Message, call: 
         attempts.append(lambda: message.reply(text))  # a reply to an ephemeral message is ephemeral too
     if call.hidden:
         # The bot, as a group admin, may send an ephemeral message at any time.
-        attempts.append(lambda: bot.send_message(call.chat_id, text, ephemeral_message_parameters=to_user(call.requester_id)))
+        attempts.append(lambda: bot.send_message(call.chat_id, text, message_thread_id=call.thread_id,
+                                                 ephemeral_message_parameters=to_user(call.requester_id)))
     for attempt in attempts:
         try:
             sent = await attempt()
@@ -227,7 +229,7 @@ async def _post_status(bot: Bot, session: AsyncSession, message: Message, call: 
         return  # nobody else saw the call, so it isn't announced to the class either
     try:
         # A hidden call's tag message is already deleted, so there is nothing to reply to.
-        sent = await (bot.send_message(call.chat_id, text) if call.hidden else message.reply(text))
+        sent = await (bot.send_message(call.chat_id, text, message_thread_id=call.thread_id) if call.hidden else message.reply(text))
         call.group_message_id = sent.message_id
     except TelegramAPIError as e:
         log.warning("Cannot reply in group %s: %s", call.chat_id, e)
@@ -285,7 +287,8 @@ async def refresh_call(bot: Bot, session: AsyncSession, call: Call) -> None:
             # Gone (ephemeral messages expire, or vanish when the app restarts): send the news anew.
             log.info("Cannot edit ephemeral status of call %s: %s", call.id, e)
             try:
-                sent = await bot.send_message(call.chat_id, status, ephemeral_message_parameters=to_user(call.requester_id))
+                sent = await bot.send_message(call.chat_id, status, message_thread_id=call.thread_id,
+                                             ephemeral_message_parameters=to_user(call.requester_id))
             except TelegramAPIError as e:
                 log.warning("Cannot send ephemeral status of call %s: %s", call.id, e)
                 return

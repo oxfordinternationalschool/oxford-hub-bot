@@ -14,7 +14,7 @@ RESERVED = frozenset({
     "floors", "addfloor", "delfloor",
     "invite", "invites", "revoke", "staff", "assign", "unassign",
     "groups", "stats", "setclass", "setfloor", "grouplang", "groupinfo",
-    "teacher", "announcer", "promote", "demote",
+    "teacher", "announcer", "promote", "demote", "settopic",
 })
 
 KEY_RE = re.compile(r"^[^\W\d_]\w{1,31}$")

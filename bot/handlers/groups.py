@@ -8,11 +8,12 @@ from aiogram.types import ChatMemberUpdated, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import LANGS
-from bot.db.models import Floor, User
+from bot.db.models import Floor, ForumTopic, User
 from bot.filters import IsAdmin, is_admin
 from bot.i18n import t
 from bot.services.common import ensure_group, find_floor, migrate_group, notify_admins, parse_class, q
 from bot.services.group_admins import OK, invite_used, person_name, set_group_admin
+from bot.services.topics import message_topic
 
 log = logging.getLogger(__name__)
 
@@ -145,6 +146,19 @@ async def cmd_promote(message: Message, command: CommandObject, session: AsyncSe
     result = await set_group_admin(bot, message.chat.id, target.id, make_admin)
     key = ("gadm_promoted" if make_admin else "gadm_demoted") if result == OK else f"gadm_{result}"
     await message.reply(t(group.lang, key, name=q(target.full_name)))
+
+
+@router.message(Command("settopic"), IsAdmin())
+async def cmd_settopic(message: Message, session: AsyncSession):
+    """Written in a topic: announcements to this group go there (written in General: back to General)."""
+    group = await ensure_group(session, message.chat)
+    group.announce_thread_id = message_topic(message)
+    await session.commit()
+    if group.announce_thread_id is None:
+        await message.reply(t(group.lang, "topic_set_general"))
+        return
+    topic = await session.get(ForumTopic, (message.chat.id, group.announce_thread_id))
+    await message.reply(t(group.lang, "topic_set", topic=q(topic.name if topic else "#" + str(group.announce_thread_id))))
 
 
 @router.message(Command("groupinfo"), IsAdmin())

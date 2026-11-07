@@ -5,11 +5,12 @@ from dataclasses import dataclass, field
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest, TelegramMigrateToChat, TelegramRetryAfter
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.models import Announcement, AnnouncementMessage
+from bot.db.models import Announcement, AnnouncementMessage, Group
 from bot.services.common import migrate_group
+from bot.services.topics import announce_threads, stop_announce_threads, topic_gone
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +56,16 @@ class BroadcastResult:
 
 
 async def broadcast(bot: Bot, session: AsyncSession, chat_ids: list[int], pin: bool, send: Sender) -> BroadcastResult:
+    # Groups with topics get it in their chosen announcement topic.
+    threads = await announce_threads(bot, session, chat_ids)
+    try:
+        return await _broadcast(bot, session, chat_ids, pin, send, threads)
+    finally:
+        stop_announce_threads()
+
+
+async def _broadcast(bot: Bot, session: AsyncSession, chat_ids: list[int], pin: bool, send: Sender,
+                     threads: dict[int, int]) -> BroadcastResult:
     result = BroadcastResult()
     for chat_id in chat_ids:
         target = chat_id
@@ -69,6 +80,15 @@ async def broadcast(bot: Bot, session: AsyncSession, chat_ids: list[int], pin: b
                 await migrate_group(session, target, e.migrate_to_chat_id)
                 target = e.migrate_to_chat_id
             except TelegramAPIError as e:
+                if target in threads and topic_gone(e):
+                    # The announcement topic is closed or deleted: send to General instead,
+                    # and forget a deleted topic.
+                    log.warning("Announcement topic of %s is unavailable: %s", target, e)
+                    threads.pop(target)
+                    if "not found" in str(e).lower():
+                        await session.execute(update(Group).where(Group.chat_id == target).values(announce_thread_id=None))
+                        await session.commit()
+                    continue
                 log.warning("Broadcast to %s failed: %s", target, e)
                 break
 

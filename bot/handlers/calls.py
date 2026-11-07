@@ -15,6 +15,7 @@ from bot.i18n import t
 from bot.services.calls import dispatch_call, has_media, refresh_call, schedule_delete, set_status, to_user
 from bot.services.common import ensure_group
 from bot.services.roles import parse_triggers, trigger_cache
+from bot.services.topics import message_topic
 
 router = Router(name="calls")
 router.message.filter(F.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}))
@@ -67,7 +68,8 @@ async def _only_teachers(bot: Bot, session: AsyncSession, message: Message, text
             await message.reply(text)
             return
         try:
-            await bot.send_message(message.chat.id, text, ephemeral_message_parameters=to_user(message.from_user.id))
+            await bot.send_message(message.chat.id, text, message_thread_id=message_topic(message),
+                                   ephemeral_message_parameters=to_user(message.from_user.id))
             return
         except TelegramAPIError:
             pass

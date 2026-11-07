@@ -354,6 +354,11 @@ const T = {
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     grp_remove: "Guruhni botdan olib tashlash",
+    topic: "E'lonlar mavzusi", topic_hint: "Guruhga e'lonlar shu mavzuga boradi. Ro'yxatda bot ko'rgan mavzular bor: yangi mavzu biror xabar yozilgach paydo bo'ladi.",
+    topic_all: "Hamma guruhda e'lonlar mavzusini tanlash", topic_all_pick: "Qaysi mavzuga borsin?", topic_all_opt: "{name} · {n} ta guruhda",
+    topic_all_confirm: "E'lonlar «{name}» nomli mavzusi bor hamma guruhda shu mavzuga boradigan bo'lsinmi?",
+    topic_all_done: "{n} ta guruhda e'lonlar «{name}» mavzusiga boradi",
+    topic_all_missing: "Bu guruhlarda «{name}» mavzusi topilmadi, ularga e'lon avvalgi joyiga boradi: {list}",
     grp_remove_confirm: "{group} guruhini botdan olib tashlaysizmi?\n\nBot guruhdan chiqadi va bu guruhga e'lonlar ham, xodim chaqiruvlari ham ishlamaydi. Telegram guruhining o'zi va xabarlari o'chmaydi. Botni guruhga qayta qo'shsangiz, sinf va qavat sozlamalari bilan qaytadi.",
     grp_remove_sure: "Rostdan ham {group} guruhidan bot chiqarilsinmi?",
     grp_removed: "{group}: bot guruhdan chiqdi",
@@ -440,6 +445,11 @@ const T = {
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
     grp_remove: "Убрать группу из бота",
+    topic: "Тема для объявлений", topic_hint: "Объявления в группу приходят в эту тему. В списке темы, которые видел бот: новая тема появится, когда в ней что-нибудь напишут.",
+    topic_all: "Выбрать тему для объявлений во всех группах", topic_all_pick: "В какую тему отправлять?", topic_all_opt: "{name} · в {n} группах",
+    topic_all_confirm: "Отправлять объявления в тему «{name}» во всех группах, где она есть?",
+    topic_all_done: "В {n} группах объявления пойдут в тему «{name}»",
+    topic_all_missing: "В этих группах нет темы «{name}», объявления пойдут туда же, куда и раньше: {list}",
     grp_remove_confirm: "Убрать группу {group} из бота?\n\nБот выйдет из группы, и в ней перестанут работать объявления и вызовы сотрудников. Сама группа в Telegram и её сообщения не удалятся. Если снова добавить бота, группа вернётся с прежними классом и этажом.",
     grp_remove_sure: "Точно вывести бота из группы {group}?",
     grp_removed: "{group}: бот вышел из группы",
@@ -526,6 +536,11 @@ const T = {
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
     grp_remove: "Remove the group from the bot",
+    topic: "Announcements topic", topic_hint: "Announcements to the group go to this topic. The list has the topics the bot has seen: a new one appears once someone writes in it.",
+    topic_all: "Choose the announcements topic in every group", topic_all_pick: "Which topic should they go to?", topic_all_opt: "{name} · in {n} groups",
+    topic_all_confirm: "Send announcements to the «{name}» topic in every group that has it?",
+    topic_all_done: "In {n} groups announcements go to «{name}»",
+    topic_all_missing: "These groups have no «{name}» topic, so announcements go where they did before: {list}",
     grp_remove_confirm: "Remove {group} from the bot?\n\nThe bot leaves the group, and announcements and staff calls stop working there. The Telegram group itself and its messages are not deleted. If you add the bot back, the group returns with its class and floor.",
     grp_remove_sure: "Really take the bot out of {group}?",
     grp_removed: "{group}: the bot left the group",
@@ -1550,13 +1565,25 @@ const SUBS = {
       lead: lead("school", g.bot_is_admin && g.class_name ? "" : "warn"),
       title: groupLabel(g),
       sub: [
-        [g.floor_id ? floorName(floors, g.floor_id) : t("no_floor"), g.lang.toUpperCase()].join(" · "),
+        [g.floor_id ? floorName(floors, g.floor_id) : t("no_floor"), g.lang.toUpperCase(),
+          g.topics.length ? "📢 " + (g.announce_topic || "General") : null].filter(Boolean).join(" · "),
         !g.bot_is_admin || !g.class_name ? el("div", {}, !g.bot_is_admin ? badge(t("bot_not_admin"), "bad") : null,
           !g.class_name ? badge(t("no_class"), "warn") : null) : null,
       ],
       onclick: () => openGroup(g, floors), chevron: true,
     }));
-    return [pageHead(t("more_groups"), t("more_groups_d"), refresh), card(rows.length ? rows : empty(t("groups_hint"), "school"))];
+    // One topic name for every group (e.g. "News"): each group that has such a topic sends announcements there.
+    const names = {};
+    for (const g of groups) for (const tp of g.topics) { const k = tp.name.trim().toLowerCase(); (names[k] = names[k] || { name: tp.name.trim(), n: 0 }).n++; }
+    const options = Object.values(names).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+    const topicAll = options.length ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:14px", onclick: () =>
+      openPicker(t("topic_all_pick"), options.map((o) => [o.name, t("topic_all_opt", { name: o.name, n: o.n })]), "", (name) => act(null, async () => {
+        if (!(await confirmMsg(t("topic_all_confirm", { name })))) return;
+        const r = await api("groups.topic_all", { name });
+        cache.groups = { data: r.groups, at: Date.now() }; haptic("ok"); toast(t("topic_all_done", { n: r.done, name })); render();
+        if (r.missing.length) await alertMsg(t("topic_all_missing", { name, list: r.missing.join(", ") }));
+      })) }, icon("megaphone"), t("topic_all")) : null;
+    return [pageHead(t("more_groups"), t("more_groups_d"), refresh), topicAll, card(rows.length ? rows : empty(t("groups_hint"), "school"))];
   },
 
   async roles() {
@@ -1724,8 +1751,11 @@ function openGroup(g, floors) {
   const cls = el("input", { class: "in", value: g.class_name || "", placeholder: "7-B", maxLength: 16 });
   const floor = select([["", t("no_floor")], ...floors.map((f) => [f.id, f.name])], g.floor_id ?? "", t("floor"));
   const lang = select([["uz", "O'zbekcha"], ["ru", "Русский"], ["en", "English"]], g.lang, t("lang"));
+  // Groups with topics: where announcements go. The bot learns topics from messages written in them.
+  const topic = g.topics.length ? select([["", "General"], ...g.topics.map((tp) => [tp.id, tp.name])], g.announce_thread_id ?? "", t("topic")) : null;
   const save = el("button", { class: "btn block mt", type: "button", onclick: () => act(save, async () => {
     const args = { chat_id: g.chat_id, floor_id: floor.value ? Number(floor.value) : null, lang: lang.value };
+    if (topic) args.announce_thread_id = topic.value ? Number(topic.value) : null;
     if (cls.value.trim() && cls.value.trim() !== g.class_name) args.class_name = cls.value;
     await api("groups.update", args);
     invalidate("groups", "floors", "dashboard"); haptic("ok"); toast(t("saved")); closeSheet(); render();
@@ -1761,7 +1791,8 @@ function openGroup(g, floors) {
     invalidate("dashboard"); haptic("ok"); toast(t("grp_removed", { group: groupLabel(g) })); closeSheet(); render();
   }) }, icon("trash"), t("grp_remove"));
   openSheet(groupLabel(g), el("div", { class: "hint", style: "margin:0 2px" }, g.title),
-    field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang), save,
+    field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang),
+    topic ? field(t("topic"), topic, t("topic_hint")) : null, save,
     header(t("grp_admins")), adminsBox, addAdmin, removeGroup);
 }
 

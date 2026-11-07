@@ -595,6 +595,21 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "✅ Объявления в эту группу теперь будут приходить в General.",
         "en": "✅ Announcements to this group will now go to General.",
     },
+    "ann_not_editable": {
+        "uz": "Bu e'lonni tahrirlab bo'lmaydi: unda matn yo'q, u forward qilingan yoki tahrirlash qo'shilishidan oldin yuborilgan.",
+        "ru": "Это объявление нельзя изменить: в нём нет текста, оно переслано или отправлено до появления редактирования.",
+        "en": "This announcement can't be edited: it has no text, was forwarded, or was sent before editing existed.",
+    },
+    "ann_edit_caption_long": {
+        "uz": "Rasm yoki fayl ostidagi matn 1024 belgidan oshmasligi kerak.",
+        "ru": "Подпись к фото или файлу — не больше 1024 символов.",
+        "en": "A caption under a photo or file can be at most 1024 characters.",
+    },
+    "ann_edit_too_long": {
+        "uz": "Matn 4096 belgidan oshmasligi kerak.",
+        "ru": "Текст — не больше 4096 символов.",
+        "en": "The text can be at most 4096 characters.",
+    },
     "gadm_usage": {
         "uz": "Odamning xabariga javob (reply) qilib yozing: /promote — guruh admini qilish, /demote — adminlikdan olish.",
         "ru": "Напишите ответом (reply) на сообщение человека: /promote — сделать админом группы, /demote — снять админа.",

@@ -144,6 +144,11 @@ class Announcement(Base):
     # Its first photo and text (HTML), so it can also be posted as a story later.
     story_file_id: Mapped[str | None] = mapped_column(String(255))
     story_caption: Mapped[str | None] = mapped_column(Text)
+    # Its current text (HTML), so it can be edited; for a slideshow/collage also its layout and
+    # media ([[kind, file_id], ...] as JSON), since editing a rich message sends it whole again.
+    html: Mapped[str | None] = mapped_column(Text)
+    layout: Mapped[str | None] = mapped_column(String(16))
+    rich_media: Mapped[str | None] = mapped_column(Text)
 
 
 class StoryAccount(Base):
@@ -273,3 +278,5 @@ class AnnouncementMessage(Base):
     )
     chat_id: Mapped[int] = mapped_column(BigInteger)
     message_id: Mapped[int]
+    # Where its text is, for editing: "text", "caption", "rich", or None (no text, or forwarded).
+    text_kind: Mapped[str | None] = mapped_column(String(8))

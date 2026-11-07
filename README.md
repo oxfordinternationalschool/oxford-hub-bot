@@ -180,7 +180,7 @@ Telegram ichida ochiladigan boshqaruv paneli. U faqat adminlarga ko'rinadi va fa
 | Bo'lim | Nima qilsa bo'ladi |
 |---|---|
 | Asosiy | Raqamlar, ogohlantirishlar (masalan, "bot admin emas", "qavat yo'q"), kutilayotgan chaqiruvlar |
-| E'lon | Matn yozish, hamma/parallel/tanlangan guruhlarga yuborish, pin qilish, yuborilganlarni hammasidan o'chirish |
+| E'lon | Matn yozish, hamma/parallel/tanlangan guruhlarga yuborish, pin qilish. Yuborilgan e'lonni bosib: matnini hamma guruhda tahrirlash yoki tanlangan guruhlardan o'chirish |
 | Chaqiruvlar | Kutilayotgan va barcha chaqiruvlar, osilib qolganini yopish |
 | Xodimlar | Qidirish, admin/e'lon beruvchi/o'qituvchi huquqlarini yoqib-o'chirish, rol va qavat berish yoki olish |
 | Guruhlar | Sinf, qavat va tilni o'zgartirish, Telegram'dan tekshirish (bot hali admin ekanmi), guruh adminlari ro'yxati, admin qo'shish yoki olib tashlash, guruhni botdan olib tashlash (bot chiqadi; qayta qo'shilsa, sozlamalari bilan qaytadi) |

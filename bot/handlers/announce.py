@@ -117,7 +117,7 @@ async def on_ready_message(message: Message, state: FSMContext, session: AsyncSe
             await state.clear()
             await message.answer(t(lang, "groups_empty"))
             return
-        await _open_targets(message, state, session, lang, message.message_id, message.text or message.caption)
+        await _open_targets(message, state, session, lang, message.message_id, message)
         return
 
     text = t(lang, "fwd_ask")
@@ -141,11 +141,15 @@ async def _album_lead(session: AsyncSession, message: Message) -> bool:
 
 
 async def _open_targets(message: Message, state: FSMContext, session: AsyncSession, lang: str,
-                        src_msg: int, preview: str | None, edit: bool = False) -> None:
+                        src_msg: int, source: Message | None, edit: bool = False) -> None:
     groups = await active_groups(session)
     await state.set_state(AnnounceSG.targets)
+    preview = source and (source.text or source.caption)
     await state.set_data({
         "src_chat": message.chat.id, "src_msg": src_msg, "preview": (preview or "")[:200], "selected": [], "pin": False,
+        # So the copies can be edited later: where the text is, and the text as HTML.
+        "src_kind": "text" if source and source.text else "caption" if source and source.caption else None,
+        "src_html": (source.html_text if preview else "") if source else "",
     })
     markup = _targets_keyboard(lang, groups, set(), False)
     if edit:
@@ -166,7 +170,7 @@ async def on_send_to_groups(
         return
     # The button sits on the bot's reply to the message, so Telegram hands that message back too.
     src = cb.message.reply_to_message
-    await _open_targets(cb.message, state, session, lang, callback_data.m, src and (src.text or src.caption), edit=True)
+    await _open_targets(cb.message, state, session, lang, callback_data.m, src, edit=True)
     await cb.answer()
 
 
@@ -243,12 +247,18 @@ async def _source(session: AsyncSession, user: User, chat_id: int, msg_id: int) 
 async def _do_send(status_msg: Message, session: AsyncSession, bot: Bot, user: User, lang: str,
                    data: dict, chat_ids: list[int], pin: bool) -> None:
     ids, drafts = await _source(session, user, data["src_chat"], data["src_msg"])
-    send = CopySender(bot, data["src_chat"], ids)
+    if len(ids) > 1:  # an album: the caption is on whichever item has one
+        kinds = ["caption" if d.caption else None for d in drafts]
+    else:
+        kinds = [data.get("src_kind")]
+    send = CopySender(bot, data["src_chat"], ids, kinds)
     result = await broadcast(bot, session, chat_ids, pin, send=send)
     photo = story_photo(drafts)
     caption = next((d.caption for d in drafts if d.caption), "")
+    text_html = data.get("src_html") or html.escape(caption or data.get("preview", ""), quote=False)
     ann = await save_announcement(session, user.id, pin, media_preview(drafts, data.get("preview", "")), result,
-                                  story_file_id=photo, story_caption=story_caption(html.escape(caption, quote=False), caption))
+                                  story_file_id=photo, story_caption=story_caption(html.escape(caption, quote=False), caption),
+                                  html=text_html or None)
 
     labels = {g.chat_id: g.label for g in await active_groups(session)}
     lines = [t(lang, "ann_report", sent=result.chats_reached, total=len(chat_ids))]

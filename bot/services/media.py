@@ -15,7 +15,7 @@ from aiogram.types import (
 )
 
 from bot.db.models import MediaDraft
-from bot.services.broadcast import Sender
+from bot.services.broadcast import Sender, Tagged
 from bot.services.rich_text import to_rich_blocks
 
 log = logging.getLogger(__name__)
@@ -141,20 +141,25 @@ def layout_problem(drafts: list[MediaDraft], layout: str) -> str | None:
     return album_problem(drafts)
 
 
-def _rich_sender(bot: Bot, drafts: list[MediaDraft], html_text: str, layout: str, fallback: Sender) -> Sender:
-    """A Telegram rich message: the photos/videos as a slideshow (← →) or collage, then the text.
-    Falls back to an ordinary album where Telegram refuses the rich message."""
-    def media_block(d: MediaDraft):
-        if d.kind == "video":
-            return InputRichBlockVideo(video=InputMediaVideo(media=d.file_id))
-        return InputRichBlockPhoto(photo=InputMediaPhoto(media=d.file_id))
+def rich_message(media: list[tuple[str, str]], html_text: str, layout: str) -> InputRichMessage:
+    """The photos/videos ([(kind, file_id)]) as a slideshow (← →) or collage, then the text."""
+    def media_block(kind: str, file_id: str):
+        if kind == "video":
+            return InputRichBlockVideo(video=InputMediaVideo(media=file_id))
+        return InputRichBlockPhoto(photo=InputMediaPhoto(media=file_id))
 
     container = InputRichBlockSlideshow if layout == "slideshow" else InputRichBlockCollage
-    message = InputRichMessage(blocks=[container(blocks=[media_block(d) for d in drafts]), *to_rich_blocks(html_text)])
+    return InputRichMessage(blocks=[container(blocks=[media_block(k, f) for k, f in media]), *to_rich_blocks(html_text)])
+
+
+def _rich_sender(bot: Bot, drafts: list[MediaDraft], html_text: str, layout: str, fallback: Sender) -> Sender:
+    """A Telegram rich message. Falls back to an ordinary album where Telegram refuses the rich message."""
+    message = rich_message([(d.kind, d.file_id) for d in drafts], html_text, layout)
 
     async def send(chat_id: int):
         try:
-            return await bot.send_rich_message(chat_id, rich_message=message)
+            sent = await bot.send_rich_message(chat_id, rich_message=message)
+            return Tagged(sent.message_id, "rich")
         except TelegramBadRequest as e:
             log.warning("Rich message refused in %s (%s); sending an album instead", chat_id, e)
             return await fallback(chat_id)

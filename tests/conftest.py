@@ -104,13 +104,13 @@ class FakeSession(BaseSession):
             self.set_member(method.chat_id, method.user_id, "administrator" if method.can_manage_chat else "member",
                             can_be_edited=True)
         if isinstance(method, (SendPhoto, SendVoice, SendDocument, SendVideo)):
-            return self._media_message(method.chat_id, type(method).__name__[4:].lower())
+            return self._media_message(method.chat_id, type(method).__name__[4:].lower(), getattr(method, "caption", None))
         if isinstance(method, SendRichMessage):
             if self.reject_rich:
                 raise TelegramBadRequest(method=method, message="Bad Request: rich messages are not allowed")
             return Message(message_id=next(self._ids), date=datetime.now(), chat=Chat(id=method.chat_id, type="group"))
         if isinstance(method, SendMediaGroup):
-            return [self._media_message(method.chat_id, "photo" if isinstance(m, InputMediaPhoto) else "video")
+            return [self._media_message(method.chat_id, "photo" if isinstance(m, InputMediaPhoto) else "video", m.caption)
                     for m in method.media]
         if isinstance(method, GetFile):
             return File(file_id=method.file_id, file_unique_id="u", file_path=f"thumbs/{method.file_id}.jpg")
@@ -151,7 +151,7 @@ class FakeSession(BaseSession):
             return ChatMemberOwner(user=user, is_anonymous=False)
         return ChatMemberMember(user=user)
 
-    def _media_message(self, chat_id, kind):
+    def _media_message(self, chat_id, kind, caption=None):
         n = next(self._ids)
         fid, uid = f"{kind}{n}", f"u{n}"
         media = {
@@ -161,7 +161,7 @@ class FakeSession(BaseSession):
             "document": {"document": Document(file_id=fid, file_unique_id=uid)},
             "video": {"video": Video(file_id=fid, file_unique_id=uid, width=1, height=1, duration=1)},
         }[kind]
-        return Message(message_id=n, date=datetime.now(), chat=Chat(id=chat_id, type="group"), **media)
+        return Message(message_id=n, date=datetime.now(), chat=Chat(id=chat_id, type="group"), caption=caption, **media)
 
     async def stream_content(self, *args, **kwargs):
         yield FAKE_FILE

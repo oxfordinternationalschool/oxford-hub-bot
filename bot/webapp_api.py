@@ -30,9 +30,10 @@ from bot.db.models import (
 )
 from bot.i18n import t
 from bot.services import admin_views as views
+from bot.services.announcements import TEXT_LIMIT, edit_announcement, edit_problem, new_preview, text_messages
 from bot.services.broadcast import broadcast, delete_announcement, save_announcement
 from bot.services.media import (
-    ALBUM_FAMILY, LAYOUTS, album_problem, announcement_sender, layout_problem, media_preview, upload_kind, upload_to_owner,
+    ALBUM_FAMILY, CAPTION_LIMIT, LAYOUTS, album_problem, announcement_sender, layout_problem, media_preview, upload_kind, upload_to_owner,
 )
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import find_floor, group_sort_key, parse_class
@@ -794,8 +795,11 @@ async def op_announce_send(ctx: Ctx, args: dict):
     send = announcement_sender(ctx.bot, drafts, html_text, plain, layout)
     result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
     photo = story_photo(drafts)
+    rich = layout in ("slideshow", "collage") and len(drafts) >= 2
     ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result,
-                                  story_file_id=photo, story_caption=story_caption(html_text, plain))
+                                  story_file_id=photo, story_caption=story_caption(html_text, plain),
+                                  html=html_text if plain else None, layout=layout if rich else None,
+                                  rich_media=json.dumps([[d.kind, d.file_id] for d in drafts]) if rich else None)
     # Optionally also a 24-hour story on the school's account (the photo only; Telegram has no channel stories for bots).
     story = None
     if args.get("story") is True:
@@ -848,13 +852,55 @@ async def op_announce_history(ctx: Ctx, args: dict):
     } for a in anns]
 
 
+def _chat_ids(args: dict, key: str = "chat_ids", optional: bool = False) -> list[int] | None:
+    ids = args.get(key)
+    if ids is None and optional:
+        return None
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
+        raise ApiError(400, "bad_args", key)
+    return ids
+
+
+@op("announce.get")
+async def op_announce_get(ctx: Ctx, args: dict):
+    """One sent announcement: its text (to edit) and the groups that still have it."""
+    ann = await _get(ctx, Announcement, _int(args, "id"))
+    chat_ids = (await ctx.session.scalars(select(func.distinct(AnnouncementMessage.chat_id))
+                                          .where(AnnouncementMessage.announcement_id == ann.id))).all()
+    groups = {g.chat_id: g for g in (await ctx.session.scalars(select(Group).where(Group.chat_id.in_(chat_ids)))).all()}
+    msgs = await text_messages(ctx.session, ann)
+    kinds = {m.text_kind for m in msgs}
+    return {
+        "id": ann.id, "html": ann.html or "", "deleted": ann.deleted,
+        "editable": bool(msgs) and not ann.deleted and ("rich" not in kinds or bool(ann.rich_media)),
+        "limit": CAPTION_LIMIT if "caption" in kinds else TEXT_LIMIT,
+        "groups": sorted(({"chat_id": c, "label": groups[c].label if c in groups else str(c)} for c in chat_ids),
+                         key=lambda g: group_sort_key(groups[g["chat_id"]]) if g["chat_id"] in groups else (99, g["label"])),
+    }
+
+
+@op("announce.edit")
+async def op_announce_edit(ctx: Ctx, args: dict):
+    """New text for an announcement, changed in every group that has it."""
+    ann = await _get(ctx, Announcement, _int(args, "id"))
+    html_text, plain = to_telegram_html(_str(args, "html", 20000) or "")
+    msgs = await text_messages(ctx.session, ann)
+    if problem := edit_problem(ann, msgs, plain):
+        raise ctx.error(problem)
+    result = await edit_announcement(ctx.bot, ctx.session, ann, msgs, html_text, new_preview(ann.preview, plain))
+    labels = {g.chat_id: g.label for g in (await ctx.session.scalars(select(Group).where(Group.chat_id.in_(result.failed)))).all()}
+    return {"edited": len(set(result.edited)), "total": len({m.chat_id for m in msgs}),
+            "failed": [labels.get(c, str(c)) for c in dict.fromkeys(result.failed)]}
+
+
 @op("announce.delete")
 async def op_announce_delete(ctx: Ctx, args: dict):
+    """Deletes the announcement from the given groups (`chat_ids`), or from every group."""
     ann = await _get(ctx, Announcement, _int(args, "id"))
     if ann.deleted:
         raise ctx.error("ann_already_deleted")
-    deleted, total = await delete_announcement(ctx.bot, ctx.session, ann)
-    return {"deleted": deleted, "total": total}
+    deleted, total = await delete_announcement(ctx.bot, ctx.session, ann, _chat_ids(args, optional=True))
+    return {"deleted": deleted, "total": total, "all_gone": ann.deleted}
 
 
 # ---------- Calls & stats ----------

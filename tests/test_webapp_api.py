@@ -150,7 +150,7 @@ async def test_announcement_send_history_delete(wh):
     assert item["preview"].startswith("Ertaga") and item["groups"] == 1 and item["pinned"]
 
     deleted = await ok("announce.delete", {"id": item["id"]})
-    assert deleted == {"deleted": 1, "total": 1}
+    assert deleted == {"deleted": 1, "total": 1, "all_gone": True}
     assert any(isinstance(r, DeleteMessage) and r.chat_id == GROUP for r in wh.api.requests)
 
     status, _ = await api("announce.send", {"text": "  ", "chat_ids": [GROUP], "pin": False})

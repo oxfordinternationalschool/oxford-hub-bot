@@ -354,6 +354,13 @@ const T = {
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     grp_remove: "Guruhni botdan olib tashlash",
+    ann_sheet: "E'lon", ann_edit: "Matnni tahrirlash", ann_edit_save: "{n} ta guruhda o'zgartirish",
+    ann_edit_hint: "Matn e'lon borgan hamma guruhda o'zgaradi. Rasm va fayllar o'zgarmaydi.",
+    ann_edit_confirm: "E'lon matni {n} ta guruhda o'zgartirilsinmi?", ann_edited: "O'zgardi: {n}/{total} guruh",
+    ann_edit_failed: "Bu guruhlarda o'zgartirib bo'lmadi: {list}",
+    ann_not_editable: "Bu e'lonni tahrirlab bo'lmaydi: unda matn yo'q, u forward qilingan yoki tahrirlash qo'shilishidan oldin yuborilgan.",
+    ann_del_title: "Guruhlardan o'chirish", ann_del_pick: "Guruhlarni belgilang", ann_del_n: "Belgilangan {n} ta guruhdan o'chirish",
+    ann_del_confirm: "E'lon shu guruhlardan o'chirilsinmi?\n{groups}",
     topic: "E'lonlar mavzusi", topic_hint: "Guruhga e'lonlar shu mavzuga boradi. Ro'yxatda bot ko'rgan mavzular bor: yangi mavzu biror xabar yozilgach paydo bo'ladi.",
     topic_all: "Hamma guruhda e'lonlar mavzusini tanlash", topic_all_pick: "Qaysi mavzuga borsin?", topic_all_opt: "{name} · {n} ta guruhda",
     topic_all_confirm: "E'lonlar «{name}» nomli mavzusi bor hamma guruhda shu mavzuga boradigan bo'lsinmi?",
@@ -445,6 +452,13 @@ const T = {
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
     grp_remove: "Убрать группу из бота",
+    ann_sheet: "Объявление", ann_edit: "Изменить текст", ann_edit_save: "Изменить в {n} группах",
+    ann_edit_hint: "Текст изменится во всех группах, куда ушло объявление. Фото и файлы не меняются.",
+    ann_edit_confirm: "Изменить текст объявления в {n} группах?", ann_edited: "Изменено: {n}/{total} групп",
+    ann_edit_failed: "Не удалось изменить в группах: {list}",
+    ann_not_editable: "Это объявление нельзя изменить: в нём нет текста, оно переслано или отправлено до появления редактирования.",
+    ann_del_title: "Удалить из групп", ann_del_pick: "Отметьте группы", ann_del_n: "Удалить из {n} отмеченных групп",
+    ann_del_confirm: "Удалить объявление из этих групп?\n{groups}",
     topic: "Тема для объявлений", topic_hint: "Объявления в группу приходят в эту тему. В списке темы, которые видел бот: новая тема появится, когда в ней что-нибудь напишут.",
     topic_all: "Выбрать тему для объявлений во всех группах", topic_all_pick: "В какую тему отправлять?", topic_all_opt: "{name} · в {n} группах",
     topic_all_confirm: "Отправлять объявления в тему «{name}» во всех группах, где она есть?",
@@ -536,6 +550,13 @@ const T = {
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
     grp_remove: "Remove the group from the bot",
+    ann_sheet: "Announcement", ann_edit: "Edit the text", ann_edit_save: "Change in {n} groups",
+    ann_edit_hint: "The text changes in every group the announcement went to. Photos and files stay the same.",
+    ann_edit_confirm: "Change the announcement text in {n} groups?", ann_edited: "Changed: {n}/{total} groups",
+    ann_edit_failed: "Couldn't change it in: {list}",
+    ann_not_editable: "This announcement can't be edited: it has no text, was forwarded, or was sent before editing existed.",
+    ann_del_title: "Delete from groups", ann_del_pick: "Tick the groups", ann_del_n: "Delete from {n} ticked groups",
+    ann_del_confirm: "Delete the announcement from these groups?\n{groups}",
     topic: "Announcements topic", topic_hint: "Announcements to the group go to this topic. The list has the topics the bot has seen: a new one appears once someone writes in it.",
     topic_all: "Choose the announcements topic in every group", topic_all_pick: "Which topic should they go to?", topic_all_opt: "{name} · in {n} groups",
     topic_all_confirm: "Send announcements to the «{name}» topic in every group that has it?",
@@ -1353,19 +1374,12 @@ const SCREENS = {
       haptic();
       tg.shareToStory(location.origin + a.story_url, a.story_text ? { text: a.story_text } : undefined);
     };
-    const historyRows = history.slice(0, 5).map((a) => row({
+    // A sent announcement opens a sheet: fix its text everywhere, or delete it from chosen groups.
+    const historyRows = history.slice(0, 10).map((a) => row({
       lead: lead("megaphone", a.deleted ? "bad" : ""),
       title: (a.preview || "—").slice(0, 80),
       sub: [`${fmtTime(a.created_at)} · ${t("ann_groups", { n: a.groups })}`, a.deleted ? [" ", badge(t("ann_deleted_badge"), "bad")] : null],
-      side: el("div", { class: "side-btns" },
-        a.story_url ? el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--ok-soft);color:var(--ok)",
-          type: "button", "aria-label": t("story_share"), title: t("story_share"), onclick: () => shareStory(a) }, icon("story")) : null,
-        a.deleted || !a.groups ? null : el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--danger-soft);color:var(--danger)",
-          type: "button", "aria-label": t("ann_delete"), onclick: (e) => act(e.currentTarget, async () => {
-            if (!(await confirmMsg(t("ann_delete_confirm")))) return;
-            const r = await api("announce.delete", { id: a.id });
-            invalidate("annHistory"); haptic("ok"); toast(t("ann_deleted", { n: r.deleted, total: r.total })); render();
-          }) }, icon("trash"))),
+      onclick: () => act(null, () => openAnnouncement(a, shareStory)), chevron: true,
     }));
 
     return [
@@ -1745,6 +1759,71 @@ function openUser(u, roles, floors) {
     roles.length ? card(el("div", { style: "padding:2px 16px 16px" }, field(t("role"), roleSel), floors.length ? field(t("floor"), floorSel) : null, addBtn))
       : card(empty(t("no_roles_yet"), "tag")));
   sheetCloseHook = () => { if (state.tab === "staff" && !state.sub) render(); };
+}
+
+// ---- one sent announcement: edit its text in every group, delete it from chosen groups
+async function openAnnouncement(a, shareStory) {
+  const d = await api("announce.get", { id: a.id });
+  const refresh = () => { invalidate("annHistory"); if (state.tab === "announce" && !state.sub) render(); };
+
+  // Edit
+  let editBox = null, saveBtn = null;
+  if (d.editable) {
+    const editor = el("div", { class: "editor", contenteditable: "true", role: "textbox", "aria-multiline": "true", style: "min-height:110px" });
+    editor.append(tgToNodes(d.html));
+    const counter = el("div", { class: "hint", style: "text-align:right" });
+    const count = () => { const n = editorToTg(editor).plain.length; counter.textContent = `${n}/${d.limit}`; counter.style.color = n > d.limit ? "var(--warn)" : ""; };
+    editor.addEventListener("input", count);
+    editor.addEventListener("paste", (e) => { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain")); });
+    count();
+    const save = el("button", { class: "btn block mt", type: "button", onclick: () => act(save, async () => {
+      const { html } = editorToTg(editor);
+      if (!(await confirmMsg(t("ann_edit_confirm", { n: d.groups.length })))) return;
+      const r = await api("announce.edit", { id: a.id, html });
+      d.html = html; haptic(r.failed.length ? "warning" : "ok"); toast(t("ann_edited", { n: r.edited, total: r.total }));
+      if (r.failed.length) await alertMsg(t("ann_edit_failed", { list: r.failed.join(", ") }));
+      refresh();
+    }) }, t("ann_edit_save", { n: d.groups.length }));
+    saveBtn = save;
+    editBox = [header(t("ann_edit")), card(el("div", { style: "padding:12px 14px 14px" }, editor, counter)), save,
+      el("div", { class: "hint", style: "margin:8px 2px 0" }, t("ann_edit_hint"))];
+  } else if (!d.deleted && d.groups.length) {
+    editBox = [header(t("ann_edit")), card(el("div", { class: "hint", style: "padding:14px 16px;margin:0" }, t("ann_not_editable")))];
+  }
+
+  // Delete from chosen groups
+  const chosen = new Set();
+  const delBox = el("div");
+  const drawDel = () => {
+    const allOn = d.groups.length && d.groups.every((g) => chosen.has(g.chat_id));
+    const go = el("button", { class: "btn danger block", type: "button", disabled: !chosen.size, onclick: () => act(go, async () => {
+      const picked = d.groups.filter((g) => chosen.has(g.chat_id));
+      if (!(await confirmMsg(t("ann_del_confirm", { groups: picked.map((g) => g.label).join(", ") })))) return;
+      const r = await api("announce.delete", { id: a.id, chat_ids: picked.map((g) => g.chat_id) });
+      d.groups = d.groups.filter((g) => !chosen.has(g.chat_id)); chosen.clear();
+      haptic("ok"); toast(t("ann_deleted", { n: r.deleted, total: r.total }));
+      if (r.all_gone) { closeSheet(); refresh(); return; }
+      if (saveBtn) saveBtn.textContent = t("ann_edit_save", { n: d.groups.length });
+      drawDel(); refresh();
+    }) }, icon("trash"), chosen.size ? t("ann_del_n", { n: chosen.size }) : t("ann_del_pick"));
+    delBox.replaceChildren(
+      header(t("ann_del_title")),
+      card(...d.groups.map((g) => {
+        const on = chosen.has(g.chat_id);
+        return row({ lead: el("span", { class: "tick" + (on ? " on" : "") }, on ? icon("check") : null), title: g.label,
+          onclick: () => { on ? chosen.delete(g.chat_id) : chosen.add(g.chat_id); haptic(); drawDel(); } });
+      }), el("div", { style: "padding:8px 16px 16px" },
+        d.groups.length > 1 ? el("button", { class: "btn soft sm", type: "button", style: "margin-bottom:10px", onclick: () => {
+          d.groups.forEach((g) => (allOn ? chosen.delete(g.chat_id) : chosen.add(g.chat_id))); haptic(); drawDel();
+        } }, allOn ? t("ga_clear") : t("ga_select_all")) : null, go)));
+  };
+  if (!d.deleted && d.groups.length) drawDel();
+
+  openSheet(t("ann_sheet"),
+    el("div", { class: "hint", style: "margin:0 2px" }, `${fmtTime(a.created_at)} · ${a.author || ""} · ${t("ann_groups", { n: d.groups.length })}`),
+    d.deleted ? el("div", { class: "mt" }, badge(t("ann_deleted_badge"), "bad")) : null,
+    editBox, delBox,
+    a.story_url ? el("button", { class: "btn soft block mt", type: "button", onclick: () => shareStory(a) }, icon("story"), t("story_share")) : null);
 }
 
 function openGroup(g, floors) {

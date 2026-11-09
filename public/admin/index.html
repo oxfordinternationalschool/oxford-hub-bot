@@ -359,7 +359,8 @@ const T = {
     kick_hint: "Odam guruhdan chiqariladi, lekin bloklanmaydi: havola orqali qaytib kira oladi.",
     kick_confirm: "{name} shu guruhlardan chiqarilsinmi?\n{groups}", kick_sure: "Rostdan ham {name} {n} ta guruhdan chiqarilsinmi?",
     uadd_all: "{n} ta guruhga qo'shish", uadd_progress: "Qo'shilmoqda: {n}/{total}",
-    uadd_confirm: "{name} {n} ta guruhga qo'shilsinmi? Guruhlarda uni ulangan akkaunt qo'shgani ko'rinadi.",
+    uadd_ask: "{name} {n} ta guruhga qanday qo'shilsin? Guruhlarda uni ulangan akkaunt qo'shgani ko'rinadi.",
+    uadd_as_admin: "Admin qilib qo'shish", uadd_as_member: "Oddiy a'zo qilib qo'shish",
     ann_sheet: "E'lon", ann_edit: "Matnni tahrirlash", ann_edit_save: "{n} ta guruhda o'zgartirish",
     ann_edit_hint: "Matn e'lon borgan hamma guruhda o'zgaradi. Rasm va fayllar o'zgarmaydi.",
     ann_edit_confirm: "E'lon matni {n} ta guruhda o'zgartirilsinmi?", ann_edited: "O'zgardi: {n}/{total} guruh",
@@ -463,7 +464,8 @@ const T = {
     kick_hint: "Человек будет удалён из группы, но не заблокирован: он сможет вернуться по ссылке.",
     kick_confirm: "Удалить {name} из этих групп?\n{groups}", kick_sure: "Точно удалить {name} из {n} групп?",
     uadd_all: "Добавить в {n} групп", uadd_progress: "Добавление: {n}/{total}",
-    uadd_confirm: "Добавить {name} в {n} групп? В группах будет видно, что его добавил подключённый аккаунт.",
+    uadd_ask: "Как добавить {name} в {n} групп? В группах будет видно, что его добавил подключённый аккаунт.",
+    uadd_as_admin: "Добавить админом", uadd_as_member: "Добавить участником",
     ann_sheet: "Объявление", ann_edit: "Изменить текст", ann_edit_save: "Изменить в {n} группах",
     ann_edit_hint: "Текст изменится во всех группах, куда ушло объявление. Фото и файлы не меняются.",
     ann_edit_confirm: "Изменить текст объявления в {n} группах?", ann_edited: "Изменено: {n}/{total} групп",
@@ -567,7 +569,8 @@ const T = {
     kick_hint: "The person is removed from the group but not blocked: they can come back through a link.",
     kick_confirm: "Remove {name} from these groups?\n{groups}", kick_sure: "Really remove {name} from {n} groups?",
     uadd_all: "Add to {n} groups", uadd_progress: "Adding: {n}/{total}",
-    uadd_confirm: "Add {name} to {n} groups? The groups will show the connected account as the one who added them.",
+    uadd_ask: "How should {name} be added to {n} groups? The groups will show the connected account as the one who added them.",
+    uadd_as_admin: "Add as admin", uadd_as_member: "Add as a member",
     ann_sheet: "Announcement", ann_edit: "Edit the text", ann_edit_save: "Change in {n} groups",
     ann_edit_hint: "The text changes in every group the announcement went to. Photos and files stay the same.",
     ann_edit_confirm: "Change the announcement text in {n} groups?", ann_edited: "Changed: {n}/{total} groups",
@@ -703,6 +706,14 @@ const alertMsg = (msg) => new Promise((ok) => {
 const confirmMsg = (msg) => new Promise((ok) => {
   try { if (canTg("6.2")) return tg.showConfirm(msg, (yes) => ok(!!yes)); } catch {}
   ok(confirm(msg));
+});
+/** Asks which of up to two things to do; resolves to the chosen id, or null if cancelled. */
+const chooseMsg = (msg, choices) => new Promise((ok) => {
+  try {
+    if (canTg("6.2")) return tg.showPopup({ message: msg, buttons: [...choices.map(([id, text]) => ({ id, type: "default", text })), { id: "", type: "cancel" }] }, (id) => ok(id || null));
+  } catch {}
+  for (const [id, text] of choices) if (confirm(`${msg}\n\n${text}?`)) return ok(id);
+  ok(null);
 });
 /** Runs an action; on failure shows the server's (already translated) message. */
 async function act(button, fn) {
@@ -1590,9 +1601,14 @@ function adminPanel(person) {
     return results;
   };
   const addToGroups = async (groups, button) => {
-    if (!(await confirmMsg(t("uadd_confirm", { name: person.name, n: groups.length })))) return;
+    const how = await chooseMsg(t("uadd_ask", { name: person.name, n: groups.length }),
+      [["admin", t("uadd_as_admin")], ["member", t("uadd_as_member")]]);
+    if (!how) return;
     const results = await addChunks(groups, button);
-    draw(); await reportResults(results);
+    if (how === "member") { draw(); await reportResults(results); return; }
+    const added = groups.filter((g) => g.status === "member");
+    const promoted = added.length ? await setAdmin(person, added, true) : [];
+    draw(); await reportResults([...results.filter((r) => r.result !== "ok"), ...promoted]);
   };
   const draw = () => {
     const accountReady = !!(cached("me") || {}).account_ready;

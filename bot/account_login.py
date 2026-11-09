@@ -29,7 +29,7 @@ def copy_session() -> None:
     session = os.getenv("TG_SESSION", "")
     if not session:
         sys.exit("Avval login qiling: python -m bot.account_login")
-    subprocess.run("clip", input=session.encode("utf-16"), check=True)
+    subprocess.run("clip", input=session.encode("utf-16-le"), check=True)
     print("Kalit nusxalandi. Vercel'da TG_SESSION qiymatiga joylang (Ctrl+V).")
 
 

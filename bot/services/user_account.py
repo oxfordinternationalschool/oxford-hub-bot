@@ -32,6 +32,11 @@ PAUSE = 1.0  # seconds between invites, to stay well within Telegram's limits
 NOTICE_EVERY = timedelta(minutes=10)
 
 
+def _session_value() -> str:
+    # Pasted from the Windows clipboard, the value may start with an invisible byte-order mark.
+    return os.environ["TG_SESSION"].strip().lstrip("﻿")
+
+
 class AccountOff(Exception):
     """The account isn't configured, or its session was ended."""
 
@@ -52,11 +57,11 @@ async def open_account() -> AsyncIterator:
         if not os.environ["TG_API_ID"].strip().isdigit():
             raise AccountOff("bad_api_id")
         try:
-            StringSession(os.environ["TG_SESSION"].strip())
+            StringSession(_session_value())
         except ValueError:
             raise AccountOff("bad_session") from None
         client = TelegramClient(
-            StringSession(os.environ["TG_SESSION"].strip()), int(os.environ["TG_API_ID"].strip()), os.environ["TG_API_HASH"].strip(),
+            StringSession(_session_value()), int(os.environ["TG_API_ID"].strip()), os.environ["TG_API_HASH"].strip(),
             receive_updates=False, flood_sleep_threshold=0,
         )
         await client.connect()

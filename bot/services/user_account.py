@@ -49,12 +49,20 @@ async def open_account() -> AsyncIterator:
         from telethon import TelegramClient
         from telethon.sessions import StringSession
 
+        if not os.environ["TG_API_ID"].strip().isdigit():
+            raise AccountOff("bad_api_id")
+        try:
+            StringSession(os.environ["TG_SESSION"].strip())
+        except ValueError:
+            raise AccountOff("bad_session") from None
         client = TelegramClient(
             StringSession(os.environ["TG_SESSION"].strip()), int(os.environ["TG_API_ID"].strip()), os.environ["TG_API_HASH"].strip(),
             receive_updates=False, flood_sleep_threshold=0,
         )
         await client.connect()
-    except Exception as e:  # a mistyped value, for instance; only the kind is reported, values are secret
+    except AccountOff:
+        raise
+    except Exception as e:  # only the kind is reported, the values are secret
         log.warning("Cannot connect the account: %s", type(e).__name__)
         raise AccountOff(type(e).__name__) from None
     try:

@@ -354,6 +354,7 @@ const T = {
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     grp_remove: "Guruhni botdan olib tashlash",
+    ga_confirm_add: "{name} shu guruhlarda admin qilinsinmi?\n{groups}\n\nGuruhda yo'q bo'lsa, avval guruhga qo'shiladi.",
     cancel: "Bekor qilish", kick_open: "Guruhlardan chiqarish", kick_n: "Belgilangan {n} ta guruhdan chiqarish",
     kick_hint: "Odam guruhdan chiqariladi, lekin bloklanmaydi: havola orqali qaytib kira oladi.",
     kick_confirm: "{name} shu guruhlardan chiqarilsinmi?\n{groups}", kick_sure: "Rostdan ham {name} {n} ta guruhdan chiqarilsinmi?",
@@ -457,6 +458,7 @@ const T = {
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
     grp_remove: "Убрать группу из бота",
+    ga_confirm_add: "Сделать {name} админом в этих группах?\n{groups}\n\nЕсли человека нет в группе, он сначала будет добавлен.",
     cancel: "Отмена", kick_open: "Удалить из групп", kick_n: "Удалить из {n} отмеченных групп",
     kick_hint: "Человек будет удалён из группы, но не заблокирован: он сможет вернуться по ссылке.",
     kick_confirm: "Удалить {name} из этих групп?\n{groups}", kick_sure: "Точно удалить {name} из {n} групп?",
@@ -560,6 +562,7 @@ const T = {
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
     grp_remove: "Remove the group from the bot",
+    ga_confirm_add: "Make {name} an admin of these groups?\n{groups}\n\nIf they aren't in a group, they are added first.",
     cancel: "Cancel", kick_open: "Remove from groups", kick_n: "Remove from {n} ticked groups",
     kick_hint: "The person is removed from the group but not blocked: they can come back through a link.",
     kick_confirm: "Remove {name} from these groups?\n{groups}", kick_sure: "Really remove {name} from {n} groups?",
@@ -1489,6 +1492,7 @@ const SCREENS = {
 };
 
 // ---------------------------------------------------------------- group admins (shared)
+const CANT_ADD = ["privacy", "unknown_user"];  // adding can't work for this person: only an invite link can
 const GST_KIND = { owner: "acc", admin: "ok", admin_other: "ok", member: "", absent: "warn", unknown: "bad" };
 
 /** Telegram's own people picker (any contact or chat member, whether or not they use the bot).
@@ -1529,11 +1533,15 @@ function adminPanel(person) {
     if (!(await confirmMsg(t("ga_remove_confirm", { name: person.name, group: g.label })))) return;
     await reportResults(await setAdmin(person, [g], false)); draw();
   };
-  const promote = async () => {
+  // Ticked groups they aren't in yet: added first through the connected account, then made admin.
+  const promote = async (button) => {
     const groups = list.filter((g) => chosen.has(g.chat_id));
-    if (!(await confirmMsg(t("ga_confirm", { name: person.name, groups: groups.map((g) => g.label).join(", ") })))) return;
-    const results = await setAdmin(person, groups, true);
-    chosen.clear(); draw(); await reportResults(results);
+    const absent = groups.filter((g) => g.status === "absent");
+    if (!(await confirmMsg(t(absent.length ? "ga_confirm_add" : "ga_confirm", { name: person.name, groups: groups.map((g) => g.label).join(", ") })))) return;
+    const failed = (absent.length ? await addChunks(absent, button) : []).filter((r) => r.result !== "ok");
+    const ready = groups.filter((g) => g.status === "member");
+    const results = ready.length ? await setAdmin(person, ready, true) : [];
+    chosen.clear(); draw(); await reportResults([...failed, ...results]);
   };
   // Removing them from ticked groups. Tucked away behind a button, and asked twice.
   let kicking = false;
@@ -1565,48 +1573,60 @@ function adminPanel(person) {
         } }, allOn ? t("ga_clear") : t("ga_select_all")) : null, go, el("div", { class: "mt" }), open));
   };
   // Into every group they aren't in, through the connected Telegram account; a few at a time, with progress.
-  const addToGroups = async (groups, button) => {
-    if (!(await confirmMsg(t("uadd_confirm", { name: person.name, n: groups.length })))) return;
+  const addChunks = async (groups, button) => {
     const near = list.filter((g) => ["member", "admin", "admin_other", "owner"].includes(g.status)).map((g) => g.chat_id).slice(0, 3);
     const results = [];
     for (let i = 0; i < groups.length; i += 4) {
       button.textContent = t("uadd_progress", { n: i, total: groups.length });
       const r = await api("admins.add", { user_id: person.id, chat_ids: groups.slice(i, i + 4).map((g) => g.chat_id), near });
       results.push(...r.results);
-      for (const x of r.results) if (x.result === "ok") { const g = list.find((y) => y.chat_id === x.chat_id); g.status = "member"; g.invite = null; }
+      for (const x of r.results) {
+        const g = list.find((y) => y.chat_id === x.chat_id);
+        if (x.result === "ok") { g.status = "member"; g.invite = null; }
+        else if (CANT_ADD.includes(x.result)) { g.addFailed = true; chosen.delete(g.chat_id); }  // an invite link is the way now
+      }
       if (r.stop) break;
     }
+    return results;
+  };
+  const addToGroups = async (groups, button) => {
+    if (!(await confirmMsg(t("uadd_confirm", { name: person.name, n: groups.length })))) return;
+    const results = await addChunks(groups, button);
     draw(); await reportResults(results);
   };
   const draw = () => {
-    const members = list.filter((g) => g.status === "member");
+    const accountReady = !!(cached("me") || {}).account_ready;
+    // Someone not in the group can be ticked too: the connected account adds them first.
+    const tickable = (g) => g.status === "member" || (g.status === "absent" && accountReady && !g.addFailed);
+    const members = list.filter(tickable);
     const rows = list.map((g) => {
       const on = chosen.has(g.chat_id);
-      const kind = g.status === "member" ? (on ? " on" : "") : g.status === "admin" || g.status === "admin_other" || g.status === "owner" ? " done" : " off";
+      const needsLink = g.status === "absent" && !tickable(g);
+      const kind = tickable(g) ? (on ? " on" : "") : g.status === "admin" || g.status === "admin_other" || g.status === "owner" ? " done" : " off";
       let side = null;
       if (g.status === "admin") side = el("button", { class: "btn danger sm", type: "button", onclick: (e) => act(e.currentTarget, () => remove(g)) }, t("ga_remove"));
       // Not in the group: a link for them alone; joining through it makes them an admin.
-      else if (g.status === "absent" && g.invite) side = el("div", { class: "btns" },
+      else if (needsLink && g.invite) side = el("div", { class: "btns" },
         el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--surface-2)", type: "button", "aria-label": t("copy"), onclick: () => copyText(g.invite) }, icon("copy")),
         el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--accent-soft);color:var(--accent)", type: "button", "aria-label": t("share"),
           onclick: () => share(g.invite, t("ga_invite_text", { group: g.label })) }, icon("share")));
-      else if (g.status === "absent") side = el("button", { class: "btn soft sm", type: "button", onclick: (e) => act(e.currentTarget, async () => {
+      else if (needsLink) side = el("button", { class: "btn soft sm", type: "button", onclick: (e) => act(e.currentTarget, async () => {
         g.invite = (await api("admins.invite", { user_id: person.id, chat_id: g.chat_id })).link;
         haptic("ok"); draw(); share(g.invite, t("ga_invite_text", { group: g.label }));
       }) }, t("ga_invite"));
       return row({
         lead: el("span", { class: "tick" + kind }, on || kind === " done" ? icon("check") : null),
         title: g.label,
-        sub: [badge(t("gst_" + g.status), GST_KIND[g.status]), g.invite ? el("div", { style: "margin-top:4px" }, t("ga_invite_sent")) : null],
+        sub: [badge(t("gst_" + g.status), GST_KIND[g.status]), needsLink && g.invite ? el("div", { style: "margin-top:4px" }, t("ga_invite_sent")) : null],
         side,
-        onclick: g.status === "member" ? () => { on ? chosen.delete(g.chat_id) : chosen.add(g.chat_id); haptic(); draw(); } : null,
+        onclick: tickable(g) ? () => { on ? chosen.delete(g.chat_id) : chosen.add(g.chat_id); haptic(); draw(); } : null,
       });
     });
     const allOn = members.length && members.every((g) => chosen.has(g.chat_id));
-    const absent = list.filter((g) => g.status === "absent");
-    const addAll = (cached("me") || {}).account_ready && absent.length ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:10px",
+    const absent = list.filter((g) => g.status === "absent" && !g.addFailed);
+    const addAll = accountReady && absent.length ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:10px",
       onclick: () => act(addAll, () => addToGroups(absent, addAll)) }, icon("plus"), t("uadd_all", { n: absent.length })) : null;
-    const go = el("button", { class: "btn block", type: "button", disabled: !chosen.size, onclick: () => act(go, promote) },
+    const go = el("button", { class: "btn block", type: "button", disabled: !chosen.size, onclick: () => act(go, () => promote(go)) },
       chosen.size ? t("ga_promote", { n: chosen.size }) : t("ga_tick"));
     box.replaceChildren(...(rows.length ? rows : [empty(t("gadm_no_groups"), "school")]),
       el("div", { style: "padding:8px 16px 16px" }, addAll,
@@ -1921,7 +1941,13 @@ function openGroup(g, floors) {
   const addAdmin = el("button", { class: "btn soft block mt", type: "button", onclick: () => act(addAdmin, async () => {
     const p = await pickPerson();
     if (!p || !(await confirmMsg(t("grp_add_confirm", { name: p.name, group: groupLabel(g) })))) return;
-    const results = await setAdmin(p, [{ chat_id: g.chat_id, label: groupLabel(g) }], true);
+    const target = () => [{ chat_id: g.chat_id, label: groupLabel(g) }];
+    let results = await setAdmin(p, target(), true);
+    if (results[0] && results[0].result === "not_member" && (cached("me") || {}).account_ready) {
+      const added = (await api("admins.add", { user_id: p.id, chat_ids: [g.chat_id] })).results;
+      if (added[0].result === "ok") results = await setAdmin(p, target(), true);
+      else if (!CANT_ADD.includes(added[0].result)) { await reportResults(added); return; }
+    }
     if (results[0] && results[0].result === "not_member") {
       // Not in the group yet: offer a link for them alone; joining through it makes them an admin.
       if (!(await confirmMsg(t("grp_invite_confirm", { name: p.name, group: groupLabel(g) })))) return;

@@ -179,6 +179,38 @@ class ForumTopic(Base):
     updated_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
+class AccountChat(Base):
+    """A school group as the connected Telegram account can address it (see services/user_account.py)."""
+
+    __tablename__ = "account_chats"
+
+    chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    access_hash: Mapped[int] = mapped_column(BigInteger)
+    right: Mapped[str] = mapped_column(String(16))  # "ok": the account may add members
+
+
+class AccountUser(Base):
+    """A person as the connected Telegram account can address them."""
+
+    __tablename__ = "account_users"
+
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    access_hash: Mapped[int] = mapped_column(BigInteger)
+
+
+class AccountAddLog(Base):
+    """Who added whom to which group through the connected account."""
+
+    __tablename__ = "account_add_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    actor_id: Mapped[int] = mapped_column(BigInteger)
+    user_id: Mapped[int] = mapped_column(BigInteger)
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    result: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
 class PickedUser(Base):
     """A person an admin picked in Telegram's own people picker, opened from the Mini App.
     Telegram tells the bot in a private message; the Mini App reads it back by the request id.

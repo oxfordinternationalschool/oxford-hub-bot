@@ -354,6 +354,8 @@ const T = {
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     grp_remove: "Guruhni botdan olib tashlash",
+    uadd_all: "{n} ta guruhga qo'shish", uadd_progress: "Qo'shilmoqda: {n}/{total}",
+    uadd_confirm: "{name} {n} ta guruhga qo'shilsinmi? Guruhlarda uni ulangan akkaunt qo'shgani ko'rinadi.",
     ann_sheet: "E'lon", ann_edit: "Matnni tahrirlash", ann_edit_save: "{n} ta guruhda o'zgartirish",
     ann_edit_hint: "Matn e'lon borgan hamma guruhda o'zgaradi. Rasm va fayllar o'zgarmaydi.",
     ann_edit_confirm: "E'lon matni {n} ta guruhda o'zgartirilsinmi?", ann_edited: "O'zgardi: {n}/{total} guruh",
@@ -452,6 +454,8 @@ const T = {
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
     grp_remove: "Убрать группу из бота",
+    uadd_all: "Добавить в {n} групп", uadd_progress: "Добавление: {n}/{total}",
+    uadd_confirm: "Добавить {name} в {n} групп? В группах будет видно, что его добавил подключённый аккаунт.",
     ann_sheet: "Объявление", ann_edit: "Изменить текст", ann_edit_save: "Изменить в {n} группах",
     ann_edit_hint: "Текст изменится во всех группах, куда ушло объявление. Фото и файлы не меняются.",
     ann_edit_confirm: "Изменить текст объявления в {n} группах?", ann_edited: "Изменено: {n}/{total} групп",
@@ -550,6 +554,8 @@ const T = {
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
     grp_remove: "Remove the group from the bot",
+    uadd_all: "Add to {n} groups", uadd_progress: "Adding: {n}/{total}",
+    uadd_confirm: "Add {name} to {n} groups? The groups will show the connected account as the one who added them.",
     ann_sheet: "Announcement", ann_edit: "Edit the text", ann_edit_save: "Change in {n} groups",
     ann_edit_hint: "The text changes in every group the announcement went to. Photos and files stay the same.",
     ann_edit_confirm: "Change the announcement text in {n} groups?", ann_edited: "Changed: {n}/{total} groups",
@@ -1520,6 +1526,20 @@ function adminPanel(person) {
     const results = await setAdmin(person, groups, true);
     chosen.clear(); draw(); await reportResults(results);
   };
+  // Into every group they aren't in, through the connected Telegram account; a few at a time, with progress.
+  const addToGroups = async (groups, button) => {
+    if (!(await confirmMsg(t("uadd_confirm", { name: person.name, n: groups.length })))) return;
+    const near = list.filter((g) => ["member", "admin", "admin_other", "owner"].includes(g.status)).map((g) => g.chat_id).slice(0, 3);
+    const results = [];
+    for (let i = 0; i < groups.length; i += 4) {
+      button.textContent = t("uadd_progress", { n: i, total: groups.length });
+      const r = await api("admins.add", { user_id: person.id, chat_ids: groups.slice(i, i + 4).map((g) => g.chat_id), near });
+      results.push(...r.results);
+      for (const x of r.results) if (x.result === "ok") { const g = list.find((y) => y.chat_id === x.chat_id); g.status = "member"; g.invite = null; }
+      if (r.stop) break;
+    }
+    draw(); await reportResults(results);
+  };
   const draw = () => {
     const members = list.filter((g) => g.status === "member");
     const rows = list.map((g) => {
@@ -1545,10 +1565,13 @@ function adminPanel(person) {
       });
     });
     const allOn = members.length && members.every((g) => chosen.has(g.chat_id));
+    const absent = list.filter((g) => g.status === "absent");
+    const addAll = (cached("me") || {}).account_ready && absent.length ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:10px",
+      onclick: () => act(addAll, () => addToGroups(absent, addAll)) }, icon("plus"), t("uadd_all", { n: absent.length })) : null;
     const go = el("button", { class: "btn block", type: "button", disabled: !chosen.size, onclick: () => act(go, promote) },
       chosen.size ? t("ga_promote", { n: chosen.size }) : t("ga_tick"));
     box.replaceChildren(...(rows.length ? rows : [empty(t("gadm_no_groups"), "school")]),
-      el("div", { style: "padding:8px 16px 16px" },
+      el("div", { style: "padding:8px 16px 16px" }, addAll,
         !members.length ? el("div", { class: "hint", style: "margin:0" }, t("ga_nowhere")) : [
           members.length > 1 ? el("button", { class: "btn soft sm", type: "button", style: "margin-bottom:10px", onclick: () => {
             members.forEach((g) => (allOn ? chosen.delete(g.chat_id) : chosen.add(g.chat_id))); haptic(); draw();

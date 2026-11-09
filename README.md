@@ -101,6 +101,12 @@ Rollar menyusi rol qo'shilganda yoki o'zgarganda o'zi yangilanadi.
 - Telegram botga mavzular ro'yxatini bermaydi. Bot mavzuni unga biror xabar yozilganda ko'radi va eslab qoladi.
 - Tanlangan mavzu o'chirib yuborilsa, e'lon General'ga boradi.
 
+**Odamni hamma guruhga qo'shish.** Telegram botlarga odam qo'shishga ruxsat bermaydi, shuning uchun buni ulangan oddiy Telegram akkaunt bajaradi.
+- Ulash: kompyuterda `python -m bot.account_login`, keyin `python -m bot.account_login --copy` va Vercel'ga `TG_API_ID`, `TG_API_HASH`, `TG_SESSION` qo'yiladi.
+- Ishlatish: Mini App → Yana → Guruh adminlari → odamni tanlash → **N ta guruhga qo'shish**. Har qanday Mini App admini bosa oladi; akkaunt egasiga kim, kimni qo'shayotgani xabar qilinadi.
+- `TG_SESSION` akkauntga to'liq kirish beradi. Uni bekor qilish: Telegram → Settings → Devices.
+- Odamning maxfiylik sozlamalari ruxsat bermasa, unga taklif havolasi yuboriladi. Telegram vaqtincha cheklasa, qo'shish to'xtaydi.
+
 **Guruh adminlarini tayinlash.** Botda guruhda "Yangi admin qo'shish" huquqi bo'lishi kerak.
 - Guruhning o'zida odamning xabariga javoban `/promote` yozsangiz admin qiladi, `/demote` yozsangiz adminlikdan oladi.
 - Mini App'da: **Yana → Guruh adminlari → Odamni tanlash**. Odam Telegram'ning o'z oynasidan tanlanadi va botga ulangan bo'lishi shart emas. Keyin guruhlarni belgilab, tasdiqlaysiz.

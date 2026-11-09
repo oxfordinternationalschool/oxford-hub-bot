@@ -4,3 +4,4 @@ aiosqlite>=0.20
 asyncpg>=0.30
 python-dotenv>=1.0
 Pillow>=11
+Telethon>=1.40,<2

@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.app import request_scope
 from bot.config import LANGS, settings, utcnow
 from bot.db.models import (
-    Announcement, AnnouncementMessage, Call, Floor, ForumTopic, Group, Invite, MediaDraft, Role, StaffRole, User,
+    AccountChat, Announcement, AnnouncementMessage, Call, Floor, ForumTopic, Group, Invite, MediaDraft, Role, StaffRole, User, PickedUser,
 )
 from bot.i18n import t
 from bot.services import admin_views as views
@@ -41,6 +41,7 @@ from bot.services.group_admins import (
     admin_invite, group_status, member_status, new_request_id, pending_invites, person_name, picked_user, picker_button,
     set_group_admin,
 )
+from bot.services import user_account
 from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.topics import same_name, topics_by_chat
 from bot.services.rich_text import to_telegram_html
@@ -240,7 +241,7 @@ async def op_me(ctx: Ctx, args: dict):
     me = await ctx.bot.me()
     account = await story_account(ctx.session)
     return {"id": ctx.user.id, "name": ctx.user.full_name, "lang": ctx.user.lang, "bot": me.username,
-            "story_account": account.name if account else None}
+            "story_account": account.name if account else None, "account_ready": user_account.configured()}
 
 
 @op("dashboard")
@@ -615,6 +616,54 @@ async def op_admins_set(ctx: Ctx, args: dict):
         "chat_id": g.chat_id, "label": g.label, "result": r,
         "message": None if r == "ok" else html.unescape(_plain(t(ctx.lang, f"gadm_{r}", name=name))),
     } for g, r in zip(groups, results)]
+
+
+@op("admins.add")
+async def op_admins_add(ctx: Ctx, args: dict):
+    """Adds the person to the given groups through the connected Telegram account (a few at a
+    time: the Mini App calls this repeatedly and shows the progress)."""
+    user_id = _user_id(args)
+    chat_ids = args.get("chat_ids")
+    if not isinstance(chat_ids, list) or not 1 <= len(chat_ids) <= 6 or not all(isinstance(c, int) for c in chat_ids):
+        raise ApiError(400, "bad_args", "chat_ids")
+    near = [c for c in (args.get("near") or []) if isinstance(c, int)][:3]
+    groups = {g.chat_id: g for g in await _active_groups(ctx) if g.chat_id in set(chat_ids)}
+
+    known = await ctx.session.get(User, user_id)
+    picked = await ctx.session.scalar(
+        select(PickedUser).where(PickedUser.user_id == user_id).order_by(PickedUser.id.desc()).limit(1)
+    )
+    username = (known.username if known else None) or (picked.username if picked else None)
+    name = await person_name(ctx.session, user_id)
+    try:
+        async with user_account.open_account() as client:
+            cached = (await ctx.session.scalars(select(AccountChat.chat_id).where(AccountChat.chat_id.in_(groups)))).all()
+            if len(cached) < len(groups):  # a group added since the last check
+                await user_account.refresh_chats(client, ctx.session)
+            target = await user_account.resolve_user(client, ctx.session, user_id, username, name, near)
+            if target is None:
+                results = dict.fromkeys(groups, user_account.UNKNOWN_USER)
+            else:
+                results = await user_account.add_to_chats(client, ctx.session, target, list(groups))
+            owner = await client.get_me()
+    except user_account.AccountOff:
+        raise ctx.error("uadd_off", status=409)
+
+    tell_owner = await user_account.record(ctx.session, ctx.user.id, user_id, results)
+    if tell_owner and owner.id != ctx.user.id:
+        owner_user = await ctx.session.get(User, owner.id)
+        with contextlib.suppress(TelegramAPIError):
+            await ctx.bot.send_message(owner.id, t(
+                owner_user.lang if owner_user else settings.default_lang, "uadd_notice",
+                actor=html.escape(ctx.user.full_name), name=html.escape(name),
+            ))
+    return {
+        "stop": user_account.FLOOD in results.values(),
+        "results": [{
+            "chat_id": c, "label": groups[c].label, "result": r,
+            "message": None if r == user_account.OK else html.unescape(_plain(t(ctx.lang, f"uadd_{r}"))),
+        } for c, r in results.items()],
+    }
 
 
 @op("groups.admins")

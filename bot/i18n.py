@@ -610,6 +610,60 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Текст — не больше 4096 символов.",
         "en": "The text can be at most 4096 characters.",
     },
+    "uadd_off": {
+        "uz": "Odam qo'shadigan Telegram akkaunt ulanmagan yoki undan chiqib ketilgan.",
+        "ru": "Telegram-аккаунт для добавления людей не подключён, или из него вышли.",
+        "en": "The Telegram account that adds people isn't connected, or was logged out.",
+    },
+    "uadd_notice": {
+        "uz": "👤 {actor} sizning akkauntingiz orqali {name} ni guruhlarga qo'shyapti.",
+        "ru": "👤 {actor} добавляет {name} в группы через ваш аккаунт.",
+        "en": "👤 {actor} is adding {name} to groups through your account.",
+    },
+    "uadd_privacy": {
+        "uz": "Telegram sozlamalari bu odamni qo'shishga ruxsat bermadi. Taklif havolasini yuboring.",
+        "ru": "Настройки Telegram этого человека не позволяют его добавить. Отправьте ссылку-приглашение.",
+        "en": "This person's Telegram settings don't allow adding them. Send an invite link.",
+    },
+    "uadd_too_many": {
+        "uz": "Bu odam juda ko'p guruhga a'zo, Telegram yana qo'shishga ruxsat bermadi.",
+        "ru": "Этот человек состоит в слишком многих группах, Telegram не разрешил добавить его.",
+        "en": "This person is in too many groups, so Telegram refused.",
+    },
+    "uadd_full": {
+        "uz": "Guruh to'lgan.", "ru": "Группа заполнена.", "en": "The group is full.",
+    },
+    "uadd_banned": {
+        "uz": "Bu odam guruhdan chetlatilgan. Avval cheklovni olib tashlang.",
+        "ru": "Этот человек заблокирован в группе. Сначала снимите блокировку.",
+        "en": "This person is banned from the group. Lift the ban first.",
+    },
+    "uadd_no_right": {
+        "uz": "Ulangan akkauntda bu guruhga odam qo'shish huquqi yo'q.",
+        "ru": "У подключённого аккаунта нет права добавлять людей в эту группу.",
+        "en": "The connected account has no right to add people to this group.",
+    },
+    "uadd_not_in": {
+        "uz": "Ulangan akkaunt bu guruhda yo'q.", "ru": "Подключённого аккаунта нет в этой группе.", "en": "The connected account isn't in this group.",
+    },
+    "uadd_flood": {
+        "uz": "Telegram vaqtincha cheklov qo'ydi, qolganlari qo'shilmadi. Keyinroq urinib ko'ring.",
+        "ru": "Telegram временно ограничил добавление, остальные не добавлены. Попробуйте позже.",
+        "en": "Telegram set a temporary limit, so the rest weren't added. Try again later.",
+    },
+    "uadd_unknown_user": {
+        "uz": "Ulangan akkaunt bu odamni topa olmadi (username'i yo'q). Taklif havolasini yuboring.",
+        "ru": "Подключённый аккаунт не смог найти этого человека (нет username). Отправьте ссылку-приглашение.",
+        "en": "The connected account couldn't find this person (no username). Send an invite link.",
+    },
+    "uadd_basic_group": {
+        "uz": "Bu eski turdagi guruh, bu usul ishlamaydi.", "ru": "Это группа старого типа, так нельзя.", "en": "This is an old-style group, so this doesn't work.",
+    },
+    "uadd_error": {
+        "uz": "Telegram rad etdi. Birozdan keyin qayta urinib ko'ring.",
+        "ru": "Telegram отказал. Попробуйте чуть позже.",
+        "en": "Telegram refused. Please try again a bit later.",
+    },
     "gadm_usage": {
         "uz": "Odamning xabariga javob (reply) qilib yozing: /promote — guruh admini qilish, /demote — adminlikdan olish.",
         "ru": "Напишите ответом (reply) на сообщение человека: /promote — сделать админом группы, /demote — снять админа.",

@@ -685,9 +685,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "en": "Choose who to make an admin",
     },
     "gadm_promoted": {
-        "uz": "✅ {name} endi guruh admini: xabarlarni o'chira oladi, a'zolarni cheklay oladi, xabarni qadaydi va odam qo'sha oladi.",
-        "ru": "✅ {name} теперь админ группы: может удалять сообщения, ограничивать участников, закреплять и приглашать.",
-        "en": "✅ {name} is now a group admin: they can delete messages, restrict members, pin and invite people.",
+        "uz": "✅ {name} endi guruh admini, botda bor barcha huquqlar berildi.",
+        "ru": "✅ {name} теперь админ группы, со всеми правами, которые есть у бота.",
+        "en": "✅ {name} is now a group admin, with every right the bot has.",
     },
     "gadm_demoted": {
         "uz": "✅ {name} endi admin emas.",

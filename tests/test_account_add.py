@@ -26,6 +26,7 @@ class FakeClient:
         self.errors = {}  # channel id -> exception
         self.usernames = {"anvar_q": PERSON}
         self.members = {}  # search word -> user ids
+        self.everyone, self.roles = [], []  # the group's member list
 
     async def iter_dialogs(self):
         for chat_id in (GROUP_A, GROUP_B):
@@ -40,6 +41,9 @@ class FakeClient:
             uid = self.usernames.get(request.username)
             return NS(users=[NS(id=uid, access_hash=555)] if uid else [])
         if isinstance(request, GetParticipantsRequest):
+            if request.filter.q == "":
+                return NS(users=self.everyone[request.offset:request.offset + request.limit],
+                          participants=self.roles[request.offset:request.offset + request.limit], count=len(self.everyone))
             return NS(users=[NS(id=u, access_hash=666) for u in self.members.get(request.filter.q, [])])
         assert isinstance(request, InviteToChannelRequest)
         error = self.errors.get(request.channel.channel_id)
@@ -135,3 +139,33 @@ async def test_only_admins_can_add(wh, account):
     await wh.register(TEACHER)
     status, _ = await api("admins.add", {"user_id": PERSON, "chat_ids": [GROUP_A]}, uid=TEACHER)
     assert status == 403 and account.invited == []
+
+
+class ChannelParticipantCreator:
+    def __init__(self, user_id):
+        self.user_id = user_id
+
+
+class ChannelParticipant(ChannelParticipantCreator):
+    pass
+
+
+def person(uid, first, username=None, bot=False):
+    return NS(id=uid, first_name=first, last_name=None, username=username, bot=bot, deleted=False)
+
+
+async def test_group_members_are_listed_through_the_account(wh, account):
+    await school(wh)
+    account.everyone = [person(10, "Zafar", "zafar"), person(11, "Owner"), person(12, "SomeBot", bot=True)]
+    account.roles = [ChannelParticipant(10), ChannelParticipantCreator(11), ChannelParticipant(12)]
+    members = await ok("groups.members", {"chat_id": GROUP_A})
+    assert [(m["id"], m["status"]) for m in members] == [(11, "owner"), (10, "member")]  # no bots, owner first
+
+    [r] = await ok("admins.kick", {"user_id": 10, "chat_ids": [GROUP_A], "name": "Zafar"})
+    assert r["result"] == "ok"
+
+
+async def test_members_need_the_account(wh):
+    await school(wh)
+    status, body = await api("groups.members", {"chat_id": GROUP_A})
+    assert status == 409 and "ulanmagan" in body["message"]

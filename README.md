@@ -113,7 +113,7 @@ Rollar menyusi rol qo'shilganda yoki o'zgarganda o'zi yangilanadi.
 - Guruhning o'zida odamning xabariga javoban `/promote` yozsangiz admin qiladi, `/demote` yozsangiz adminlikdan oladi.
 - Mini App'da: **Yana → Guruh adminlari → Odamni tanlash**. Odam Telegram'ning o'z oynasidan tanlanadi va botga ulangan bo'lishi shart emas. Keyin guruhlarni belgilab, tasdiqlaysiz.
 - Guruh oynasida o'sha guruhning adminlari ro'yxati chiqadi, u yerdan admin qo'shish yoki olib tashlash ham mumkin.
-- Odam xabarlarni o'chirish, a'zolarni cheklash, qadash va odam qo'shish huquqini oladi. Yangi admin tayinlash huquqi berilmaydi.
+- Odam botda bor barcha admin huquqlarini oladi (anonim qolishdan tashqari).
 - Odam guruhda bo'lmasa, uning qatorida **Taklif havolasi** tugmasi chiqadi. Bot faqat shu odam uchun bir martalik havola yaratadi (7 kun amal qiladi). Odam havola orqali kirishi bilan bot uni admin qiladi va sizga xabar beradi. Havoladan boshqa odam kirsa, u oddiy a'zo bo'lib qoladi. Buning uchun botda "Foydalanuvchilarni taklif qilish" huquqi bo'lishi kerak.
 - Telegram cheklovi: bot faqat o'zi tayinlagan adminlarni olib tashlay oladi.
 

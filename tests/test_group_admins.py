@@ -23,9 +23,9 @@ async def test_promote_and_demote_by_reply(h):
     [promote] = h.api.sent(kind=PromoteChatMember)
     assert promote.chat_id == GROUP and promote.user_id == TEACHER
     assert promote.can_manage_chat and promote.can_delete_messages and promote.can_restrict_members
-    assert not promote.can_promote_members and not promote.can_change_info and not promote.is_anonymous
+    assert promote.can_promote_members and promote.can_change_info and not promote.is_anonymous
 
-    assert "allaqachon admin" in await reply_with(h, ADMIN, "/promote", TEACHER)
+    assert "endi guruh admini" in await reply_with(h, ADMIN, "/promote", TEACHER)  # updates the rights
     assert "admin emas" in await reply_with(h, ADMIN, "/demote", TEACHER)
     demote = h.api.sent(kind=PromoteChatMember)[-1]
     assert not demote.can_manage_chat and not demote.can_delete_messages

@@ -666,6 +666,20 @@ async def op_admins_add(ctx: Ctx, args: dict):
     }
 
 
+@op("groups.members")
+async def op_groups_members(ctx: Ctx, args: dict):
+    """Everyone in the group, listed through the connected account (bots can't list members)."""
+    group = await _get(ctx, Group, _int(args, "chat_id"))
+    try:
+        async with user_account.open_account() as client:
+            members = await user_account.list_members(client, ctx.session, group.chat_id)
+    except user_account.AccountOff:
+        raise ctx.error("uadd_off", status=409)
+    if members is None:
+        raise ctx.error("uadd_not_in")
+    return members
+
+
 @op("admins.kick")
 async def op_admins_kick(ctx: Ctx, args: dict):
     """Removes the person from exactly the groups given. Done by the bot itself."""
@@ -679,6 +693,8 @@ async def op_admins_kick(ctx: Ctx, args: dict):
     results = await _for_groups(groups, lambda g: kick_member(ctx.bot, g.chat_id, user_id), limit=5)
 
     person = await person_name(ctx.session, user_id)
+    if person.startswith("ID "):  # picked from a group's member list: the bot may not know them
+        person = _str(args, "name", 255, optional=True) or person
     await user_account.record(ctx.session, ctx.user.id, user_id, {g.chat_id: f"kick_{r}"[:16] for g, r in zip(groups, results)})
     removed = [g.label for g, r in zip(groups, results) if r == "ok"]
     if removed:  # every other admin is told: this can't be undone by the bot

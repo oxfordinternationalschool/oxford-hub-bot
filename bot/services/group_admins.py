@@ -1,8 +1,6 @@
 """Making people admins of the class groups, through the bot (which needs the "Add new admins" right there).
 
-They get the rights a teacher needs to keep order in a class group, and only those the bot
-itself has (Telegram refuses the rest): delete messages, restrict members, pin, invite,
-manage video chats. Not: change the group info, add admins, stay anonymous.
+They get every admin right the bot itself has, except staying anonymous.
 Telegram lets the bot demote only the admins it promoted itself.
 
 The person can be anyone in the group, also someone who never started the bot: the Mini App
@@ -16,6 +14,7 @@ from datetime import timedelta, timezone
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
+from aiogram.methods import PromoteChatMember
 from aiogram.types import ChatMember, KeyboardButton, KeyboardButtonRequestUsers, UsersShared
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,13 +27,18 @@ log = logging.getLogger(__name__)
 PICK_TTL = timedelta(days=1)
 INVITE_TTL = timedelta(days=7)
 
-GRANTED = ("can_delete_messages", "can_restrict_members", "can_invite_users", "can_pin_messages",
-           "can_manage_video_chats")
 
 # Results of set_group_admin; each has a text "gadm_<result>" in i18n.
 OK, ALREADY_ADMIN, NOT_ADMIN, OWNER, NOT_MEMBER, NOT_OURS, NO_RIGHT, BASIC_GROUP, ERROR = (
     "ok", "already_admin", "not_admin", "owner", "not_member", "not_ours", "no_right", "basic_group", "error",
 )
+
+
+def _rights(me, value: bool) -> dict[str, bool]:
+    """Every admin right the bot itself has (Telegram refuses the rest), all set to `value`."""
+    rights = {f: value for f in PromoteChatMember.model_fields if f.startswith("can_") and getattr(me, f, False)}
+    rights["can_manage_chat"] = value
+    return rights
 
 
 def member_status(member: ChatMember) -> str:
@@ -79,14 +83,13 @@ async def set_group_admin(bot: Bot, chat_id: int, user_id: int, make_admin: bool
             return OWNER
         if status == "absent":
             return NOT_MEMBER
-        if make_admin and status in ("admin", "admin_other"):
-            return ALREADY_ADMIN
+        if make_admin and status == "admin_other":
+            return ALREADY_ADMIN  # (an admin the bot appointed is updated to the full rights)
         if not make_admin and status == "member":
             return NOT_ADMIN
         if not make_admin and status == "admin_other":
             return NOT_OURS
-        rights = {right: make_admin and bool(getattr(me, right, False)) for right in GRANTED}
-        await bot.promote_chat_member(chat_id, user_id, can_manage_chat=make_admin, **rights)
+        await bot.promote_chat_member(chat_id, user_id, **_rights(me, make_admin))
     except TelegramBadRequest as e:
         log.info("Cannot change admin %s in %s: %s", user_id, chat_id, e)
         return _error_result(e)
@@ -113,7 +116,7 @@ async def kick_member(bot: Bot, chat_id: int, user_id: int) -> str:
         if status == "admin":
             if not me.can_promote_members:
                 return NO_RIGHT
-            await bot.promote_chat_member(chat_id, user_id, can_manage_chat=False, **dict.fromkeys(GRANTED, False))
+            await bot.promote_chat_member(chat_id, user_id, **_rights(me, False))
         # A short ban, lifted at once: if the lifting failed, it would still run out by itself.
         await bot.ban_chat_member(chat_id, user_id, until_date=int(time.time()) + 60, revoke_messages=False)
         await bot.unban_chat_member(chat_id, user_id, only_if_banned=True)

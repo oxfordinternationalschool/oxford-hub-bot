@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 OK, PRIVACY, TOO_MANY, FULL, BANNED, NO_RIGHT, NOT_IN, FLOOD, UNKNOWN_USER, BASIC_GROUP, ERROR = (
     "ok", "privacy", "too_many", "full", "banned", "no_right", "not_in", "flood", "unknown_user", "basic_group", "error",
 )
+MAX_MEMBERS = 2000
 PAUSE = 1.0  # seconds between invites, to stay well within Telegram's limits
 NOTICE_EVERY = timedelta(minutes=10)
 
@@ -133,6 +134,39 @@ async def resolve_user(client, session: AsyncSession, user_id: int, username: st
     session.add(AccountUser(user_id=user_id, access_hash=found.access_hash))
     await session.commit()
     return InputUser(user_id, found.access_hash)
+
+
+async def list_members(client, session: AsyncSession, chat_id: int) -> list[dict] | None:
+    """Everyone in the group (not bots), owner and admins first; None if the account isn't in it.
+    Bots can't list members, but an account can."""
+    from telethon.tl.functions.channels import GetParticipantsRequest
+    from telethon.tl.types import ChannelParticipantsSearch
+
+    chat = await session.get(AccountChat, chat_id)
+    if chat is None:
+        await refresh_chats(client, session)
+        chat = await session.get(AccountChat, chat_id)
+        if chat is None:
+            return None
+    channel = _input_channel(chat_id, chat.access_hash)
+    people: dict[int, dict] = {}
+    roles: dict[int, str] = {}
+    offset = 0
+    while offset < MAX_MEMBERS:
+        page = await client(GetParticipantsRequest(channel, ChannelParticipantsSearch(""), offset, 200, 0))
+        for p in page.participants:
+            kind = type(p).__name__
+            roles[p.user_id] = "owner" if "Creator" in kind else "admin" if "Admin" in kind else "member"
+        for u in page.users:
+            if not u.bot and not u.deleted:
+                name = " ".join(filter(None, (u.first_name, u.last_name))) or (u.username or str(u.id))
+                people[u.id] = {"id": u.id, "name": name, "username": u.username}
+        offset += len(page.participants)
+        if not page.participants or offset >= page.count:
+            break
+    order = {"owner": 0, "admin": 1, "member": 2}
+    out = [{**p, "status": roles.get(uid, "member")} for uid, p in people.items()]
+    return sorted(out, key=lambda m: (order[m["status"]], m["name"].lower()))
 
 
 def _error_result(e: Exception) -> str:

@@ -337,7 +337,7 @@ const T = {
     search: "Ism yoki @username", perm_admin: "Admin", perm_announcer: "E'lon beruvchi", perm_teacher: "O'qituvchi",
     no_users: "Hech kim topilmadi", rights: "Huquqlar", user_roles: "Xodim rollari", add_role: "Rol berish",
     gadm_title: "Sinf guruhlarida admin", gadm_load: "Guruhlarni ko'rish", gadm_no_groups: "Faol guruh yo'q",
-    gadm_hint: "Bot bu odamni guruh admini qiladi. U xabarlarni o'chira oladi, a'zolarni cheklay oladi, xabarni qadaydi va odam qo'sha oladi. Yangi admin tayinlay olmaydi, guruh nomini ham o'zgartira olmaydi. Odam o'sha guruhda bo'lishi kerak.",
+    gadm_hint: "Bot bu odamni guruh admini qiladi va o'zida bor barcha huquqlarni beradi.",
     gadm_done: "{n} ta guruhda bajarildi", gadm_failed: "Bu guruhlarda bo'lmadi:",
     more_admins: "Guruh adminlari", more_admins_d: "Istalgan odamni sinf guruhida admin qilish",
     ga_pick: "Odamni tanlash", ga_pick_other: "Boshqa odamni tanlash",
@@ -354,6 +354,9 @@ const T = {
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     grp_remove: "Guruhni botdan olib tashlash",
+    members_show: "Guruh a'zolarini ko'rish", members_n: "Guruh a'zolari · {n}", kick_one: "Chiqarish",
+    kick_one_confirm: "{name} {group} guruhidan chiqarilsinmi?",
+    ga_full: "{n} ta guruhda barcha huquqlarni berish", ga_full_confirm: "{name} {n} ta guruhda barcha admin huquqlarini olsinmi?",
     ga_confirm_add: "{name} shu guruhlarda admin qilinsinmi?\n{groups}\n\nGuruhda yo'q bo'lsa, avval guruhga qo'shiladi.",
     cancel: "Bekor qilish", kick_open: "Guruhlardan chiqarish", kick_n: "Belgilangan {n} ta guruhdan chiqarish",
     kick_hint: "Odam guruhdan chiqariladi, lekin bloklanmaydi: havola orqali qaytib kira oladi.",
@@ -442,7 +445,7 @@ const T = {
     search: "Имя или @username", perm_admin: "Админ", perm_announcer: "Публикует объявления", perm_teacher: "Учитель",
     no_users: "Никого не найдено", rights: "Права", user_roles: "Роли сотрудника", add_role: "Назначить роль",
     gadm_title: "Админ в группах классов", gadm_load: "Показать группы", gadm_no_groups: "Нет активных групп",
-    gadm_hint: "Бот сделает человека админом группы. Он сможет удалять сообщения, ограничивать участников, закреплять сообщения и приглашать людей. Назначать админов и менять название группы он не сможет. Человек должен состоять в группе.",
+    gadm_hint: "Бот сделает человека админом группы и даст все права, которые есть у него самого.",
     gadm_done: "Готово в {n} группах", gadm_failed: "Не получилось в этих группах:",
     more_admins: "Админы групп", more_admins_d: "Сделать любого человека админом группы класса",
     ga_pick: "Выбрать человека", ga_pick_other: "Выбрать другого",
@@ -459,6 +462,9 @@ const T = {
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
     grp_remove: "Убрать группу из бота",
+    members_show: "Показать участников", members_n: "Участники · {n}", kick_one: "Удалить",
+    kick_one_confirm: "Удалить {name} из группы {group}?",
+    ga_full: "Дать все права в {n} группах", ga_full_confirm: "Дать {name} все права админа в {n} группах?",
     ga_confirm_add: "Сделать {name} админом в этих группах?\n{groups}\n\nЕсли человека нет в группе, он сначала будет добавлен.",
     cancel: "Отмена", kick_open: "Удалить из групп", kick_n: "Удалить из {n} отмеченных групп",
     kick_hint: "Человек будет удалён из группы, но не заблокирован: он сможет вернуться по ссылке.",
@@ -547,7 +553,7 @@ const T = {
     search: "Name or @username", perm_admin: "Admin", perm_announcer: "Announcer", perm_teacher: "Teacher",
     no_users: "Nobody found", rights: "Rights", user_roles: "Staff roles", add_role: "Give a role",
     gadm_title: "Admin in class groups", gadm_load: "Show groups", gadm_no_groups: "No active groups",
-    gadm_hint: "The bot makes this person a group admin. They can delete messages, restrict members, pin messages and invite people. They can't appoint admins or rename the group. The person must be in the group.",
+    gadm_hint: "The bot makes this person a group admin, with every right the bot itself has.",
     gadm_done: "Done in {n} groups", gadm_failed: "Didn't work in these groups:",
     more_admins: "Group admins", more_admins_d: "Make anyone an admin of a class group",
     ga_pick: "Choose a person", ga_pick_other: "Choose someone else",
@@ -564,6 +570,9 @@ const T = {
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
     grp_remove: "Remove the group from the bot",
+    members_show: "Show group members", members_n: "Group members · {n}", kick_one: "Remove",
+    kick_one_confirm: "Remove {name} from {group}?",
+    ga_full: "Give all rights in {n} groups", ga_full_confirm: "Give {name} all admin rights in {n} groups?",
     ga_confirm_add: "Make {name} an admin of these groups?\n{groups}\n\nIf they aren't in a group, they are added first.",
     cancel: "Cancel", kick_open: "Remove from groups", kick_n: "Remove from {n} ticked groups",
     kick_hint: "The person is removed from the group but not blocked: they can come back through a link.",
@@ -1642,10 +1651,15 @@ function adminPanel(person) {
     const absent = list.filter((g) => g.status === "absent" && !g.addFailed);
     const addAll = accountReady && absent.length ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:10px",
       onclick: () => act(addAll, () => addToGroups(absent, addAll)) }, icon("plus"), t("uadd_all", { n: absent.length })) : null;
+    const ourAdmins = list.filter((g) => g.status === "admin");
+    const full = ourAdmins.length ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:10px", onclick: () => act(full, async () => {
+      if (!(await confirmMsg(t("ga_full_confirm", { name: person.name, n: ourAdmins.length })))) return;
+      await reportResults(await setAdmin(person, ourAdmins, true)); draw();
+    }) }, t("ga_full", { n: ourAdmins.length })) : null;
     const go = el("button", { class: "btn block", type: "button", disabled: !chosen.size, onclick: () => act(go, () => promote(go)) },
       chosen.size ? t("ga_promote", { n: chosen.size }) : t("ga_tick"));
     box.replaceChildren(...(rows.length ? rows : [empty(t("gadm_no_groups"), "school")]),
-      el("div", { style: "padding:8px 16px 16px" }, addAll,
+      el("div", { style: "padding:8px 16px 16px" }, addAll, full,
         !members.length ? el("div", { class: "hint", style: "margin:0" }, t("ga_nowhere")) : [
           members.length > 1 ? el("button", { class: "btn soft sm", type: "button", style: "margin-bottom:10px", onclick: () => {
             members.forEach((g) => (allOn ? chosen.delete(g.chat_id) : chosen.add(g.chat_id))); haptic(); draw();
@@ -1973,6 +1987,36 @@ function openGroup(g, floors) {
     }
     await reportResults(results); loadAdmins();
   }) }, icon("plus"), t("grp_add_admin"));
+  // Everyone in the group, each removable. Bots can't list members, so this goes through the connected account.
+  const membersBox = el("div");
+  const showMembers = async (button) => {
+    const members = await api("groups.members", { chat_id: g.chat_id });
+    const search = el("input", { class: "in", type: "search", placeholder: t("search") });
+    const listBox = el("div", { class: "card mt" });
+    const head = header("");
+    const draw = () => {
+      head.firstChild.textContent = t("members_n", { n: members.length });
+      const q = search.value.trim().toLowerCase().replace(/^@/, "");
+      const shown = members.filter((m) => !q || m.name.toLowerCase().includes(q) || (m.username || "").toLowerCase().includes(q));
+      listBox.replaceChildren(...(shown.length ? shown.slice(0, 300).map((m) => row({
+        lead: avatar(m.name, m.id), title: m.name,
+        sub: [m.username ? "@" + m.username + " " : null, m.status !== "member" ? badge(t("gst_" + m.status), GST_KIND[m.status]) : null],
+        side: m.status === "owner" ? null : el("button", { class: "btn danger sm", type: "button", onclick: (e) => act(e.currentTarget, async () => {
+          if (!(await confirmMsg(t("kick_one_confirm", { name: m.name, group: groupLabel(g) })))) return;
+          const results = await api("admins.kick", { user_id: m.id, chat_ids: [g.chat_id], name: m.name });
+          if (results[0] && results[0].result === "ok") { members.splice(members.indexOf(m), 1); draw(); loadAdmins(); }
+          await reportResults(results);
+        }) }, t("kick_one")),
+      })) : [empty(t("no_users"), "users")]));
+    };
+    search.addEventListener("input", draw);
+    draw();
+    membersBox.replaceChildren(head, el("div", { class: "search" }, icon("search"), search), listBox);
+  };
+  if ((cached("me") || {}).account_ready) {
+    const load = el("button", { class: "btn soft block mt", type: "button", onclick: () => act(load, () => showMembers(load)) }, icon("users"), t("members_show"));
+    membersBox.replaceChildren(load);
+  }
   // Takes the group off the bot (the bot leaves it). Asked twice: the school relies on these groups.
   const removeGroup = el("button", { class: "btn danger block", type: "button", style: "margin-top:28px", onclick: () => act(removeGroup, async () => {
     if (!(await confirmMsg(t("grp_remove_confirm", { group: groupLabel(g) })))) return;
@@ -1983,7 +2027,7 @@ function openGroup(g, floors) {
   openSheet(groupLabel(g), el("div", { class: "hint", style: "margin:0 2px" }, g.title),
     field(t("class"), cls), field(t("floor"), floor), field(t("lang"), lang),
     topic ? field(t("topic"), topic, t("topic_hint")) : null, save,
-    header(t("grp_admins")), adminsBox, addAdmin, removeGroup);
+    header(t("grp_admins")), adminsBox, addAdmin, membersBox, removeGroup);
 }
 
 function openRole(r) {

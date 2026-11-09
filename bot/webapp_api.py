@@ -646,8 +646,8 @@ async def op_admins_add(ctx: Ctx, args: dict):
             else:
                 results = await user_account.add_to_chats(client, ctx.session, target, list(groups))
             owner = await client.get_me()
-    except user_account.AccountOff:
-        raise ctx.error("uadd_off", status=409)
+    except user_account.AccountOff as e:
+        raise ApiError(409, f"uadd_off:{e}", _plain(t(ctx.lang, "uadd_off")))
 
     tell_owner = await user_account.record(ctx.session, ctx.user.id, user_id, results)
     if tell_owner and owner.id != ctx.user.id:
@@ -673,8 +673,8 @@ async def op_groups_members(ctx: Ctx, args: dict):
     try:
         async with user_account.open_account() as client:
             members = await user_account.list_members(client, ctx.session, group.chat_id)
-    except user_account.AccountOff:
-        raise ctx.error("uadd_off", status=409)
+    except user_account.AccountOff as e:
+        raise ApiError(409, f"uadd_off:{e}", _plain(t(ctx.lang, "uadd_off")))
     if members is None:
         raise ctx.error("uadd_not_in")
     return members

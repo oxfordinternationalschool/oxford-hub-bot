@@ -45,17 +45,21 @@ async def open_account() -> AsyncIterator:
     """A connected client for one request."""
     if not configured():
         raise AccountOff
-    from telethon import TelegramClient
-    from telethon.sessions import StringSession
+    try:
+        from telethon import TelegramClient
+        from telethon.sessions import StringSession
 
-    client = TelegramClient(
-        StringSession(os.environ["TG_SESSION"]), int(os.environ["TG_API_ID"]), os.environ["TG_API_HASH"],
-        receive_updates=False, flood_sleep_threshold=0,
-    )
-    await client.connect()
+        client = TelegramClient(
+            StringSession(os.environ["TG_SESSION"].strip()), int(os.environ["TG_API_ID"].strip()), os.environ["TG_API_HASH"].strip(),
+            receive_updates=False, flood_sleep_threshold=0,
+        )
+        await client.connect()
+    except Exception as e:  # a mistyped value, for instance; only the kind is reported, values are secret
+        log.warning("Cannot connect the account: %s", type(e).__name__)
+        raise AccountOff(type(e).__name__) from None
     try:
         if not await client.is_user_authorized():
-            raise AccountOff
+            raise AccountOff("not_authorized")
         yield client
     finally:
         await client.disconnect()

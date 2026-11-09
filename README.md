@@ -107,6 +107,8 @@ Rollar menyusi rol qo'shilganda yoki o'zgarganda o'zi yangilanadi.
 - `TG_SESSION` akkauntga to'liq kirish beradi. Uni bekor qilish: Telegram → Settings → Devices.
 - Odamning maxfiylik sozlamalari ruxsat bermasa, unga taklif havolasi yuboriladi. Telegram vaqtincha cheklasa, qo'shish to'xtaydi.
 
+**Odamni guruhlardan chiqarish.** Mini App -> Yana -> Guruh adminlari -> odamni tanlash -> **Guruhlardan chiqarish**: guruhlar belgilanadi va ikki marta tasdiqlanadi. Buni botning o'zi qiladi. Odam bloklanmaydi, boshqa adminlarga xabar boradi. Guruh egasi, boshqa odam tayinlagan admin va botning bosh admini chiqarilmaydi.
+
 **Guruh adminlarini tayinlash.** Botda guruhda "Yangi admin qo'shish" huquqi bo'lishi kerak.
 - Guruhning o'zida odamning xabariga javoban `/promote` yozsangiz admin qiladi, `/demote` yozsangiz adminlikdan oladi.
 - Mini App'da: **Yana → Guruh adminlari → Odamni tanlash**. Odam Telegram'ning o'z oynasidan tanlanadi va botga ulangan bo'lishi shart emas. Keyin guruhlarni belgilab, tasdiqlaysiz.

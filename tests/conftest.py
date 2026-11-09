@@ -9,12 +9,14 @@ from datetime import datetime
 os.environ["BOT_TOKEN"] = "999:TEST"
 os.environ["ADMIN_IDS"] = "1"
 os.environ["DEFAULT_LANG"] = "uz"
+# Empty, so that tests can never reach the real Telegram account saved in .env.
+os.environ.update(TG_API_ID="", TG_API_HASH="", TG_SESSION="")
 
 import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import (
-    CopyMessage, CopyMessages, CreateChatInviteLink, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages,
+    BanChatMember, CopyMessage, CopyMessages, CreateChatInviteLink, DeleteMessage, EditEphemeralMessageText, ForwardMessage, ForwardMessages,
     GetChatAdministrators, GetChatMember, SavePreparedKeyboardButton,
     GetFile, GetMe, GetWebhookInfo, PostStory, PromoteChatMember, SendDocument, SendMediaGroup, SendMessage, SendPhoto,
     SendRichMessage, SendVideo, SendVoice,
@@ -86,6 +88,8 @@ class FakeSession(BaseSession):
             raise TelegramBadRequest(method=method, message="Bad Request: message can't be deleted")
         if isinstance(method, EditEphemeralMessageText) and self.reject_ephemeral_edit:
             raise TelegramBadRequest(method=method, message="Bad Request: message to edit not found")
+        if isinstance(method, BanChatMember):
+            self.set_member(method.chat_id, method.user_id, "left")
         if isinstance(method, GetChatMember):
             return self.member(method.chat_id, method.user_id)
         if isinstance(method, GetChatAdministrators):

@@ -190,3 +190,51 @@ async def test_admin_removes_a_group_from_the_bot(wh):
     # Adding the bot back brings the group back.
     await wh.bot_added(GROUP_A, ADMIN, title="7-A sinf")
     assert {g["chat_id"] for g in await ok("groups.list")} == {GROUP_A, GROUP_B}
+
+
+async def test_person_is_removed_from_ticked_groups_only(wh):
+    from aiogram.methods import BanChatMember, UnbanChatMember
+    await school(wh)
+    await wh.register(OTHER_ADMIN)
+    await ok("staff.set_perm", {"user_id": OTHER_ADMIN, "perm": "admin", "value": True})
+    wh.api.requests.clear()
+
+    [r] = await ok("admins.kick", {"user_id": STRANGER, "chat_ids": [GROUP_A]})
+    assert r["result"] == "ok" and r["message"] is None
+    [ban] = wh.api.sent(kind=BanChatMember)
+    [unban] = wh.api.sent(kind=UnbanChatMember)
+    assert ban.chat_id == unban.chat_id == GROUP_A and ban.user_id == STRANGER and unban.only_if_banned
+    assert ban.revoke_messages is False
+    assert "chiqardi" in wh.api.sent(OTHER_ADMIN)[-1].text  # the other admins are told
+    assert wh.api.sent(ADMIN) == []  # the one who did it isn't
+    statuses = {g["chat_id"]: g["status"] for g in await ok("admins.status", {"user_id": STRANGER})}
+    assert statuses == {GROUP_A: "absent", GROUP_B: "member"}
+
+
+async def test_an_admin_the_bot_made_is_demoted_then_removed(wh):
+    from aiogram.methods import BanChatMember
+    await school(wh)
+    await ok("admins.set", {"user_id": STRANGER, "chat_ids": [GROUP_A], "value": True})
+    wh.api.requests.clear()
+    [r] = await ok("admins.kick", {"user_id": STRANGER, "chat_ids": [GROUP_A]})
+    assert r["result"] == "ok"
+    assert isinstance(wh.api.requests[2], PromoteChatMember) and not wh.api.requests[2].can_manage_chat
+    assert len(wh.api.sent(kind=BanChatMember)) == 1
+
+
+async def test_who_cannot_be_removed(wh):
+    from aiogram.methods import BanChatMember
+    await school(wh)
+    wh.api.set_member(GROUP_A, 50, "creator")
+    wh.api.set_member(GROUP_A, 51, "administrator", can_be_edited=False)
+    wh.api.set_member(GROUP_A, 52, "left")
+    expected = {50: "owner", 51: "not_ours", 52: "not_member"}
+    for uid, result in expected.items():
+        [r] = await ok("admins.kick", {"user_id": uid, "chat_ids": [GROUP_A]})
+        assert r["result"] == result and r["message"]
+    status, body = await api("admins.kick", {"user_id": ADMIN, "chat_ids": [GROUP_A]})
+    assert status == 400 and "bosh admin" in body["message"]
+    wh.api.set_member(GROUP_A, 999, "administrator", can_restrict_members=False)
+    [r] = await ok("admins.kick", {"user_id": STRANGER, "chat_ids": [GROUP_A]})
+    assert r["result"] == "no_right"
+    assert wh.api.sent(kind=BanChatMember) == []

@@ -36,9 +36,9 @@ from bot.services.media import (
     ALBUM_FAMILY, CAPTION_LIMIT, LAYOUTS, album_problem, announcement_sender, layout_problem, media_preview, upload_kind, upload_to_owner,
 )
 from bot.services.calls import refresh_call, set_status
-from bot.services.common import find_floor, group_sort_key, parse_class
+from bot.services.common import admin_users, find_floor, group_sort_key, parse_class
 from bot.services.group_admins import (
-    admin_invite, group_status, member_status, new_request_id, pending_invites, person_name, picked_user, picker_button,
+    admin_invite, group_status, kick_member, member_status, new_request_id, pending_invites, person_name, picked_user, picker_button,
     set_group_admin,
 )
 from bot.services import user_account
@@ -664,6 +664,34 @@ async def op_admins_add(ctx: Ctx, args: dict):
             "message": None if r == user_account.OK else html.unescape(_plain(t(ctx.lang, f"uadd_{r}"))),
         } for c, r in results.items()],
     }
+
+
+@op("admins.kick")
+async def op_admins_kick(ctx: Ctx, args: dict):
+    """Removes the person from exactly the groups given. Done by the bot itself."""
+    user_id = _user_id(args)
+    chat_ids = args.get("chat_ids")
+    if not isinstance(chat_ids, list) or not chat_ids or not all(isinstance(c, int) for c in chat_ids):
+        raise ApiError(400, "bad_args", "chat_ids")
+    if user_id in settings.admin_ids or user_id == ctx.bot.id:
+        raise ctx.error("gadm_protected")
+    groups = [g for g in await _active_groups(ctx) if g.chat_id in set(chat_ids)]
+    results = await _for_groups(groups, lambda g: kick_member(ctx.bot, g.chat_id, user_id), limit=5)
+
+    person = await person_name(ctx.session, user_id)
+    await user_account.record(ctx.session, ctx.user.id, user_id, {g.chat_id: f"kick_{r}"[:16] for g, r in zip(groups, results)})
+    removed = [g.label for g, r in zip(groups, results) if r == "ok"]
+    if removed:  # every other admin is told: this can't be undone by the bot
+        for admin in await admin_users(ctx.session):
+            if admin.id != ctx.user.id:
+                with contextlib.suppress(TelegramAPIError):
+                    await ctx.bot.send_message(admin.id, t(admin.lang, "kick_notice", actor=html.escape(ctx.user.full_name),
+                                                           name=html.escape(person), groups=html.escape(", ".join(removed))))
+    name = html.escape(person)
+    return [{
+        "chat_id": g.chat_id, "label": g.label, "result": r,
+        "message": None if r == "ok" else html.unescape(_plain(t(ctx.lang, f"gadm_{r}", name=name))),
+    } for g, r in zip(groups, results)]
 
 
 @op("groups.admins")

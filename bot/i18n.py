@@ -664,6 +664,16 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Telegram отказал. Попробуйте чуть позже.",
         "en": "Telegram refused. Please try again a bit later.",
     },
+    "gadm_protected": {
+        "uz": "Bu odamni chiqarib bo'lmaydi: u botning bosh admini.",
+        "ru": "Этого человека нельзя удалить: он главный админ бота.",
+        "en": "This person can't be removed: they are the bot's main admin.",
+    },
+    "kick_notice": {
+        "uz": "🚪 {actor} {name} ni guruhlardan chiqardi: {groups}",
+        "ru": "🚪 {actor} удалил(а) {name} из групп: {groups}",
+        "en": "🚪 {actor} removed {name} from groups: {groups}",
+    },
     "gadm_usage": {
         "uz": "Odamning xabariga javob (reply) qilib yozing: /promote — guruh admini qilish, /demote — adminlikdan olish.",
         "ru": "Напишите ответом (reply) на сообщение человека: /promote — сделать админом группы, /demote — снять админа.",

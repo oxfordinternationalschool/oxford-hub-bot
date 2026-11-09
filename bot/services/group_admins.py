@@ -10,6 +10,7 @@ lets the admin pick them in Telegram's own people picker (a "prepared keyboard b
 """
 import logging
 import secrets
+import time
 from datetime import timedelta, timezone
 
 from aiogram import Bot
@@ -91,6 +92,36 @@ async def set_group_admin(bot: Bot, chat_id: int, user_id: int, make_admin: bool
         return _error_result(e)
     except TelegramAPIError as e:
         log.warning("Cannot change admin %s in %s: %s", user_id, chat_id, e)
+        return ERROR
+    return OK
+
+
+async def kick_member(bot: Bot, chat_id: int, user_id: int) -> str:
+    """Removes the person from the group without blocking them: they can come back by a link.
+    An admin the bot appointed loses that first; other admins and the owner can't be removed."""
+    try:
+        me = await bot.get_chat_member(chat_id, bot.id)
+        if me.status != ChatMemberStatus.ADMINISTRATOR or not me.can_restrict_members:
+            return NO_RIGHT
+        status = member_status(await bot.get_chat_member(chat_id, user_id))
+        if status == "owner":
+            return OWNER
+        if status == "absent":
+            return NOT_MEMBER
+        if status == "admin_other":
+            return NOT_OURS
+        if status == "admin":
+            if not me.can_promote_members:
+                return NO_RIGHT
+            await bot.promote_chat_member(chat_id, user_id, can_manage_chat=False, **dict.fromkeys(GRANTED, False))
+        # A short ban, lifted at once: if the lifting failed, it would still run out by itself.
+        await bot.ban_chat_member(chat_id, user_id, until_date=int(time.time()) + 60, revoke_messages=False)
+        await bot.unban_chat_member(chat_id, user_id, only_if_banned=True)
+    except TelegramBadRequest as e:
+        log.info("Cannot remove %s from %s: %s", user_id, chat_id, e)
+        return _error_result(e)
+    except TelegramAPIError as e:
+        log.warning("Cannot remove %s from %s: %s", user_id, chat_id, e)
         return ERROR
     return OK
 

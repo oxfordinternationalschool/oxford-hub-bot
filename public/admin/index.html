@@ -354,6 +354,9 @@ const T = {
     grp_admins: "Guruh adminlari", grp_admins_none: "Adminlar yo'q", grp_add_admin: "Admin qo'shish",
     grp_add_confirm: "{name} {group} guruhida admin qilinsinmi?",
     grp_remove: "Guruhni botdan olib tashlash",
+    cancel: "Bekor qilish", kick_open: "Guruhlardan chiqarish", kick_n: "Belgilangan {n} ta guruhdan chiqarish",
+    kick_hint: "Odam guruhdan chiqariladi, lekin bloklanmaydi: havola orqali qaytib kira oladi.",
+    kick_confirm: "{name} shu guruhlardan chiqarilsinmi?\n{groups}", kick_sure: "Rostdan ham {name} {n} ta guruhdan chiqarilsinmi?",
     uadd_all: "{n} ta guruhga qo'shish", uadd_progress: "Qo'shilmoqda: {n}/{total}",
     uadd_confirm: "{name} {n} ta guruhga qo'shilsinmi? Guruhlarda uni ulangan akkaunt qo'shgani ko'rinadi.",
     ann_sheet: "E'lon", ann_edit: "Matnni tahrirlash", ann_edit_save: "{n} ta guruhda o'zgartirish",
@@ -454,6 +457,9 @@ const T = {
     grp_admins: "Админы группы", grp_admins_none: "Админов нет", grp_add_admin: "Добавить админа",
     grp_add_confirm: "Сделать {name} админом группы {group}?",
     grp_remove: "Убрать группу из бота",
+    cancel: "Отмена", kick_open: "Удалить из групп", kick_n: "Удалить из {n} отмеченных групп",
+    kick_hint: "Человек будет удалён из группы, но не заблокирован: он сможет вернуться по ссылке.",
+    kick_confirm: "Удалить {name} из этих групп?\n{groups}", kick_sure: "Точно удалить {name} из {n} групп?",
     uadd_all: "Добавить в {n} групп", uadd_progress: "Добавление: {n}/{total}",
     uadd_confirm: "Добавить {name} в {n} групп? В группах будет видно, что его добавил подключённый аккаунт.",
     ann_sheet: "Объявление", ann_edit: "Изменить текст", ann_edit_save: "Изменить в {n} группах",
@@ -554,6 +560,9 @@ const T = {
     grp_admins: "Group admins", grp_admins_none: "No admins", grp_add_admin: "Add an admin",
     grp_add_confirm: "Make {name} an admin of {group}?",
     grp_remove: "Remove the group from the bot",
+    cancel: "Cancel", kick_open: "Remove from groups", kick_n: "Remove from {n} ticked groups",
+    kick_hint: "The person is removed from the group but not blocked: they can come back through a link.",
+    kick_confirm: "Remove {name} from these groups?\n{groups}", kick_sure: "Really remove {name} from {n} groups?",
     uadd_all: "Add to {n} groups", uadd_progress: "Adding: {n}/{total}",
     uadd_confirm: "Add {name} to {n} groups? The groups will show the connected account as the one who added them.",
     ann_sheet: "Announcement", ann_edit: "Edit the text", ann_edit_save: "Change in {n} groups",
@@ -1526,6 +1535,35 @@ function adminPanel(person) {
     const results = await setAdmin(person, groups, true);
     chosen.clear(); draw(); await reportResults(results);
   };
+  // Removing them from ticked groups. Tucked away behind a button, and asked twice.
+  let kicking = false;
+  const kickChosen = new Set();
+  const kickSection = () => {
+    const present = list.filter((g) => g.status === "member" || g.status === "admin");
+    if (!present.length) return el("div");
+    const open = el("button", { class: "btn ghost block", type: "button", style: "color:var(--danger)", onclick: () => { kicking = !kicking; kickChosen.clear(); haptic(); draw(); } },
+      icon(kicking ? "x" : "trash"), t(kicking ? "cancel" : "kick_open"));
+    if (!kicking) return el("div", { style: "padding:0 16px 16px" }, open);
+    const allOn = present.every((g) => kickChosen.has(g.chat_id));
+    const go = el("button", { class: "btn danger block", type: "button", disabled: !kickChosen.size, onclick: () => act(go, async () => {
+      const groups = present.filter((g) => kickChosen.has(g.chat_id));
+      if (!(await confirmMsg(t("kick_confirm", { name: person.name, groups: groups.map((g) => g.label).join(", ") })))) return;
+      if (!(await confirmMsg(t("kick_sure", { name: person.name, n: groups.length })))) return;
+      const results = await api("admins.kick", { user_id: person.id, chat_ids: groups.map((g) => g.chat_id) });
+      for (const r of results) if (r.result === "ok") { const g = list.find((x) => x.chat_id === r.chat_id); g.status = "absent"; g.invite = null; }
+      kicking = false; kickChosen.clear(); draw(); await reportResults(results);
+    }) }, icon("trash"), kickChosen.size ? t("kick_n", { n: kickChosen.size }) : t("ga_tick"));
+    return el("div", { style: "border-top:1px solid var(--line)" }, el("div", { class: "hint", style: "margin:12px 16px 4px" }, t("kick_hint")),
+      present.map((g) => {
+        const on = kickChosen.has(g.chat_id);
+        return row({ lead: el("span", { class: "tick" + (on ? " on" : "") }, on ? icon("check") : null), title: g.label,
+          onclick: () => { on ? kickChosen.delete(g.chat_id) : kickChosen.add(g.chat_id); haptic(); draw(); } });
+      }),
+      el("div", { style: "padding:8px 16px 16px" },
+        present.length > 1 ? el("button", { class: "btn soft sm", type: "button", style: "margin-bottom:10px", onclick: () => {
+          present.forEach((g) => (allOn ? kickChosen.delete(g.chat_id) : kickChosen.add(g.chat_id))); haptic(); draw();
+        } }, allOn ? t("ga_clear") : t("ga_select_all")) : null, go, el("div", { class: "mt" }), open));
+  };
   // Into every group they aren't in, through the connected Telegram account; a few at a time, with progress.
   const addToGroups = async (groups, button) => {
     if (!(await confirmMsg(t("uadd_confirm", { name: person.name, n: groups.length })))) return;
@@ -1576,7 +1614,7 @@ function adminPanel(person) {
           members.length > 1 ? el("button", { class: "btn soft sm", type: "button", style: "margin-bottom:10px", onclick: () => {
             members.forEach((g) => (allOn ? chosen.delete(g.chat_id) : chosen.add(g.chat_id))); haptic(); draw();
           } }, allOn ? t("ga_clear") : t("ga_select_all")) : null,
-          go]));
+          go]), kickSection());
   };
   api("admins.status", { user_id: person.id })
     .then((l) => { list = l; draw(); })

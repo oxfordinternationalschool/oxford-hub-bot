@@ -190,6 +190,7 @@ def _error_result(e: Exception) -> str:
     from telethon import errors as er
 
     pairs = (
+        ((er.UserAlreadyParticipantError,), OK),  # already in the group: nothing to do
         ((er.FloodWaitError, er.PeerFloodError), FLOOD),
         ((er.UserPrivacyRestrictedError, er.UserNotMutualContactError), PRIVACY),
         ((er.UserChannelsTooMuchError,), TOO_MANY),

@@ -180,9 +180,12 @@ def new_request_id() -> int:
     return secrets.randbelow(2**31 - 2) + 1  # Telegram wants a signed 32-bit number
 
 
-def picker_button(text: str, request_id: int) -> KeyboardButton:
+PICK_MAX = 10  # Telegram's limit for one pick
+
+
+def picker_button(text: str, request_id: int, many: bool = False) -> KeyboardButton:
     return KeyboardButton(text=text, request_users=KeyboardButtonRequestUsers(
-        request_id=request_id, user_is_bot=False, max_quantity=1, request_name=True, request_username=True,
+        request_id=request_id, user_is_bot=False, max_quantity=PICK_MAX if many else 1, request_name=True, request_username=True,
     ))
 
 
@@ -199,6 +202,24 @@ async def picked_user(session: AsyncSession, admin_id: int, request_id: int) -> 
     return await session.scalar(select(PickedUser).where(
         PickedUser.admin_id == admin_id, PickedUser.request_id == request_id,
     ).order_by(PickedUser.id.desc()).limit(1))
+
+
+async def picked_users(session: AsyncSession, admin_id: int, request_id: int) -> list[PickedUser]:
+    return list((await session.scalars(select(PickedUser).where(
+        PickedUser.admin_id == admin_id, PickedUser.request_id == request_id,
+    ).order_by(PickedUser.id))).all())
+
+
+async def member_invite(bot: Bot, chat_id: int, name: str) -> str | None:
+    """A one-use invite link for one person, who joins as an ordinary member. None if Telegram refuses."""
+    try:
+        link = await bot.create_chat_invite_link(
+            chat_id, name=name[:32], member_limit=1, expire_date=(utcnow() + INVITE_TTL).replace(tzinfo=timezone.utc),
+        )
+    except TelegramAPIError as e:
+        log.info("Cannot create an invite in %s: %s", chat_id, e)
+        return None
+    return link.invite_link
 
 
 async def person_name(session: AsyncSession, user_id: int) -> str:

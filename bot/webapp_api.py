@@ -38,7 +38,8 @@ from bot.services.media import (
 from bot.services.calls import refresh_call, set_status
 from bot.services.common import admin_users, find_floor, group_sort_key, parse_class
 from bot.services.group_admins import (
-    admin_invite, group_status, kick_member, member_status, new_request_id, pending_invites, person_name, picked_user, picker_button,
+    admin_invite, group_status, kick_member, member_invite, member_status, new_request_id, pending_invites, person_name, picked_user,
+    picked_users, picker_button,
     set_group_admin,
 )
 from bot.services import user_account
@@ -562,14 +563,19 @@ def _user_id(args: dict) -> int:
 async def op_admins_pick(ctx: Ctx, args: dict):
     """A button for the Mini App's WebApp.requestChat(): it opens Telegram's people picker."""
     request_id = new_request_id()
-    button = picker_button(_plain(t(ctx.lang, "pick_person")), request_id)
+    many = bool(args.get("many"))
+    button = picker_button(_plain(t(ctx.lang, "pick_people" if many else "pick_person")), request_id, many)
     prepared = await ctx.bot.save_prepared_keyboard_button(ctx.user.id, button)
     return {"id": prepared.id, "request_id": request_id}
 
 
 @op("admins.picked")
 async def op_admins_picked(ctx: Ctx, args: dict):
-    """The person picked with that button, once Telegram has told the bot (null until then)."""
+    """The person picked with that button, once Telegram has told the bot (null until then).
+    With "many", everyone picked, as a list."""
+    if args.get("many"):
+        people = await picked_users(ctx.session, ctx.user.id, _int(args, "request_id"))
+        return [{"id": p.user_id, "name": p.name, "username": p.username} for p in people] or None
     picked = await picked_user(ctx.session, ctx.user.id, _int(args, "request_id"))
     if picked is None:
         return None
@@ -591,10 +597,16 @@ async def op_admins_status(ctx: Ctx, args: dict):
 
 @op("admins.invite")
 async def op_admins_invite(ctx: Ctx, args: dict):
-    """A one-use invite link for someone not in the group yet; they become an admin as they join."""
+    """A one-use invite link for someone not in the group yet; they become an admin as they join
+    (or join as an ordinary member, with "as_admin": false)."""
     user_id = _user_id(args)
     group = await _get(ctx, Group, _int(args, "chat_id"))
     name = await person_name(ctx.session, user_id)
+    if args.get("as_admin") is False:
+        link = await member_invite(ctx.bot, group.chat_id, name)
+        if link is None:
+            raise ctx.error("gadm_invite_failed")
+        return {"link": link, "expires_at": None}
     pending = await admin_invite(ctx.bot, ctx.session, group.chat_id, user_id, name, by=ctx.user.id)
     if pending is None:
         raise ctx.error("gadm_invite_failed")

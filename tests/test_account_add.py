@@ -169,3 +169,11 @@ async def test_members_need_the_account(wh):
     await school(wh)
     status, body = await api("groups.members", {"chat_id": GROUP_A})
     assert status == 409 and "ulanmagan" in body["message"]
+
+
+async def test_someone_already_in_the_group_counts_as_added(wh, account):
+    await school(wh)
+    await pick(wh)
+    account.errors[channel_id(GROUP_A)] = errors.UserAlreadyParticipantError(request=None)
+    r = await add(GROUP_A)
+    assert r["results"][0]["result"] == "ok"

@@ -238,3 +238,25 @@ async def test_who_cannot_be_removed(wh):
     [r] = await ok("admins.kick", {"user_id": STRANGER, "chat_ids": [GROUP_A]})
     assert r["result"] == "no_right"
     assert wh.api.sent(kind=BanChatMember) == []
+
+
+async def test_several_people_are_picked_at_once(wh):
+    await school(wh)
+    button = await ok("admins.pick", {"many": True})
+    [saved] = wh.api.sent(kind=SavePreparedKeyboardButton)
+    assert saved.button.request_users.max_quantity == 10
+    assert await ok("admins.picked", {"request_id": button["request_id"], "many": True}) is None
+    await wh.private_media(ADMIN, users_shared={"request_id": button["request_id"], "users": [
+        {"user_id": STRANGER, "first_name": "Anvar"}, {"user_id": 78, "first_name": "Bobur", "username": "bobur"}]})
+    people = await ok("admins.picked", {"request_id": button["request_id"], "many": True})
+    assert [(p["id"], p["name"], p["username"]) for p in people] == [(STRANGER, "Anvar", None), (78, "Bobur", "bobur")]
+
+
+async def test_member_invite_does_not_make_an_admin(wh):
+    await school(wh)
+    await pick(wh)
+    r = await ok("admins.invite", {"user_id": STRANGER, "chat_id": GROUP_A, "as_admin": False})
+    [created] = wh.api.sent(kind=CreateChatInviteLink)
+    assert created.member_limit == 1 and r["link"] and r["expires_at"] is None
+    status = {g["chat_id"]: g for g in await ok("admins.status", {"user_id": STRANGER})}
+    assert status[GROUP_A]["invite"] is None  # no pending admin

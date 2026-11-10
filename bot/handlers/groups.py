@@ -91,6 +91,11 @@ async def on_join_by_link(event: ChatMemberUpdated, session: AsyncSession, bot: 
         log.info("Cannot tell admin %s about the join: %s", pending.created_by, e)
 
 
+@router.edited_message(F.chat.type.in_(GROUP_TYPES))
+async def on_group_edit(message: Message):
+    """Edits are checked for insulting words by GroupWatcher; this handler only makes Telegram send them."""
+
+
 @router.message(F.migrate_to_chat_id)
 async def on_migrate(message: Message, session: AsyncSession):
     await migrate_group(session, message.chat.id, message.migrate_to_chat_id)

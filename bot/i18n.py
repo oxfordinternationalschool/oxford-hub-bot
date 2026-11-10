@@ -400,6 +400,24 @@ TEXTS: dict[str, dict[str, str]] = {
     "media_document": {"uz": "Fayl", "ru": "Файл", "en": "File"},
     "media_video_note": {"uz": "Video xabar", "ru": "Видеосообщение", "en": "Video message"},
     "media_animation": {"uz": "GIF", "ru": "GIF", "en": "GIF"},
+    "abuse_alert": {
+        "uz": "⚠️ <b>Haqoratli xabar</b>\nGuruh: {group}\nKim: {who}\nSo'zlar: {words}\n\n{text}\n\n<i>Xabar saqlandi: yozgan odam o'chirsa ham Mini App'dagi «Haqoratlar» bo'limida qoladi.</i>",
+        "ru": "⚠️ <b>Оскорбительное сообщение</b>\nГруппа: {group}\nКто: {who}\nСлова: {words}\n\n{text}\n\n<i>Сообщение сохранено: даже если автор его удалит, оно останется в разделе «Оскорбления» в Mini App.</i>",
+        "en": "⚠️ <b>Insulting message</b>\nGroup: {group}\nWho: {who}\nWords: {words}\n\n{text}\n\n<i>Saved: even if the writer deletes it, it stays under “Insults” in the Mini App.</i>",
+    },
+    "abuse_alert_edited": {
+        "uz": "⚠️ <b>Haqoratli xabar (tahrirlangan)</b>\nGuruh: {group}\nKim: {who}\nSo'zlar: {words}\n\n{text}\n\n<i>Xabar saqlandi: yozgan odam o'chirsa ham Mini App'dagi «Haqoratlar» bo'limida qoladi.</i>",
+        "ru": "⚠️ <b>Оскорбительное сообщение (изменено)</b>\nГруппа: {group}\nКто: {who}\nСлова: {words}\n\n{text}\n\n<i>Сообщение сохранено: даже если автор его удалит, оно останется в разделе «Оскорбления» в Mini App.</i>",
+        "en": "⚠️ <b>Insulting message (edited)</b>\nGroup: {group}\nWho: {who}\nWords: {words}\n\n{text}\n\n<i>Saved: even if the writer deletes it, it stays under “Insults” in the Mini App.</i>",
+    },
+    "ann_reply": {
+        "uz": "💬 <b>E'loningizga javob</b>\nGuruh: {group}\nKim: {who}\nE'lon: {ann}\n\n{text}",
+        "ru": "💬 <b>Ответ на ваше объявление</b>\nГруппа: {group}\nКто: {who}\nОбъявление: {ann}\n\n{text}",
+        "en": "💬 <b>Reply to your announcement</b>\nGroup: {group}\nWho: {who}\nAnnouncement: {ann}\n\n{text}",
+    },
+    "go_to_message": {
+        "uz": "Xabarga o'tish", "ru": "Перейти к сообщению", "en": "Go to message",
+    },
     "ann_need_ru": {
         "uz": "Rus guruhlari uchun ruscha matnni yozing.",
         "ru": "Напишите текст на русском для русских групп.",

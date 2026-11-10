@@ -186,6 +186,72 @@ async def list_members(client, session: AsyncSession, chat_id: int) -> list[dict
     return sorted(out, key=lambda m: (order[m["status"]], m["name"].lower()))
 
 
+SEARCH_AT_ONCE = 6  # groups searched in parallel
+
+
+async def search_people(client, session: AsyncSession, query: str) -> list[dict]:
+    """Everyone whose name or username matches, with the school groups they are in (owner/admin/member).
+    Telegram searches each group's members by name and username."""
+    from telethon.errors import RPCError
+    from telethon.tl.functions.channels import GetParticipantsRequest
+    from telethon.tl.types import ChannelParticipantsSearch
+
+    active = set((await session.scalars(select(Group.chat_id).where(Group.is_active))).all())
+    chats = [c for c in (await session.scalars(select(AccountChat))).all() if c.chat_id in active]
+    gate = asyncio.Semaphore(SEARCH_AT_ONCE)
+
+    async def one(chat: AccountChat):
+        async with gate:
+            try:
+                return chat.chat_id, await client(GetParticipantsRequest(
+                    _input_channel(chat.chat_id, chat.access_hash), ChannelParticipantsSearch(query), 0, 50, 0))
+            except RPCError as e:
+                log.info("Cannot search %s: %s", chat.chat_id, e)
+                return chat.chat_id, None
+
+    people: dict[int, dict] = {}
+    for chat_id, page in await asyncio.gather(*(one(c) for c in chats)):
+        if page is None:
+            continue
+        roles = {p.user_id: type(p).__name__ for p in page.participants}
+        for u in page.users:
+            if u.bot or u.deleted:
+                continue
+            kind = roles.get(u.id, "")
+            status = "owner" if "Creator" in kind else "admin" if "Admin" in kind else "member"
+            person = people.setdefault(u.id, {
+                "id": u.id, "name": " ".join(filter(None, (u.first_name, u.last_name))) or (u.username or str(u.id)),
+                "username": u.username, "groups": [], "access_hash": u.access_hash,
+            })
+            person["groups"].append({"chat_id": chat_id, "status": status})
+    # Remembered, so the account can add them to other groups later without searching again.
+    for p in people.values():
+        if p["access_hash"] is not None and await session.get(AccountUser, p["id"]) is None:
+            session.add(AccountUser(user_id=p["id"], access_hash=p["access_hash"]))
+        del p["access_hash"]
+    await session.commit()
+    return sorted(people.values(), key=lambda p: (-len(p["groups"]), p["name"].lower()))
+
+
+async def deleted_members(client, session: AsyncSession, chat_id: int) -> list[int] | None:
+    """The ids of deleted accounts still listed in the group; None if the account isn't in it."""
+    from telethon.tl.functions.channels import GetParticipantsRequest
+    from telethon.tl.types import ChannelParticipantsSearch
+
+    chat = await session.get(AccountChat, chat_id)
+    if chat is None:
+        return None
+    channel = _input_channel(chat_id, chat.access_hash)
+    found, offset = [], 0
+    while offset < MAX_MEMBERS:
+        page = await client(GetParticipantsRequest(channel, ChannelParticipantsSearch(""), offset, 200, 0))
+        found += [u.id for u in page.users if u.deleted]
+        offset += len(page.participants)
+        if not page.participants or offset >= page.count:
+            break
+    return found
+
+
 def _error_result(e: Exception) -> str:
     from telethon import errors as er
 

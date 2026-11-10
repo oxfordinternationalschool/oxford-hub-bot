@@ -318,6 +318,9 @@ def _fresh_trigger_cache():
 
     trigger_cache.invalidate()
     topics._known.clear()  # each test has a fresh database
+    from bot.services import watch
+
+    watch.forget_settings()
 
 
 @pytest.fixture

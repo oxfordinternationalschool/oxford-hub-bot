@@ -58,6 +58,27 @@ class DbMiddleware(BaseMiddleware):
             return await handler(event, data)
 
 
+class GroupWatcher(BaseMiddleware):
+    """Every group message (and edit) is checked for insulting words, and a reply to an
+    announcement is passed to its author. Runs before the handlers; never stops them."""
+
+    async def __call__(self, handler, event, data):
+        session, bot = data.get("session"), data.get("bot")
+        chat = getattr(event, "chat", None)
+        if session is not None and bot is not None and chat is not None and chat.type in ("group", "supergroup"):
+            from bot.services.watch import check_abuse, notify_reply
+
+            edited = event.edit_date is not None
+            try:
+                await check_abuse(bot, session, event, edited=edited)
+                if not edited:
+                    await notify_reply(bot, session, event)
+            except Exception:
+                log.exception("Could not check a group message")
+                await session.rollback()
+        return await handler(event, data)
+
+
 class TopicLearner(BaseMiddleware):
     """Remembers the topics of groups with topics from the messages written in them
     (Telegram has no way for bots to list them). Runs before the handlers, for every message."""

@@ -26,7 +26,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.app import request_scope
 from bot.config import LANGS, settings, utcnow
 from bot.db.models import (
-    AccountChat, Announcement, AnnouncementMessage, Call, Floor, ForumTopic, Group, Invite, MediaDraft, Role, StaffRole, User, PickedUser,
+    AccountChat, Announcement, AnnouncementMessage, Call, FlaggedMessage, Floor, ForumTopic, Group, Invite, MediaDraft, Role, StaffRole,
+    User, PickedUser,
 )
 from bot.i18n import t
 from bot.services import admin_views as views
@@ -35,14 +36,14 @@ from bot.services.broadcast import broadcast, delete_announcement, save_announce
 from bot.services.media import (
     ALBUM_FAMILY, CAPTION_LIMIT, LAYOUTS, album_problem, announcement_sender, layout_problem, media_preview, upload_kind, upload_to_owner,
 )
-from bot.services.calls import refresh_call, set_status
+from bot.services.calls import message_link, refresh_call, set_status
 from bot.services.common import admin_users, find_floor, group_sort_key, parse_class
 from bot.services.group_admins import (
     admin_invite, group_status, kick_member, member_invite, member_status, new_request_id, pending_invites, person_name, picked_user,
     picked_users, picker_button,
     set_group_admin,
 )
-from bot.services import user_account
+from bot.services import user_account, watch
 from bot.services.menus import set_user_menu, sync_group_commands
 from bot.services.topics import same_name, topics_by_chat
 from bot.services.rich_text import to_telegram_html
@@ -676,6 +677,106 @@ async def op_admins_add(ctx: Ctx, args: dict):
             "message": None if r == user_account.OK else html.unescape(_plain(t(ctx.lang, f"uadd_{r}"))),
         } for c, r in results.items()],
     }
+
+
+@op("people.search")
+async def op_people_search(ctx: Ctx, args: dict):
+    """Finds people by name or @username in every class group (through the connected account)."""
+    query = (_str(args, "q", 64) or "").lstrip("@")
+    if len(query) < 2:
+        raise ApiError(400, "bad_args", "q: 2 letters at least")
+    try:
+        async with user_account.open_account() as client:
+            people = await user_account.search_people(client, ctx.session, query)
+    except user_account.AccountOff as e:
+        raise ApiError(409, f"uadd_off:{e}", _plain(t(ctx.lang, "uadd_off")))
+    groups = {g.chat_id: g for g in await _active_groups(ctx)}
+    order = {g.chat_id: i for i, g in enumerate(groups.values())}
+    for person in people:
+        person["groups"] = sorted(({**x, "label": groups[x["chat_id"]].label} for x in person["groups"] if x["chat_id"] in groups),
+                                  key=lambda x: order[x["chat_id"]])
+    return people[:50]
+
+
+@op("groups.deleted")
+async def op_groups_deleted(ctx: Ctx, args: dict):
+    """Deleted accounts still listed in each class group (only groups that have some)."""
+    groups = await _active_groups(ctx)
+    try:
+        async with user_account.open_account() as client:
+            out = []
+            for g in groups:
+                ids = await user_account.deleted_members(client, ctx.session, g.chat_id)
+                if ids:
+                    out.append({"chat_id": g.chat_id, "label": g.label, "user_ids": ids})
+    except user_account.AccountOff as e:
+        raise ApiError(409, f"uadd_off:{e}", _plain(t(ctx.lang, "uadd_off")))
+    return out
+
+
+@op("groups.deleted_clean")
+async def op_groups_deleted_clean(ctx: Ctx, args: dict):
+    """Removes the given deleted accounts from one group (the bot does it)."""
+    group = await _get(ctx, Group, _int(args, "chat_id"))
+    ids = args.get("user_ids")
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 25 or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
+        raise ApiError(400, "bad_args", "user_ids")
+    ids = [i for i in ids if i not in settings.admin_ids and i != ctx.bot.id]
+    gate = asyncio.Semaphore(5)
+
+    async def one(user_id: int) -> str:
+        async with gate:
+            return await kick_member(ctx.bot, group.chat_id, user_id)
+
+    results = await asyncio.gather(*(one(i) for i in ids))
+    return {"removed": sum(r == "ok" for r in results), "total": len(ids)}
+
+
+# ---------- Insults in groups ----------
+
+@op("abuse.get")
+async def op_abuse_get(ctx: Ctx, args: dict):
+    """The insult watch: on/off, the word list, who is told, and the saved messages (newest first)."""
+    conf = await watch.abuse_settings(ctx.session)
+    admins = (await ctx.session.scalars(select(User).where(User.is_admin).order_by(User.full_name))).all()
+    rows = (await ctx.session.scalars(select(FlaggedMessage).order_by(FlaggedMessage.id.desc()).limit(100))).all()
+    labels = {g.chat_id: g.label for g in (await ctx.session.scalars(
+        select(Group).where(Group.chat_id.in_({r.chat_id for r in rows})))).all()}
+    return {
+        "on": conf["on"], "words": conf["words"], "default_words": conf["words"] == watch.DEFAULT_WORDS,
+        "admins": [{"id": a.id, "name": a.full_name, "on": a.id in conf["to"]} for a in admins],
+        "log": [{
+            "id": r.id, "chat": labels.get(r.chat_id, str(r.chat_id)), "name": r.user_name, "username": r.username,
+            "user_id": r.user_id, "text": r.text, "words": r.words, "edited": r.edited, "at": _iso(r.created_at),
+            "link": message_link(r.chat_id, r.message_id),
+        } for r in rows],
+    }
+
+
+@op("abuse.save")
+async def op_abuse_save(ctx: Ctx, args: dict):
+    if "on" in args:
+        await watch.set_setting(ctx.session, watch.ABUSE_ON, _bool(args, "on"))
+    if "words" in args:
+        words = args["words"]
+        if words == "default":
+            row = await ctx.session.get(watch.Setting, watch.ABUSE_WORDS)
+            if row is not None:
+                await ctx.session.delete(row)
+                await ctx.session.commit()
+            watch.forget_settings()
+        else:
+            if not isinstance(words, list) or len(words) > 500 or not all(isinstance(w, str) for w in words):
+                raise ApiError(400, "bad_args", "words")
+            clean = list(dict.fromkeys(w.strip()[:64] for w in words if w.strip()))
+            await watch.set_setting(ctx.session, watch.ABUSE_WORDS, clean)
+    if "to" in args:
+        to = args["to"]
+        if not isinstance(to, list) or not all(isinstance(i, int) and not isinstance(i, bool) for i in to):
+            raise ApiError(400, "bad_args", "to")
+        admins = set((await ctx.session.scalars(select(User.id).where(User.is_admin))).all())
+        await watch.set_setting(ctx.session, watch.ABUSE_TO, [i for i in to if i in admins])
+    return await op_abuse_get(ctx, {})
 
 
 @op("groups.members")

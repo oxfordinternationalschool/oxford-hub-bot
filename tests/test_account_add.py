@@ -27,6 +27,7 @@ class FakeClient:
         self.usernames = {"anvar_q": PERSON}
         self.members = {}  # search word -> user ids
         self.everyone, self.roles = [], []  # the group's member list
+        self.found_in = {}  # channel id -> ids a name search finds there (default: everywhere)
 
     async def iter_dialogs(self):
         for chat_id in (GROUP_A, GROUP_B):
@@ -44,7 +45,12 @@ class FakeClient:
             if request.filter.q == "":
                 return NS(users=self.everyone[request.offset:request.offset + request.limit],
                           participants=self.roles[request.offset:request.offset + request.limit], count=len(self.everyone))
-            return NS(users=[NS(id=u, access_hash=666) for u in self.members.get(request.filter.q, [])])
+            ids = self.members.get(request.filter.q, [])
+            by_group = self.found_in.get(request.channel.channel_id)
+            if by_group is not None:
+                ids = [u for u in ids if u in by_group]
+            return NS(users=[NS(id=u, access_hash=666, first_name=f"Anvar{u}", last_name=None, username=None, bot=False, deleted=False)
+                             for u in ids], participants=[ChannelParticipant(u) for u in ids])
         assert isinstance(request, InviteToChannelRequest)
         error = self.errors.get(request.channel.channel_id)
         if error:
@@ -177,3 +183,30 @@ async def test_someone_already_in_the_group_counts_as_added(wh, account):
     account.errors[channel_id(GROUP_A)] = errors.UserAlreadyParticipantError(request=None)
     r = await add(GROUP_A)
     assert r["results"][0]["result"] == "ok"
+
+
+async def test_a_person_is_found_in_every_group(wh, account):
+    await school(wh)
+    await pick(wh)  # fills the account's group list
+    await add(GROUP_A)
+    account.members["Anv"] = [PERSON, 88]
+    account.found_in = {channel_id(GROUP_A): {PERSON, 88}, channel_id(GROUP_B): {PERSON}}
+    people = await ok("people.search", {"q": "Anv"})
+    assert [(p["id"], [g["chat_id"] for g in p["groups"]]) for p in people] == [(PERSON, [GROUP_A, GROUP_B]), (88, [GROUP_A])]
+    assert people[1]["groups"][0]["label"] == "7-A" and people[1]["groups"][0]["status"] == "member"
+    status, _ = await api("people.search", {"q": "A"})
+    assert status == 400
+
+
+async def test_deleted_accounts_are_found_and_removed(wh, account):
+    await school(wh)
+    await pick(wh)
+    await add(GROUP_A)  # fills the account's group list
+    gone = NS(id=90, first_name=None, last_name=None, username=None, bot=False, deleted=True)
+    account.everyone = [person(10, "Zafar"), gone]
+    account.roles = [ChannelParticipant(10), ChannelParticipant(90)]
+    found = await ok("groups.deleted")
+    assert [(f["chat_id"], f["user_ids"]) for f in found] == [(GROUP_A, [90]), (GROUP_B, [90])]
+    r = await ok("groups.deleted_clean", {"chat_id": GROUP_A, "user_ids": [90]})
+    assert r == {"removed": 1, "total": 1}
+    assert wh.api.member(GROUP_A, 90).status == "left"

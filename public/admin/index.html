@@ -422,7 +422,21 @@ const T = {
     pf_pick_hint: "10 tagacha odam tanlash mumkin. Telegram «Отправить» / «Send» deb so'raydi: bosing. Bu faqat botga kimni tanlaganingizni aytadi, odamga hech narsa bormaydi.",
     pf_groups_pick: "Guruhlarni ro'yxatdan tanlash", pf_groups_choose: "Guruhlarni tanlang", pf_groups_custom: "{n} ta guruh (o'zingiz tanlagan)", pf_groups_own: "Ro'yxatdan o'zim tanlayman…", bi_toggle: "Ikki tilda: o'zbekcha va ruscha", bi_sub: "Rus guruhlariga ruscha matn, qolganlariga o'zbekcha matn boradi. Guruh tili guruh sozlamalarida.",
     lang_uz: "O'zbekcha", lang_ru: "Русский", ann_need_uz: "O'zbek guruhlari uchun o'zbekcha matnni yozing.", ann_need_ru: "Rus guruhlari uchun ruscha matnni yozing.",
-    ann_send_bi: "Yuborish: {uz} o'zbek + {ru} rus guruh", grp_uz: "O'zbek sinflar", grp_ru: "Rus sinflar", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
+    ann_send_bi: "Yuborish: {uz} o'zbek + {ru} rus guruh", grp_uz: "O'zbek sinflar", grp_ru: "Rus sinflar",
+    more_search: "Odamni qidirish", more_search_d: "Qaysi guruhlarda ekanini topish",
+    more_abuse: "Haqoratlar", more_abuse_d: "Haqoratli so'zlar va saqlangan xabarlar",
+    sr_ph: "Ism yoki @username", sr_go: "Qidirish", sr_hint: "Hamma sinf guruhlaridan qidiriladi (ism yoki username bo'yicha, kamida 2 harf).",
+    sr_none: "Hech kim topilmadi", sr_in: "{n} ta guruhda", sr_act: "Bu odam bilan ishlash", sr_pick: "Tanlash", sr_from_groups: "Guruhlardan qidirish",
+    pf_need_action: "Nima qilishni tanlang",
+    del_open: "O'chirilgan akkauntlarni tozalash", del_scanning: "Hamma guruh tekshirilmoqda… (biroz vaqt oladi)",
+    del_none: "O'chirilgan akkaunt topilmadi", del_found: "{n} ta o'chirilgan akkaunt topildi", del_go: "Hammasini chiqarish ({n})",
+    del_progress: "Chiqarilmoqda… {i}/{total}", del_done: "{n} ta o'chirilgan akkaunt chiqarildi",
+    ab_on: "Haqoratli so'zlarni kuzatish", ab_on_d: "Guruhda shunday so'z yozilsa, quyida belgilangan adminlarga xabar va xabarning nusxasi keladi. Yozgan odam buni bilmaydi.",
+    ab_to: "Kimga xabar boradi", ab_words: "So'zlar ro'yxati",
+    ab_words_hint: "Vergul yoki yangi qatordan ajrating. Oxiridagi * — shu bilan boshlanadigan hamma so'zlar (masalan jalab*). Kirill va lotin yozuvi bir xil hisoblanadi.",
+    ab_default: "Asl ro'yxatga qaytarish", ab_default_confirm: "So'zlar ro'yxati asl holiga qaytarilsinmi?",
+    ab_log: "Saqlangan xabarlar · {n}", ab_log_none: "Hali haqoratli xabar yo'q", ab_edited: "tahrirlangan", ab_words_found: "So'zlar: {w}",
+    ab_proof: "Yozgan odam xabarni o'chirsa ham, bu nusxa shu yerda qoladi.", ab_open: "Xabarga o'tish", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
     pf_where_in: "U bor guruhlar", pf_need: "Odam va guruhlarni tanlang",
     pf_go_add: "{n} ta guruhga qo'shish", pf_go_admin: "{n} ta guruhda admin qilish", pf_go_unadmin: "{n} ta guruhda adminlikdan olish",
     pf_go_kick: "{n} ta guruhdan chiqarish",
@@ -557,7 +571,21 @@ const T = {
     pf_pick_hint: "Можно выбрать до 10 человек. Telegram спросит «Отправить»: нажмите. Это только сообщает боту ваш выбор, человеку ничего не придёт.",
     pf_groups_pick: "Выбрать группы из списка", pf_groups_choose: "Выберите группы", pf_groups_custom: "Групп: {n} (выбраны вручную)", pf_groups_own: "Выберу сам из списка…", bi_toggle: "На двух языках: узбекский и русский", bi_sub: "Русские группы получат русский текст, остальные — узбекский. Язык группы — в её настройках.",
     lang_uz: "O'zbekcha", lang_ru: "Русский", ann_need_uz: "Напишите текст на узбекском для узбекских групп.", ann_need_ru: "Напишите текст на русском для русских групп.",
-    ann_send_bi: "Отправить: {uz} узб. + {ru} рус. групп", grp_uz: "Узбекские классы", grp_ru: "Русские классы", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
+    ann_send_bi: "Отправить: {uz} узб. + {ru} рус. групп", grp_uz: "Узбекские классы", grp_ru: "Русские классы",
+    more_search: "Найти человека", more_search_d: "В каких он группах",
+    more_abuse: "Оскорбления", more_abuse_d: "Оскорбительные слова и сохранённые сообщения",
+    sr_ph: "Имя или @username", sr_go: "Найти", sr_hint: "Поиск по всем группам классов (по имени или username, от 2 букв).",
+    sr_none: "Никого не найдено", sr_in: "В {n} группах", sr_act: "Действия с этим человеком", sr_pick: "Выбрать", sr_from_groups: "Найти в группах",
+    pf_need_action: "Выберите, что сделать",
+    del_open: "Удалить удалённые аккаунты", del_scanning: "Проверяем все группы… (это займёт немного времени)",
+    del_none: "Удалённых аккаунтов нет", del_found: "Найдено удалённых аккаунтов: {n}", del_go: "Удалить все ({n})",
+    del_progress: "Удаляем… {i}/{total}", del_done: "Удалено аккаунтов: {n}",
+    ab_on: "Следить за оскорблениями", ab_on_d: "Если в группе напишут такое слово, отмеченные ниже админы получат сообщение и его копию. Автор об этом не узнает.",
+    ab_to: "Кому сообщать", ab_words: "Список слов",
+    ab_words_hint: "Через запятую или с новой строки. * в конце — все слова, которые так начинаются. Кириллица и латиница считаются одинаково.",
+    ab_default: "Вернуть исходный список", ab_default_confirm: "Вернуть исходный список слов?",
+    ab_log: "Сохранённые сообщения · {n}", ab_log_none: "Оскорбительных сообщений пока нет", ab_edited: "изменено", ab_words_found: "Слова: {w}",
+    ab_proof: "Даже если автор удалит сообщение, эта копия останется здесь.", ab_open: "Перейти к сообщению", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
     pf_where_in: "Где он есть", pf_need: "Выберите людей и группы",
     pf_go_add: "Добавить в {n} групп", pf_go_admin: "Сделать админом в {n} группах", pf_go_unadmin: "Снять админа в {n} группах",
     pf_go_kick: "Удалить из {n} групп",
@@ -692,7 +720,21 @@ const T = {
     pf_pick_hint: "You can choose up to 10 people. Telegram will ask “Send”: tap it. It only tells the bot who you chose; nothing is sent to them.",
     pf_groups_pick: "Choose groups from the list", pf_groups_choose: "Choose groups", pf_groups_custom: "{n} groups (your own choice)", pf_groups_own: "I'll pick from the list…", bi_toggle: "Two languages: Uzbek and Russian", bi_sub: "Russian groups get the Russian text, the rest the Uzbek one. A group's language is in its settings.",
     lang_uz: "O'zbekcha", lang_ru: "Русский", ann_need_uz: "Write the Uzbek text for the Uzbek groups.", ann_need_ru: "Write the Russian text for the Russian groups.",
-    ann_send_bi: "Send: {uz} Uzbek + {ru} Russian groups", grp_uz: "Uzbek classes", grp_ru: "Russian classes", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
+    ann_send_bi: "Send: {uz} Uzbek + {ru} Russian groups", grp_uz: "Uzbek classes", grp_ru: "Russian classes",
+    more_search: "Find a person", more_search_d: "Which groups they are in",
+    more_abuse: "Insults", more_abuse_d: "Insulting words and saved messages",
+    sr_ph: "Name or @username", sr_go: "Search", sr_hint: "Searches every class group (by name or username, 2 letters at least).",
+    sr_none: "No one found", sr_in: "In {n} groups", sr_act: "Act on this person", sr_pick: "Choose", sr_from_groups: "Find in groups",
+    pf_need_action: "Choose what to do",
+    del_open: "Remove deleted accounts", del_scanning: "Checking every group… (takes a little while)",
+    del_none: "No deleted accounts found", del_found: "{n} deleted accounts found", del_go: "Remove them all ({n})",
+    del_progress: "Removing… {i}/{total}", del_done: "{n} deleted accounts removed",
+    ab_on: "Watch for insults", ab_on_d: "When such a word is written in a group, the admins ticked below get a message and a copy of it. The writer doesn't know.",
+    ab_to: "Who is told", ab_words: "Word list",
+    ab_words_hint: "Separate with commas or new lines. A * at the end means every word starting so. Cyrillic and Latin count alike.",
+    ab_default: "Back to the original list", ab_default_confirm: "Put the original word list back?",
+    ab_log: "Saved messages · {n}", ab_log_none: "No insulting messages yet", ab_edited: "edited", ab_words_found: "Words: {w}",
+    ab_proof: "Even if the writer deletes the message, this copy stays here.", ab_open: "Go to message", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
     pf_where_in: "Where they are", pf_need: "Choose people and groups",
     pf_go_add: "Add to {n} groups", pf_go_admin: "Make admin in {n} groups", pf_go_unadmin: "Remove admin in {n} groups",
     pf_go_kick: "Remove from {n} groups",
@@ -842,6 +884,9 @@ async function copyText(text) {
     document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove();
   }
   haptic("ok"); toast(t("copied"));
+}
+function openLink(url) {
+  if (tg && tg.openTelegramLink && url.startsWith("https://t.me/")) tg.openTelegramLink(url); else window.open(url, "_blank");
 }
 function share(link, text) {
   const url = "https://t.me/share/url?url=" + encodeURIComponent(link) + (text ? "&text=" + encodeURIComponent(text) : "");
@@ -1643,6 +1688,9 @@ const SCREENS = {
       card(item("groups", "school", "", d.groups), item("people", "users", "ok"), item("roles", "tag", "warn", d.roles),
         item("floors", "layers", "ok", d.floors)),
       el("div", { class: "mt" }),
+      el("div", { class: "mt" }),
+      card(item("search", "search", ""), item("abuse", "alert", "bad")),
+      el("div", { class: "mt" }),
       card(item("invites", "link", ""), item("stats", "chart", "warn")),
     ];
   },
@@ -1760,8 +1808,105 @@ function showResults(action, out) {
   openSheet(t("pf_result"), blocks, el("button", { class: "btn block mt", type: "button", onclick: closeSheet }, t("done")));
 }
 
+// ---------------------------------------------------------------- finding a person in every group (connected account)
+/** A search box with results; each person shows the groups they are in and a button that calls onPick(person). */
+function peopleSearch(onPick, pickLabel) {
+  const input = el("input", { class: "in", type: "search", placeholder: t("sr_ph"), enterkeyhint: "search" });
+  const results = el("div");
+  const go = el("button", { class: "btn", type: "button", style: "flex:none", onclick: () => act(go, run) }, icon("search"));
+  async function run() {
+    const q = input.value.trim();
+    if (q.replace(/^@/, "").length < 2) return;
+    input.blur();
+    results.replaceChildren(card(el("div", { class: "skel", style: "height:56px;margin:12px" }), el("div", { class: "skel", style: "height:56px;margin:12px" })));
+    const people = await api("people.search", { q });
+    results.replaceChildren(...(people.length ? people.map((p) => el("div", { class: "card mt" },
+      row({ lead: avatar(p.name, p.id), title: p.name, sub: [p.username ? "@" + p.username : null, t("sr_in", { n: p.groups.length })].filter(Boolean).join(" · ") }),
+      el("div", { style: "padding:0 16px 4px" }, p.groups.map((g) => badge(g.label + (g.status !== "member" ? " · " + t("gst_" + g.status) : ""), GST_KIND[g.status]))),
+      el("div", { style: "padding:10px 16px 14px" }, el("button", { class: "btn soft block", type: "button", onclick: () => onPick(p) }, pickLabel)),
+    )) : [el("div", { class: "card mt" }, empty(t("sr_none"), "users"))]));
+  }
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); act(go, run); } });
+  setTimeout(() => input.focus(), 50);
+  return [el("div", { class: "btns" }, el("div", { class: "search", style: "flex:1;margin:0" }, icon("search"), input), go),
+    el("div", { class: "hint", style: "margin:8px 4px 0" }, t("sr_hint")), results];
+}
+
+// ---------------------------------------------------------------- deleted accounts left in the groups
+async function openDeletedCleanup() {
+  const body = el("div", {}, el("div", { class: "hint", style: "margin:0 2px 12px" }, t("del_scanning")),
+    card(el("div", { class: "skel", style: "height:56px;margin:12px" })));
+  openSheet(t("del_open"), body);
+  const found = await api("groups.deleted");
+  const total = found.reduce((n, g) => n + g.user_ids.length, 0);
+  if (!total) { body.replaceChildren(card(empty(t("del_none"), "check"))); return; }
+  const goBtn = el("button", { class: "btn danger block mt", type: "button", onclick: () => act(goBtn, async () => {
+    let done = 0, removed = 0;
+    for (const g of found) {
+      for (let i = 0; i < g.user_ids.length; i += 25) {
+        goBtn.textContent = t("del_progress", { i: done, total });
+        const r = await api("groups.deleted_clean", { chat_id: g.chat_id, user_ids: g.user_ids.slice(i, i + 25) });
+        removed += r.removed; done += r.total;
+      }
+    }
+    haptic("ok"); closeSheet(); toast(t("del_done", { n: removed }));
+  }) }, icon("trash"), t("del_go", { n: total }));
+  body.replaceChildren(el("div", { class: "hint", style: "margin:0 2px 12px" }, t("del_found", { n: total })),
+    card(...found.map((g) => row({ flat: true, lead: lead("school"), title: g.label, side: String(g.user_ids.length) }))), goBtn);
+}
+
+// ---------------------------------------------------------------- insults: settings and the saved messages
+function abuseScreen(d) {
+  const save = async (args) => { const r = await api("abuse.save", args); Object.assign(d, r); haptic("ok"); toast(t("saved")); };
+  const onRow = row({ lead: lead("alert", "bad"), title: t("ab_on"), sub: t("ab_on_d"),
+    side: toggle(d.on, (v, input) => act(null, async () => { try { await save({ on: v }); } catch (e) { input.checked = !v; throw e; } })) });
+  const to = new Set(d.admins.filter((a) => a.on).map((a) => a.id));
+  const admins = card(...d.admins.map((a) => row({ flat: true, lead: avatar(a.name, a.id), title: a.name,
+    side: toggle(a.on, (v, input) => act(null, async () => {
+      v ? to.add(a.id) : to.delete(a.id);
+      try { await save({ to: [...to] }); } catch (e) { input.checked = !v; v ? to.delete(a.id) : to.add(a.id); throw e; }
+    })) })));
+  const words = el("textarea", { class: "in", rows: 6, value: d.words.join(", ") });
+  const saveWords = el("button", { class: "btn block mt", type: "button", onclick: () => act(saveWords, async () => {
+    await save({ words: words.value.split(/[,\n]+/).map((w) => w.trim()).filter(Boolean) });
+    words.value = d.words.join(", "); render();
+  }) }, t("save"));
+  const reset = !d.default_words ? el("button", { class: "btn ghost block mt", type: "button", onclick: () => act(reset, async () => {
+    if (!(await confirmMsg(t("ab_default_confirm")))) return;
+    await save({ words: "default" }); render();
+  }) }, t("ab_default")) : null;
+  const openItem = (m) => openSheet(m.chat,
+    el("div", { class: "hint", style: "margin:0 2px 10px" }, [m.name, m.username ? "@" + m.username : null, m.user_id ? "ID " + m.user_id : null, fmtTime(m.at)].filter(Boolean).join(" · ")),
+    card(el("div", { style: "padding:14px 16px;white-space:pre-wrap;overflow-wrap:anywhere" }, m.text)),
+    el("div", { class: "mt" }, badge(t("ab_words_found", { w: m.words }), "bad"), m.edited ? badge(t("ab_edited"), "warn") : null),
+    el("div", { class: "hint mt" }, t("ab_proof")),
+    m.link ? el("button", { class: "btn block mt", type: "button", onclick: () => openLink(m.link) }, t("ab_open")) : null);
+  const log = d.log.length ? card(...d.log.map((m) => row({
+    lead: avatar(m.name, m.user_id || 0), title: [m.name, el("span", { style: "color:var(--muted);font-weight:500" }, " · " + m.chat)],
+    sub: [el("div", { style: "color:var(--text);margin:2px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" }, m.text),
+      ago(m.at), " ", badge(m.words, "bad"), m.edited ? badge(t("ab_edited"), "warn") : null],
+    onclick: () => openItem(m), chevron: true,
+  }))) : card(empty(t("ab_log_none"), "check"));
+  return [pageHead(t("more_abuse"), t("more_abuse_d")), card(onRow),
+    header(t("ab_to")), admins,
+    header(t("ab_log", { n: d.log.length })), log,
+    header(t("ab_words")), card(el("div", { style: "padding:14px 16px 16px" }, words,
+      el("div", { class: "hint", style: "margin:8px 2px 0" }, t("ab_words_hint")), saveWords, reset))];
+}
+
+
 // ---------------------------------------------------------------- "More" sub-screens
 const SUBS = {
+  async search() {
+    return [pageHead(t("more_search"), t("more_search_d")),
+      ...peopleSearch((p) => openPeople(null, [{ id: p.id, name: p.name, username: p.username }]), t("sr_act"))];
+  },
+
+  async abuse() {
+    const d = await api("abuse.get");
+    return abuseScreen(d);
+  },
+
   async people() {
     const groups = await load("groups", "groups.list");
     const pf = state.pf || (state.pf = { action: "add", people: [], sel: new Set(), status: null });
@@ -1798,11 +1943,17 @@ const SUBS = {
         for (const p of got) if (!pf.people.some((x) => x.id === p.id)) pf.people.push(p);
         if (got.length) { haptic("ok"); loadStatus(); draw(); }
       }) }, icon("plus"), pf.people.length ? t("pf_pick_more") : t("pf_pick"));
+      const fromGroups = accountReady() ? el("button", { class: "btn ghost block mt", type: "button", onclick: () => {
+        openSheet(t("sr_from_groups"), ...peopleSearch((p) => {
+          if (!pf.people.some((x) => x.id === p.id)) pf.people.push({ id: p.id, name: p.name, username: p.username });
+          closeSheet(); haptic("ok"); loadStatus(); draw();
+        }, t("sr_pick")));
+      } }, icon("search"), t("sr_from_groups")) : null;
       const who = card(...pf.people.map((p) => row({
         lead: avatar(p.name, p.id), title: p.name, sub: p.username ? "@" + p.username : null,
         side: el("button", { class: "icon-btn", style: "box-shadow:none;background:var(--surface-2)", type: "button", "aria-label": t("delete"),
           onclick: () => { pf.people = pf.people.filter((x) => x !== p); loadStatus(); haptic(); draw(); } }, icon("x")),
-      })), el("div", { style: "padding:14px 16px" }, pick, el("div", { class: "hint", style: "margin:10px 2px 0" }, t("pf_pick_hint"))));
+      })), el("div", { style: "padding:14px 16px" }, pick, fromGroups, el("div", { class: "hint", style: "margin:10px 2px 0" }, t("pf_pick_hint"))));
       // 3. where
       const grades = [...new Set(groups.map((g) => g.grade).filter(Boolean))].sort((a, b) => a - b);
       // One dropdown: a ready set of groups, or one's own choice from the list.
@@ -1828,7 +1979,7 @@ const SUBS = {
         onclick: openDropdown, chevron: true }));
       // go
       const chosen = groups.filter((g) => pf.sel.has(g.chat_id));
-      const ready = pf.people.length && chosen.length;
+      const ready = pf.action && pf.people.length && chosen.length;
       const goBtn = el("button", { class: "btn block" + (pf.action === "kick" ? " danger" : ""), type: "button", disabled: !ready,
         onclick: () => act(goBtn, async () => {
           const what = t("pf_" + pf.action);
@@ -1836,7 +1987,7 @@ const SUBS = {
           if (pf.action === "kick" && !(await confirmMsg(t("pf_kick_sure", { n: chosen.length })))) return;
           const out = await runPeople(pf.action, pf.people, chosen, (i, total) => { goBtn.textContent = t("pf_progress", { i, total }); });
           invalidate("dashboard"); loadStatus(); draw(); showResults(pf.action, out);
-        }) }, ready ? t("pf_go_" + pf.action, { n: chosen.length }) : t("pf_need"));
+        }) }, ready ? t("pf_go_" + pf.action, { n: chosen.length }) : !pf.action ? t("pf_need_action") : t("pf_need"));
       const warn = !accountReady() && pf.action === "add"
         ? card(row({ flat: true, lead: lead("alert", "warn"), title: t("pf_no_account") })) : null;
       box.replaceChildren(...[
@@ -1878,7 +2029,9 @@ const SUBS = {
         cache.groups = { data: r.groups, at: Date.now() }; haptic("ok"); toast(t("topic_all_done", { n: r.done, name })); render();
         if (r.missing.length) await alertMsg(t("topic_all_missing", { name, list: r.missing.join(", ") }));
       })) }, icon("megaphone"), t("topic_all")) : null;
-    return [pageHead(t("more_groups"), t("more_groups_d"), refresh), topicAll, card(rows.length ? rows : empty(t("groups_hint"), "school"))];
+    const cleanDeleted = accountReady() ? el("button", { class: "btn soft block", type: "button", style: "margin-bottom:14px",
+      onclick: () => act(cleanDeleted, openDeletedCleanup) }, icon("trash"), t("del_open")) : null;
+    return [pageHead(t("more_groups"), t("more_groups_d"), refresh), topicAll, cleanDeleted, card(rows.length ? rows : empty(t("groups_hint"), "school"))];
   },
 
   async roles() {

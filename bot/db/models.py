@@ -303,6 +303,33 @@ class AlbumLead(Base):
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
+class FlaggedMessage(Base):
+    """A group message with an insulting word, kept as proof even if its writer deletes it."""
+
+    __tablename__ = "flagged_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int]
+    user_id: Mapped[int | None] = mapped_column(BigInteger)
+    user_name: Mapped[str] = mapped_column(String(255))
+    username: Mapped[str | None] = mapped_column(String(64))
+    text: Mapped[str] = mapped_column(Text)
+    words: Mapped[str] = mapped_column(String(255))
+    edited: Mapped[bool] = mapped_column(default=False)
+    file_id: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class Setting(Base):
+    """Small settings changed from the Mini App, as JSON."""
+
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+
+
 class AnnouncementMessage(Base):
     __tablename__ = "announcement_messages"
 

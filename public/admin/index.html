@@ -436,7 +436,7 @@ const T = {
     ab_words_hint: "Vergul yoki yangi qatordan ajrating. Oxiridagi * — shu bilan boshlanadigan hamma so'zlar (masalan jalab*). Kirill va lotin yozuvi bir xil hisoblanadi.",
     ab_default: "Asl ro'yxatga qaytarish", ab_default_confirm: "So'zlar ro'yxati asl holiga qaytarilsinmi?",
     ab_log: "Saqlangan xabarlar · {n}", ab_log_none: "Hali haqoratli xabar yo'q", ab_edited: "tahrirlangan", ab_words_found: "So'zlar: {w}",
-    ab_proof: "Yozgan odam xabarni o'chirsa ham, bu nusxa shu yerda qoladi.", ab_open: "Xabarga o'tish", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
+    ab_proof: "Yozgan odam xabarni o'chirsa ham, bu nusxa shu yerda qoladi.", ab_open: "Xabarga o'tish", ab_to_whom: "Kimga: {to}", ab_replied: "Shu xabarga javoban yozilgan:", ab_when: "Qachon: {at}", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
     pf_where_in: "U bor guruhlar", pf_need: "Odam va guruhlarni tanlang",
     pf_go_add: "{n} ta guruhga qo'shish", pf_go_admin: "{n} ta guruhda admin qilish", pf_go_unadmin: "{n} ta guruhda adminlikdan olish",
     pf_go_kick: "{n} ta guruhdan chiqarish",
@@ -585,7 +585,7 @@ const T = {
     ab_words_hint: "Через запятую или с новой строки. * в конце — все слова, которые так начинаются. Кириллица и латиница считаются одинаково.",
     ab_default: "Вернуть исходный список", ab_default_confirm: "Вернуть исходный список слов?",
     ab_log: "Сохранённые сообщения · {n}", ab_log_none: "Оскорбительных сообщений пока нет", ab_edited: "изменено", ab_words_found: "Слова: {w}",
-    ab_proof: "Даже если автор удалит сообщение, эта копия останется здесь.", ab_open: "Перейти к сообщению", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
+    ab_proof: "Даже если автор удалит сообщение, эта копия останется здесь.", ab_open: "Перейти к сообщению", ab_to_whom: "Кому: {to}", ab_replied: "Написано в ответ на:", ab_when: "Когда: {at}", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
     pf_where_in: "Где он есть", pf_need: "Выберите людей и группы",
     pf_go_add: "Добавить в {n} групп", pf_go_admin: "Сделать админом в {n} группах", pf_go_unadmin: "Снять админа в {n} группах",
     pf_go_kick: "Удалить из {n} групп",
@@ -734,7 +734,7 @@ const T = {
     ab_words_hint: "Separate with commas or new lines. A * at the end means every word starting so. Cyrillic and Latin count alike.",
     ab_default: "Back to the original list", ab_default_confirm: "Put the original word list back?",
     ab_log: "Saved messages · {n}", ab_log_none: "No insulting messages yet", ab_edited: "edited", ab_words_found: "Words: {w}",
-    ab_proof: "Even if the writer deletes the message, this copy stays here.", ab_open: "Go to message", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
+    ab_proof: "Even if the writer deletes the message, this copy stays here.", ab_open: "Go to message", ab_to_whom: "To: {to}", ab_replied: "Written in reply to:", ab_when: "When: {at}", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
     pf_where_in: "Where they are", pf_need: "Choose people and groups",
     pf_go_add: "Add to {n} groups", pf_go_admin: "Make admin in {n} groups", pf_go_unadmin: "Remove admin in {n} groups",
     pf_go_kick: "Remove from {n} groups",
@@ -1875,16 +1875,22 @@ function abuseScreen(d) {
     if (!(await confirmMsg(t("ab_default_confirm")))) return;
     await save({ words: "default" }); render();
   }) }, t("ab_default")) : null;
+  const fullTime = (iso) => new Date(iso).toLocaleString(LOCALES[L], { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const openItem = (m) => openSheet(m.chat,
-    el("div", { class: "hint", style: "margin:0 2px 10px" }, [m.name, m.username ? "@" + m.username : null, m.user_id ? "ID " + m.user_id : null, fmtTime(m.at)].filter(Boolean).join(" · ")),
+    el("div", { class: "hint", style: "margin:0 2px 4px" }, [m.name, m.username ? "@" + m.username : null, m.user_id ? "ID " + m.user_id : null].filter(Boolean).join(" · ")),
+    el("div", { class: "hint", style: "margin:0 2px 4px" }, t("ab_when", { at: fullTime(m.at) })),
+    m.to ? el("div", { class: "hint", style: "margin:0 2px 4px;color:var(--text)" }, t("ab_to_whom", { to: m.to + (m.to_user_id ? " · ID " + m.to_user_id : "") })) : null,
+    el("div", { style: "height:6px" }),
     card(el("div", { style: "padding:14px 16px;white-space:pre-wrap;overflow-wrap:anywhere" }, m.text)),
+    m.reply_text ? [el("div", { class: "hint", style: "margin:12px 2px 6px" }, t("ab_replied")),
+      card(el("div", { style: "padding:12px 16px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)" }, m.reply_text))] : null,
     el("div", { class: "mt" }, badge(t("ab_words_found", { w: m.words }), "bad"), m.edited ? badge(t("ab_edited"), "warn") : null),
     el("div", { class: "hint mt" }, t("ab_proof")),
     m.link ? el("button", { class: "btn block mt", type: "button", onclick: () => openLink(m.link) }, t("ab_open")) : null);
   const log = d.log.length ? card(...d.log.map((m) => row({
     lead: avatar(m.name, m.user_id || 0), title: [m.name, el("span", { style: "color:var(--muted);font-weight:500" }, " · " + m.chat)],
     sub: [el("div", { style: "color:var(--text);margin:2px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" }, m.text),
-      ago(m.at), " ", badge(m.words, "bad"), m.edited ? badge(t("ab_edited"), "warn") : null],
+      fmtTime(m.at), m.to ? " → " + m.to : "", " ", badge(m.words, "bad"), m.edited ? badge(t("ab_edited"), "warn") : null],
     onclick: () => openItem(m), chevron: true,
   }))) : card(empty(t("ab_log_none"), "check"));
   return [pageHead(t("more_abuse"), t("more_abuse_d")), card(onRow),

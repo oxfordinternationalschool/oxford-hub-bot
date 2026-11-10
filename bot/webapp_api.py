@@ -749,6 +749,7 @@ async def op_abuse_get(ctx: Ctx, args: dict):
             "id": r.id, "chat": labels.get(r.chat_id, str(r.chat_id)), "name": r.user_name, "username": r.username,
             "user_id": r.user_id, "text": r.text, "words": r.words, "edited": r.edited, "at": _iso(r.created_at),
             "link": message_link(r.chat_id, r.message_id),
+            "to": r.to_name, "to_user_id": r.to_user_id, "reply_text": r.reply_text,
         } for r in rows],
     }
 

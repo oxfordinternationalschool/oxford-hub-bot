@@ -319,6 +319,10 @@ class FlaggedMessage(Base):
     edited: Mapped[bool] = mapped_column(default=False)
     file_id: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    # Whom it was aimed at: the person replied to, and anyone @mentioned; with the replied message's text.
+    to_user_id: Mapped[int | None] = mapped_column(BigInteger)
+    to_name: Mapped[str | None] = mapped_column(String(255))
+    reply_text: Mapped[str | None] = mapped_column(Text)
 
 
 class Setting(Base):

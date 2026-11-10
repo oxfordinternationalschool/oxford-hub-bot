@@ -91,3 +91,16 @@ async def test_reply_to_an_announcement_reaches_its_author(wh):
         "message_id": 99999, "date": 1, "chat": {"id": GROUP_A, "type": "supergroup"},
         "from": {"id": BOT_USER["id"], "is_bot": True, "first_name": "Hub"}, "text": "x"})
     assert len(wh.api.sent(ADMIN)) == before + 1
+
+
+async def test_whom_it_was_aimed_at_is_kept(wh):
+    await school(wh)
+    teacher_msg = {"message_id": 5, "date": 1, "chat": {"id": GROUP_A, "type": "supergroup"},
+                   "from": {"id": 3, "is_bot": False, "first_name": "Dilnoza", "username": "dilnoza"}, "text": "Uyga vazifa bor"}
+    await wh._send("message", {
+        "message_id": 6, "date": 2, "chat": {"id": GROUP_A, "type": "supergroup", "title": "7-A sinf"},
+        "from": wh._user(STUDENT), "text": "jalab @bobur", "reply_to_message": teacher_msg,
+        "entities": [{"type": "mention", "offset": 6, "length": 6}]})
+    assert "Kimga: Dilnoza (@dilnoza), @bobur" in wh.api.sent(ADMIN)[-1].text
+    [item] = (await ok("abuse.get"))["log"]
+    assert item["to"] == "Dilnoza (@dilnoza), @bobur" and item["to_user_id"] == 3 and item["reply_text"] == "Uyga vazifa bor"

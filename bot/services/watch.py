@@ -129,6 +129,28 @@ def _who(message: Message) -> tuple[int | None, str, str | None]:
     return None, chat.title or "—", getattr(chat, "username", None)
 
 
+def _aimed_at(message: Message) -> tuple[int | None, str | None, str | None]:
+    """(id, name, text replied to) of whom the message was aimed at: the person it replies to
+    (not a topic's opening message), plus anyone @mentioned."""
+    names, to_id, reply_text = [], None, None
+    reply = message.reply_to_message
+    if reply is not None and reply.forum_topic_created is None:
+        if reply.from_user is not None:
+            to_id = reply.from_user.id
+            names.append(reply.from_user.full_name + (f" (@{reply.from_user.username})" if reply.from_user.username else ""))
+        elif reply.sender_chat is not None:
+            names.append(reply.sender_chat.title or "—")
+        reply_text = reply.text or reply.caption
+    text = message.text or message.caption or ""
+    for e in (message.entities or message.caption_entities or []):
+        if e.type == "mention":
+            names.append(e.extract_from(text))
+        elif e.type == "text_mention" and e.user is not None:
+            to_id = to_id or e.user.id
+            names.append(e.user.full_name)
+    return to_id, ", ".join(dict.fromkeys(names))[:255] or None, reply_text
+
+
 def _who_text(user_id: int | None, name: str, username: str | None) -> str:
     parts = [html.escape(name)]
     if username:
@@ -160,6 +182,7 @@ async def check_abuse(bot: Bot, session: AsyncSession, message: Message, edited:
         return False
 
     user_id, name, username = _who(message)
+    to_id, to_name, reply_text = _aimed_at(message)
     file_id = None
     if message.photo:
         file_id = message.photo[-1].file_id
@@ -168,6 +191,7 @@ async def check_abuse(bot: Bot, session: AsyncSession, message: Message, edited:
     session.add(FlaggedMessage(
         chat_id=message.chat.id, message_id=message.message_id, user_id=user_id, user_name=name[:255],
         username=username, text=text, words=", ".join(found)[:255], edited=edited, file_id=file_id,
+        to_user_id=to_id, to_name=to_name, reply_text=reply_text,
     ))
     await session.commit()
 
@@ -184,7 +208,8 @@ async def check_abuse(bot: Bot, session: AsyncSession, message: Message, edited:
             await bot.send_message(
                 admin_id,
                 t(lang, "abuse_alert_edited" if edited else "abuse_alert", group=html.escape(group),
-                  who=_who_text(user_id, name, username), words=html.escape(", ".join(found)), text=html.escape(text[:3000])),
+                  who=_who_text(user_id, name, username), words=html.escape(", ".join(found)), text=html.escape(text[:3000]),
+                  to="\n" + t(lang, "abuse_to", to=html.escape(to_name)) if to_name else ""),
                 reply_markup=_link_button(lang, message.chat.id, message.message_id),
                 reply_to_message_id=forwarded.message_id if forwarded else None,
             )

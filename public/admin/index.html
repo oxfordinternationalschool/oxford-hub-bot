@@ -1261,6 +1261,7 @@ const SCREENS = {
     editor.append(tgToNodes(state.annHtml));
     const counter = el("span", {});
     const sendBtn = el("button", { class: "btn block", type: "button" });
+    const pickedTitle = el("span", {});
     const pickedLabel = el("div", { class: "sub" });
     // A story goes to the school's Telegram account, and only a photo can become one.
     const storyBox = el("div", {});
@@ -1281,7 +1282,6 @@ const SCREENS = {
       counter.textContent = `${plain.length}/${limit}`;
       counter.style.color = plain.length > limit ? "var(--warn)" : "";
       sendBtn.textContent = sel.size ? t("ann_send_n", { n: sel.size }) : t("ann_send");
-      pickedLabel.textContent = sel.size ? t("ann_picked", { n: sel.size }) : t("ann_none_picked");
     };
     editor.addEventListener("input", updateUi);
     editor.addEventListener("paste", (e) => {  // keep pasted text plain; formatting comes from the toolbar
@@ -1427,21 +1427,23 @@ const SCREENS = {
 
     // ---- groups
     const grades = [...new Set(groups.map((g) => g.grade).filter(Boolean))].sort((a, b) => a - b);
-    const quickChips = el("div", { class: "chips" });
+    // One dropdown: all groups, one grade, or one's own choice from the list.
+    const presets = [["all", t("ann_all"), groups.map((g) => g.chat_id)],
+      ...grades.map((gr) => ["g" + gr, t("ann_grade", { g: gr }), groups.filter((g) => g.grade === gr).map((g) => g.chat_id)])];
+    const samePreset = () => (sel.size ? presets.find(([, , ids]) => ids.length === sel.size && ids.every((id) => sel.has(id))) : null);
     const drawChips = () => {
-      const all = groups.length && groups.every((g) => sel.has(g.chat_id));
-      const chip = (label, on, ids) => el("button", { class: "chip" + (on ? " on" : ""), type: "button", onclick: () => {
-        const allOn = ids.every((id) => sel.has(id));
-        ids.forEach((id) => (allOn ? sel.delete(id) : sel.add(id)));
-        haptic(); drawChips(); updateUi();
-      } }, label);
-      quickChips.replaceChildren(
-        chip(t("ann_all"), all, groups.map((g) => g.chat_id)),
-        ...grades.map((gr) => {
-          const ids = groups.filter((g) => g.grade === gr).map((g) => g.chat_id);
-          return chip(t("ann_grade", { g: gr }), ids.every((id) => sel.has(id)), ids);
-        }));
+      const preset = samePreset();
+      pickedTitle.textContent = preset ? preset[1] : sel.size ? t("pf_groups_custom", { n: sel.size }) : t("pf_groups_choose");
+      const names = groups.filter((g) => sel.has(g.chat_id)).map(groupLabel);
+      pickedLabel.textContent = names.length ? (names.length > 12 ? names.slice(0, 12).join(", ") + " …" : names.join(", ")) : t("ann_none_picked");
     };
+    const openGroupDropdown = () => openPicker(t("ann_to"),
+      [...presets.map(([k, label, ids]) => [k, `${label} · ${ids.length}`]), ["own", t("pf_groups_own")]],
+      (samePreset() || [""])[0], (k) => {
+        if (k === "own") return setTimeout(openGroupPicker, 250);
+        sel.clear(); presets.find(([key]) => key === k)[2].forEach((id) => sel.add(id));
+        drawChips(); updateUi();
+      });
     drawChips();
     const openGroupPicker = () => {
       const list = el("div", { class: "card" }, groups.map((g) => row({
@@ -1518,8 +1520,7 @@ const SCREENS = {
       card(toolbar, el("div", { style: "padding:12px 14px 14px" }, editor,
         el("div", { class: "hint", style: "text-align:right" }, counter), fileInput, attBox)),
       header(t("ann_to")),
-      quickChips,
-      card(row({ lead: lead("school"), title: t("ann_pick"), sub: pickedLabel, onclick: openGroupPicker, chevron: true }),
+      card(row({ lead: lead("school"), title: pickedTitle, sub: pickedLabel, onclick: openGroupDropdown, chevron: true }),
         row({ lead: lead("tag", "warn"), title: t("ann_pin"), side: toggle(state.annPin, (v) => { state.annPin = v; saveAnnDraft(); haptic(); }) }),
         storyBox),
       el("div", { class: "btns mt" }, el("button", { class: "btn ghost", type: "button", style: "flex:none;padding:0 16px", onclick: openPreview },

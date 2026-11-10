@@ -420,7 +420,9 @@ const T = {
     pf_kick: "Guruhdan chiqarish", pf_kick_d: "Bloklanmaydi: havola bilan qaytib kira oladi",
     pf_pick: "Odam tanlash", pf_pick_more: "Yana odam tanlash",
     pf_pick_hint: "10 tagacha odam tanlash mumkin. Telegram «Отправить» / «Send» deb so'raydi: bosing. Bu faqat botga kimni tanlaganingizni aytadi, odamga hech narsa bormaydi.",
-    pf_groups_pick: "Guruhlarni ro'yxatdan tanlash", pf_groups_choose: "Guruhlarni tanlang", pf_groups_custom: "{n} ta guruh (o'zingiz tanlagan)", pf_groups_own: "Ro'yxatdan o'zim tanlayman…", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
+    pf_groups_pick: "Guruhlarni ro'yxatdan tanlash", pf_groups_choose: "Guruhlarni tanlang", pf_groups_custom: "{n} ta guruh (o'zingiz tanlagan)", pf_groups_own: "Ro'yxatdan o'zim tanlayman…", bi_toggle: "Ikki tilda: o'zbekcha va ruscha", bi_sub: "Rus guruhlariga ruscha matn, qolganlariga o'zbekcha matn boradi. Guruh tili guruh sozlamalarida.",
+    lang_uz: "O'zbekcha", lang_ru: "Русский", ann_need_uz: "O'zbek guruhlari uchun o'zbekcha matnni yozing.", ann_need_ru: "Rus guruhlari uchun ruscha matnni yozing.",
+    ann_send_bi: "Yuborish: {uz} o'zbek + {ru} rus guruh", grp_uz: "O'zbek sinflar", grp_ru: "Rus sinflar", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
     pf_where_in: "U bor guruhlar", pf_need: "Odam va guruhlarni tanlang",
     pf_go_add: "{n} ta guruhga qo'shish", pf_go_admin: "{n} ta guruhda admin qilish", pf_go_unadmin: "{n} ta guruhda adminlikdan olish",
     pf_go_kick: "{n} ta guruhdan chiqarish",
@@ -553,7 +555,9 @@ const T = {
     pf_kick: "Удалить из группы", pf_kick_d: "Без блокировки: сможет вернуться по ссылке",
     pf_pick: "Выбрать человека", pf_pick_more: "Выбрать ещё",
     pf_pick_hint: "Можно выбрать до 10 человек. Telegram спросит «Отправить»: нажмите. Это только сообщает боту ваш выбор, человеку ничего не придёт.",
-    pf_groups_pick: "Выбрать группы из списка", pf_groups_choose: "Выберите группы", pf_groups_custom: "Групп: {n} (выбраны вручную)", pf_groups_own: "Выберу сам из списка…", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
+    pf_groups_pick: "Выбрать группы из списка", pf_groups_choose: "Выберите группы", pf_groups_custom: "Групп: {n} (выбраны вручную)", pf_groups_own: "Выберу сам из списка…", bi_toggle: "На двух языках: узбекский и русский", bi_sub: "Русские группы получат русский текст, остальные — узбекский. Язык группы — в её настройках.",
+    lang_uz: "O'zbekcha", lang_ru: "Русский", ann_need_uz: "Напишите текст на узбекском для узбекских групп.", ann_need_ru: "Напишите текст на русском для русских групп.",
+    ann_send_bi: "Отправить: {uz} узб. + {ru} рус. групп", grp_uz: "Узбекские классы", grp_ru: "Русские классы", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
     pf_where_in: "Где он есть", pf_need: "Выберите людей и группы",
     pf_go_add: "Добавить в {n} групп", pf_go_admin: "Сделать админом в {n} группах", pf_go_unadmin: "Снять админа в {n} группах",
     pf_go_kick: "Удалить из {n} групп",
@@ -686,7 +690,9 @@ const T = {
     pf_kick: "Remove from group", pf_kick_d: "Not banned: can come back by a link",
     pf_pick: "Choose a person", pf_pick_more: "Choose more",
     pf_pick_hint: "You can choose up to 10 people. Telegram will ask “Send”: tap it. It only tells the bot who you chose; nothing is sent to them.",
-    pf_groups_pick: "Choose groups from the list", pf_groups_choose: "Choose groups", pf_groups_custom: "{n} groups (your own choice)", pf_groups_own: "I'll pick from the list…", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
+    pf_groups_pick: "Choose groups from the list", pf_groups_choose: "Choose groups", pf_groups_custom: "{n} groups (your own choice)", pf_groups_own: "I'll pick from the list…", bi_toggle: "Two languages: Uzbek and Russian", bi_sub: "Russian groups get the Russian text, the rest the Uzbek one. A group's language is in its settings.",
+    lang_uz: "O'zbekcha", lang_ru: "Русский", ann_need_uz: "Write the Uzbek text for the Uzbek groups.", ann_need_ru: "Write the Russian text for the Russian groups.",
+    ann_send_bi: "Send: {uz} Uzbek + {ru} Russian groups", grp_uz: "Uzbek classes", grp_ru: "Russian classes", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
     pf_where_in: "Where they are", pf_need: "Choose people and groups",
     pf_go_add: "Add to {n} groups", pf_go_admin: "Make admin in {n} groups", pf_go_unadmin: "Remove admin in {n} groups",
     pf_go_kick: "Remove from {n} groups",
@@ -726,6 +732,7 @@ const ICONS = {
   star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z",
   userplus: "M15 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19 8v6M16 11h6",
   userminus: "M15 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM16 11h6",
+  globe: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18",
   undo: "M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
   story: "M12 3a9 9 0 1 1-6.4 2.6M3.5 8.5a9 9 0 0 1 2-2.9M8.5 3.7a9 9 0 0 1 1.8-.6M12 8v8M8 12h8",
@@ -956,7 +963,8 @@ const groupLabel = (g) => g.class_name || g.title;
 // ---------------------------------------------------------------- navigation
 const NAV = [["home", "home"], ["announce", "megaphone"], ["calls", "bell"], ["staff", "users"], ["more", "grid"]];
 const state = { tab: "home", sub: null, callsFilter: "pending", staffFilter: "all", staffQuery: "", statsDays: 7,
-  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", annStory: false, invitePreset: null, pf: null, subFrom: null };
+  annSelected: new Set(), annPin: false, annHtml: "", annMedia: [], annLayout: "album", annStory: false, invitePreset: null, pf: null, subFrom: null,
+  annBi: false, annHtmlRu: "", annEdit: "uz" };
 
 function renderNav() {
   const pending = (cached("dashboard") || {}).pending || [];
@@ -1143,7 +1151,7 @@ function tgToNodes(html) {
 const DRAFT_KEY = "ois-ann-draft-v2";
 function saveAnnDraft() {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ html: state.annHtml, sel: [...state.annSelected], pin: state.annPin, layout: state.annLayout,
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ html: state.annHtml, bi: state.annBi, ru: state.annHtmlRu, edit: state.annEdit, sel: [...state.annSelected], pin: state.annPin, layout: state.annLayout,
       media: state.annMedia.map(({ id, kind, caption, file_name, duration, has_thumb, album_ok }) =>
         ({ id, kind, caption, file_name, duration, has_thumb, album_ok })) }));
   } catch {}
@@ -1151,6 +1159,7 @@ function saveAnnDraft() {
 function loadAnnDraft() {
   try {
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+    if (d) { state.annBi = !!d.bi; state.annHtmlRu = d.ru || ""; state.annEdit = d.bi && d.edit === "ru" ? "ru" : "uz"; }
     if (d) { state.annHtml = d.html || ""; state.annSelected = new Set(d.sel || []); state.annPin = !!d.pin; state.annMedia = d.media || []; state.annLayout = d.layout || "album"; }
   } catch {}
 }
@@ -1258,7 +1267,8 @@ const SCREENS = {
 
     // ---- editor with a formatting toolbar
     const editor = el("div", { class: "editor", contenteditable: "true", "data-ph": t("ann_ph"), role: "textbox", "aria-multiline": "true" });
-    editor.append(tgToNodes(state.annHtml));
+    const editingRu = () => state.annBi && state.annEdit === "ru";
+    editor.append(tgToNodes(editingRu() ? state.annHtmlRu : state.annHtml));
     const counter = el("span", {});
     const sendBtn = el("button", { class: "btn block", type: "button" });
     const pickedTitle = el("span", {});
@@ -1277,11 +1287,14 @@ const SCREENS = {
     const updateUi = () => {
       if (done) return;
       const { html, plain } = current();
-      state.annHtml = html; saveAnnDraft();
+      if (editingRu()) state.annHtmlRu = html; else state.annHtml = html;
+      saveAnnDraft();
       const limit = state.annMedia.length && effectiveLayout() === "album" ? 1024 : 4096;
       counter.textContent = `${plain.length}/${limit}`;
       counter.style.color = plain.length > limit ? "var(--warn)" : "";
-      sendBtn.textContent = sel.size ? t("ann_send_n", { n: sel.size }) : t("ann_send");
+      const ruN = state.annBi ? groups.filter((g) => sel.has(g.chat_id) && g.lang === "ru").length : 0;
+      sendBtn.textContent = ruN && ruN < sel.size ? t("ann_send_bi", { uz: sel.size - ruN, ru: ruN })
+        : sel.size ? t("ann_send_n", { n: sel.size }) : t("ann_send");
     };
     editor.addEventListener("input", updateUi);
     editor.addEventListener("paste", (e) => {  // keep pasted text plain; formatting comes from the toolbar
@@ -1425,10 +1438,32 @@ const SCREENS = {
     loadThumbs(state.annMedia).then(drawAtt).catch(() => {});
     drawAtt();
 
+    // ---- two languages: the Russian groups get the Russian text, the rest the Uzbek one
+    const biRow = el("div");
+    const langSeg = el("div");
+    const switchTo = (lang) => {
+      updateUi();  // keeps the text of the language being left
+      state.annEdit = lang;
+      editor.replaceChildren(tgToNodes(lang === "ru" ? state.annHtmlRu : state.annHtml));
+      updateUi(); drawLang();
+    };
+    const drawLang = () => {
+      biRow.replaceChildren(row({ lead: lead("globe", "ok"), title: t("bi_toggle"), sub: t("bi_sub"), side: toggle(state.annBi, (v) => {
+        if (!v && state.annEdit === "ru") switchTo("uz");
+        state.annBi = v; state.annEdit = "uz"; haptic(); updateUi(); drawLang();
+      }) }));
+      langSeg.replaceChildren(state.annBi ? el("div", { style: "padding:12px 14px 0" },
+        seg([["uz", t("lang_uz")], ["ru", t("lang_ru")]], state.annEdit, (v) => { if (v !== state.annEdit) { haptic(); switchTo(v); } })) : "");
+    };
+    drawLang();
+    const plainOf = (h) => { const box = el("div"); box.append(tgToNodes(h || "")); return editorToTg(box).plain; };
+
     // ---- groups
     const grades = [...new Set(groups.map((g) => g.grade).filter(Boolean))].sort((a, b) => a - b);
+    const langIds = (ru) => groups.filter((g) => (g.lang === "ru") === ru).map((g) => g.chat_id);
     // One dropdown: all groups, one grade, or one's own choice from the list.
     const presets = [["all", t("ann_all"), groups.map((g) => g.chat_id)],
+      ...(langIds(true).length && langIds(false).length ? [["uz", t("grp_uz"), langIds(false)], ["ru", t("grp_ru"), langIds(true)]] : []),
       ...grades.map((gr) => ["g" + gr, t("ann_grade", { g: gr }), groups.filter((g) => g.grade === gr).map((g) => g.chat_id)])];
     const samePreset = () => (sel.size ? presets.find(([, , ids]) => ids.length === sel.size && ids.every((id) => sel.has(id))) : null);
     const drawChips = () => {
@@ -1456,6 +1491,14 @@ const SCREENS = {
     // ---- preview & send
     const validate = () => {
       const { plain } = current();
+      if (state.annBi) {
+        updateUi();
+        if (!sel.size) return t("ann_need_groups");
+        const ruN = groups.filter((g) => sel.has(g.chat_id) && g.lang === "ru").length;
+        if (sel.size > ruN && !plainOf(state.annHtml) && !state.annMedia.length) return t("ann_need_uz");
+        if (ruN && !plainOf(state.annHtmlRu) && !state.annMedia.length) return t("ann_need_ru");
+        return null;
+      }
       if (!plain && !state.annMedia.length) return t("ann_need_text");
       if (!sel.size) return t("ann_need_groups");
       return null;
@@ -1463,7 +1506,8 @@ const SCREENS = {
     const openPreview = () => {
       const { html, plain } = current();
       if (!plain && !state.annMedia.length) return alertMsg(t("ann_need_text"));
-      const first = groups.find((g) => sel.has(g.chat_id)) || groups[0];
+      const fits = (g) => !state.annBi || (g.lang === "ru") === editingRu();
+      const first = groups.find((g) => sel.has(g.chat_id) && fits(g)) || groups.find(fits) || groups[0];
       openSheet(t("preview"), previewBubble(groupLabel(first), state.annMedia, html, plain, effectiveLayout()),
         sel.size ? el("button", { class: "btn block mt", type: "button", onclick: () => { closeSheet(); sendBtn.click(); } },
           t("ann_send_n", { n: sel.size })) : el("div", { class: "hint mt" }, t("ann_need_groups")));
@@ -1481,13 +1525,13 @@ const SCREENS = {
       act(sendBtn, doSend).finally(() => { sending = false; updateUi(); });
     });
     const doSend = async () => {
-      const { html } = current();
-      const r = await api("announce.send", { html, chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id),
-        layout: effectiveLayout(), story: storyOn() });
+      updateUi();
+      const r = await api("announce.send", { html: state.annHtml, ...(state.annBi ? { html_ru: state.annHtmlRu } : {}),
+        chat_ids: [...sel], pin: state.annPin, media_ids: state.annMedia.map((m) => m.id), layout: effectiveLayout(), story: storyOn() });
       haptic(r.failed.length || (r.story && r.story !== "ok") ? "warning" : "ok");
       toast(t("ann_sent", { sent: r.sent, total: r.total }) + (r.story === "ok" ? " · " + t("story_ok") : ""));
       done = true;
-      state.annHtml = ""; state.annMedia = []; sel.clear(); saveAnnDraft(); invalidate("annHistory");
+      state.annHtml = ""; state.annHtmlRu = ""; state.annEdit = "uz"; state.annMedia = []; sel.clear(); saveAnnDraft(); invalidate("annHistory");
       await render();
       if (r.failed.length || r.pin_failed.length || (r.story && r.story !== "ok")) {
         await alertMsg([
@@ -1517,7 +1561,8 @@ const SCREENS = {
 
     return [
       pageHead(t("ann_title")),
-      card(toolbar, el("div", { style: "padding:12px 14px 14px" }, editor,
+      card(biRow), el("div", { class: "mt" }),
+      card(langSeg, toolbar, el("div", { style: "padding:12px 14px 14px" }, editor,
         el("div", { class: "hint", style: "text-align:right" }, counter), fileInput, attBox)),
       header(t("ann_to")),
       card(row({ lead: lead("school"), title: pickedTitle, sub: pickedLabel, onclick: openGroupDropdown, chevron: true }),
@@ -1762,8 +1807,11 @@ const SUBS = {
       const grades = [...new Set(groups.map((g) => g.grade).filter(Boolean))].sort((a, b) => a - b);
       // One dropdown: a ready set of groups, or one's own choice from the list.
       const inIds = groups.filter((g) => ["member", "admin", "admin_other"].includes(statusOf(g))).map((g) => g.chat_id);
+      const ruIds = groups.filter((g) => g.lang === "ru").map((g) => g.chat_id);
+      const uzIds = groups.filter((g) => g.lang !== "ru").map((g) => g.chat_id);
       const presets = [["all", t("ann_all"), groups.map((g) => g.chat_id)],
         ...(inIds.length ? [["in", t("pf_where_in", { n: inIds.length }), inIds]] : []),
+        ...(ruIds.length && uzIds.length ? [["uz", t("grp_uz"), uzIds], ["ru", t("grp_ru"), ruIds]] : []),
         ...grades.map((gr) => ["g" + gr, t("ann_grade", { g: gr }), groups.filter((g) => g.grade === gr).map((g) => g.chat_id)])];
       const same = (ids) => ids.length === pf.sel.size && ids.every((id) => pf.sel.has(id));
       const current = pf.sel.size ? (presets.find(([, , ids]) => same(ids)) || [""])[0] : "";
@@ -2000,7 +2048,17 @@ async function openAnnouncement(a, shareStory) {
   let editBox = null, saveBtn = null;
   if (d.editable) {
     const editor = el("div", { class: "editor", contenteditable: "true", role: "textbox", "aria-multiline": "true", style: "min-height:110px" });
+    const bi = d.html_ru != null;
+    const texts = { uz: d.html, ru: d.html_ru || "" };
+    let lang = "uz";
+    const groupsOf = (lg) => (bi ? d.groups.filter((g) => (g.lang === "ru") === (lg === "ru")) : d.groups);
     editor.append(tgToNodes(d.html));
+    const langSeg = el("div");
+    const drawSeg = () => langSeg.replaceChildren(bi ? el("div", { style: "padding:12px 14px 0" }, seg([["uz", t("lang_uz")], ["ru", t("lang_ru")]], lang, (v) => {
+      if (v === lang) return;
+      texts[lang] = editorToTg(editor).html; lang = v; editor.replaceChildren(tgToNodes(texts[lang]));
+      haptic(); count(); drawSeg(); save.textContent = t("ann_edit_save", { n: groupsOf(lang).length });
+    })) : "");
     const counter = el("div", { class: "hint", style: "text-align:right" });
     const count = () => { const n = editorToTg(editor).plain.length; counter.textContent = `${n}/${d.limit}`; counter.style.color = n > d.limit ? "var(--warn)" : ""; };
     editor.addEventListener("input", count);
@@ -2008,14 +2066,15 @@ async function openAnnouncement(a, shareStory) {
     count();
     const save = el("button", { class: "btn block mt", type: "button", onclick: () => act(save, async () => {
       const { html } = editorToTg(editor);
-      if (!(await confirmMsg(t("ann_edit_confirm", { n: d.groups.length })))) return;
-      const r = await api("announce.edit", { id: a.id, html });
-      d.html = html; haptic(r.failed.length ? "warning" : "ok"); toast(t("ann_edited", { n: r.edited, total: r.total }));
+      if (!(await confirmMsg(t("ann_edit_confirm", { n: groupsOf(lang).length })))) return;
+      const r = await api("announce.edit", { id: a.id, html, ...(bi ? { lang } : {}) });
+      texts[lang] = html; haptic(r.failed.length ? "warning" : "ok"); toast(t("ann_edited", { n: r.edited, total: r.total }));
       if (r.failed.length) await alertMsg(t("ann_edit_failed", { list: r.failed.join(", ") }));
       refresh();
-    }) }, t("ann_edit_save", { n: d.groups.length }));
+    }) }, t("ann_edit_save", { n: groupsOf(lang).length }));
+    drawSeg();
     saveBtn = save;
-    editBox = [header(t("ann_edit")), card(el("div", { style: "padding:12px 14px 14px" }, editor, counter)), save,
+    editBox = [header(t("ann_edit")), card(langSeg, el("div", { style: "padding:12px 14px 14px" }, editor, counter)), save,
       el("div", { class: "hint", style: "margin:8px 2px 0" }, t("ann_edit_hint"))];
   } else if (!d.deleted && d.groups.length) {
     editBox = [header(t("ann_edit")), card(el("div", { class: "hint", style: "padding:14px 16px;margin:0" }, t("ann_not_editable")))];

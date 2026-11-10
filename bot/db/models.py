@@ -147,6 +147,8 @@ class Announcement(Base):
     # Its current text (HTML), so it can be edited; for a slideshow/collage also its layout and
     # media ([[kind, file_id], ...] as JSON), since editing a rich message sends it whole again.
     html: Mapped[str | None] = mapped_column(Text)
+    # A two-language announcement: this text went to the Russian groups (group.lang == "ru"), `html` to the rest.
+    html_ru: Mapped[str | None] = mapped_column(Text)
     layout: Mapped[str | None] = mapped_column(String(16))
     rich_media: Mapped[str | None] = mapped_column(Text)
 

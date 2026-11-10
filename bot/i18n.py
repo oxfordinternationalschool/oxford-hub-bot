@@ -400,6 +400,11 @@ TEXTS: dict[str, dict[str, str]] = {
     "media_document": {"uz": "Fayl", "ru": "Файл", "en": "File"},
     "media_video_note": {"uz": "Video xabar", "ru": "Видеосообщение", "en": "Video message"},
     "media_animation": {"uz": "GIF", "ru": "GIF", "en": "GIF"},
+    "ann_need_ru": {
+        "uz": "Rus guruhlari uchun ruscha matnni yozing.",
+        "ru": "Напишите текст на русском для русских групп.",
+        "en": "Write the Russian text for the Russian groups.",
+    },
     "webapp_text_empty": {
         "uz": "E'lon matni bo'sh.",
         "ru": "Текст объявления пуст.",

@@ -66,7 +66,8 @@ async def _edit_one(bot: Bot, m: AnnouncementMessage, html_text: str, rich) -> N
 
 
 async def edit_announcement(bot: Bot, session: AsyncSession, ann: Announcement, msgs: list[AnnouncementMessage],
-                            html_text: str, preview: str) -> EditResult:
+                            html_text: str, preview: str, lang: str = "uz") -> EditResult:
+    """Edits the text in the given messages. `lang` "ru" is the Russian text of a two-language announcement."""
     rich = rich_message(json.loads(ann.rich_media), html_text, ann.layout) if ann.rich_media and ann.layout else None
     result = EditResult()
     for m in msgs:
@@ -84,9 +85,12 @@ async def edit_announcement(bot: Bot, session: AsyncSession, ann: Announcement, 
                     log.warning("Cannot edit announcement %s in %s: %s", ann.id, m.chat_id, e)
                     result.failed.append(m.chat_id)
             break
-    ann.html = html_text
-    ann.preview = preview[:200]
-    if ann.story_caption is not None:
-        ann.story_caption = html_text
+    if lang == "ru":
+        ann.html_ru = html_text
+    else:
+        ann.html = html_text
+        ann.preview = preview[:200]
+        if ann.story_caption is not None:
+            ann.story_caption = html_text
     await session.commit()
     return result

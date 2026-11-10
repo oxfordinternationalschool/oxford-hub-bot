@@ -142,11 +142,11 @@ def text_kind(message) -> str | None:
 async def save_announcement(
     session: AsyncSession, author_id: int, pin: bool, preview: str, result: BroadcastResult,
     story_file_id: str | None = None, story_caption: str | None = None,
-    html: str | None = None, layout: str | None = None, rich_media: str | None = None,
+    html: str | None = None, layout: str | None = None, rich_media: str | None = None, html_ru: str | None = None,
 ) -> Announcement:
     ann = Announcement(author_id=author_id, pinned=pin, preview=preview[:200],
                        story_file_id=story_file_id, story_caption=story_caption,
-                       html=html, layout=layout, rich_media=rich_media)
+                       html=html, html_ru=html_ru, layout=layout, rich_media=rich_media)
     session.add(ann)
     await session.flush()
     for chat_id, message_id in result.sent:

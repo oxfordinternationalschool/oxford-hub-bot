@@ -880,8 +880,11 @@ async def op_announce_send(ctx: Ctx, args: dict):
     if not isinstance(media_ids, list):
         raise ApiError(400, "bad_args", "media_ids")
     drafts = await _own_drafts(ctx, media_ids) if media_ids else []
-    if not plain and not drafts:
-        raise ctx.error("webapp_text_empty")
+    # Two languages: `html_ru` goes to the groups whose language is Russian, `html` to the rest.
+    raw_ru = _str(args, "html_ru", 20000, optional=True)
+    html_ru, plain_ru = to_telegram_html(raw_ru) if raw_ru is not None else (None, "")
+    if len(plain_ru) > 4096:
+        raise ApiError(400, "bad_args", "html_ru: 4096 max")
     layout = _str(args, "layout", 16, optional=True) or "album"
     if layout not in LAYOUTS:
         raise ApiError(400, "bad_args", "layout")
@@ -895,15 +898,26 @@ async def op_announce_send(ctx: Ctx, args: dict):
     chat_ids = [cid for cid in dict.fromkeys(ids) if cid in groups]
     if not chat_ids:
         raise ctx.error("ann_nothing_selected")
+    ru_ids = {cid for cid in chat_ids if groups[cid].lang == "ru"} if html_ru is not None else set()
+    if len(ru_ids) < len(chat_ids) and not plain and not drafts:
+        raise ctx.error("webapp_text_empty")
+    if ru_ids and not plain_ru and not drafts:
+        raise ctx.error("ann_need_ru")
 
-    preview = media_preview(drafts, plain)
+    preview = media_preview(drafts, plain or plain_ru)
     send = announcement_sender(ctx.bot, drafts, html_text, plain, layout)
+    if ru_ids:
+        send_main, send_ru = send, announcement_sender(ctx.bot, drafts, html_ru, plain_ru, layout)
+
+        def send(chat_id: int):
+            return (send_ru if chat_id in ru_ids else send_main)(chat_id)
     result = await broadcast(ctx.bot, ctx.session, chat_ids, pin, send=send)
     photo = story_photo(drafts)
     rich = layout in ("slideshow", "collage") and len(drafts) >= 2
     ann = await save_announcement(ctx.session, ctx.user.id, pin, preview, result,
                                   story_file_id=photo, story_caption=story_caption(html_text, plain),
                                   html=html_text if plain else None, layout=layout if rich else None,
+                                  html_ru=html_ru if ru_ids and plain_ru else None,
                                   rich_media=json.dumps([[d.kind, d.file_id] for d in drafts]) if rich else None)
     # Optionally also a 24-hour story on the school's account (the photo only; Telegram has no channel stories for bots).
     story = None
@@ -976,23 +990,32 @@ async def op_announce_get(ctx: Ctx, args: dict):
     msgs = await text_messages(ctx.session, ann)
     kinds = {m.text_kind for m in msgs}
     return {
-        "id": ann.id, "html": ann.html or "", "deleted": ann.deleted,
+        "id": ann.id, "html": ann.html or "", "html_ru": ann.html_ru, "deleted": ann.deleted,
         "editable": bool(msgs) and not ann.deleted and ("rich" not in kinds or bool(ann.rich_media)),
         "limit": CAPTION_LIMIT if "caption" in kinds else TEXT_LIMIT,
-        "groups": sorted(({"chat_id": c, "label": groups[c].label if c in groups else str(c)} for c in chat_ids),
+        "groups": sorted(({"chat_id": c, "label": groups[c].label if c in groups else str(c),
+                           "lang": groups[c].lang if c in groups else None} for c in chat_ids),
                          key=lambda g: group_sort_key(groups[g["chat_id"]]) if g["chat_id"] in groups else (99, g["label"])),
     }
 
 
 @op("announce.edit")
 async def op_announce_edit(ctx: Ctx, args: dict):
-    """New text for an announcement, changed in every group that has it."""
+    """New text for an announcement, changed in every group that has it. For a two-language one,
+    `lang` says which text: "ru" for the Russian groups, otherwise the rest."""
     ann = await _get(ctx, Announcement, _int(args, "id"))
     html_text, plain = to_telegram_html(_str(args, "html", 20000) or "")
     msgs = await text_messages(ctx.session, ann)
+    lang = "ru" if args.get("lang") == "ru" else "uz"
+    if ann.html_ru is not None:
+        ru = set((await ctx.session.scalars(select(Group.chat_id).where(
+            Group.chat_id.in_({m.chat_id for m in msgs}), Group.lang == "ru"))).all())
+        msgs = [m for m in msgs if (m.chat_id in ru) == (lang == "ru")]
+    elif lang == "ru":
+        raise ApiError(400, "bad_args", "lang")
     if problem := edit_problem(ann, msgs, plain):
         raise ctx.error(problem)
-    result = await edit_announcement(ctx.bot, ctx.session, ann, msgs, html_text, new_preview(ann.preview, plain))
+    result = await edit_announcement(ctx.bot, ctx.session, ann, msgs, html_text, new_preview(ann.preview, plain), lang)
     labels = {g.chat_id: g.label for g in (await ctx.session.scalars(select(Group).where(Group.chat_id.in_(result.failed)))).all()}
     return {"edited": len(set(result.edited)), "total": len({m.chat_id for m in msgs}),
             "failed": [labels.get(c, str(c)) for c in dict.fromkeys(result.failed)]}

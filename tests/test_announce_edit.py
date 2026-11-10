@@ -85,3 +85,32 @@ async def test_delete_from_some_groups_only(wh):
     assert r["all_gone"]
     [item] = await ok("announce.history")
     assert item["deleted"]
+
+
+async def test_two_languages_each_group_gets_its_own_text(wh):
+    from aiogram.methods import SendMessage
+    await school(wh)
+    await ok("groups.update", {"chat_id": GROUP_B, "lang": "ru"})
+    ann = await send("Ertaga yig'ilish", html_ru="Завтра собрание")
+    assert [m.text for m in wh.api.sent(GROUP_A, kind=SendMessage)][-1] == "Ertaga yig'ilish"
+    assert [m.text for m in wh.api.sent(GROUP_B, kind=SendMessage)][-1] == "Завтра собрание"
+    got = await ok("announce.get", {"id": ann})
+    assert got["html_ru"] == "Завтра собрание" and {g["chat_id"]: g["lang"] for g in got["groups"]}[GROUP_B] == "ru"
+
+    r = await ok("announce.edit", {"id": ann, "html": "Завтра в 10", "lang": "ru"})
+    assert r["edited"] == 1 and r["total"] == 1
+    assert {(e.chat_id, e.text) for e in edits(wh)} == {(GROUP_B, "Завтра в 10")}
+    await ok("announce.edit", {"id": ann, "html": "Ertaga soat 10 da"})
+    assert {(e.chat_id, e.text) for e in edits(wh)} == {(GROUP_B, "Завтра в 10"), (GROUP_A, "Ertaga soat 10 da")}
+    got = await ok("announce.get", {"id": ann})
+    assert got["html"] == "Ertaga soat 10 da" and got["html_ru"] == "Завтра в 10"
+
+
+async def test_russian_text_is_required_for_russian_groups(wh):
+    await school(wh)
+    await ok("groups.update", {"chat_id": GROUP_B, "lang": "ru"})
+    status, body = await api("announce.send", {"html": "Salom", "html_ru": "", "chat_ids": BOTH, "pin": False})
+    assert status == 400 and "rus" in body["message"].lower()
+    # only Russian groups chosen: the Uzbek text may be empty
+    r = await ok("announce.send", {"html": "", "html_ru": "Привет", "chat_ids": [GROUP_B], "pin": False})
+    assert r["sent"] == 1

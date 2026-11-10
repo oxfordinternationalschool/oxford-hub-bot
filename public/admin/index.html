@@ -420,8 +420,8 @@ const T = {
     pf_kick: "Guruhdan chiqarish", pf_kick_d: "Bloklanmaydi: havola bilan qaytib kira oladi",
     pf_pick: "Odam tanlash", pf_pick_more: "Yana odam tanlash",
     pf_pick_hint: "10 tagacha odam tanlash mumkin. Telegram «Отправить» / «Send» deb so'raydi: bosing. Bu faqat botga kimni tanlaganingizni aytadi, odamga hech narsa bormaydi.",
-    pf_groups_pick: "Guruhlarni ro'yxatdan tanlash", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
-    pf_where_in: "U bor guruhlar · {n}", pf_need: "Odam va guruhlarni tanlang",
+    pf_groups_pick: "Guruhlarni ro'yxatdan tanlash", pf_groups_choose: "Guruhlarni tanlang", pf_groups_custom: "{n} ta guruh (o'zingiz tanlagan)", pf_groups_own: "Ro'yxatdan o'zim tanlayman…", pf_groups_n: "{n} ta guruh tanlandi", pf_groups_none: "Hali guruh tanlanmagan",
+    pf_where_in: "U bor guruhlar", pf_need: "Odam va guruhlarni tanlang",
     pf_go_add: "{n} ta guruhga qo'shish", pf_go_admin: "{n} ta guruhda admin qilish", pf_go_unadmin: "{n} ta guruhda adminlikdan olish",
     pf_go_kick: "{n} ta guruhdan chiqarish",
     pf_confirm: "{people}\n\n{what}: {n} ta guruh. Davom etamizmi?", pf_kick_sure: "Rostdan ham chiqarilsinmi? ({n} ta guruh)",
@@ -553,8 +553,8 @@ const T = {
     pf_kick: "Удалить из группы", pf_kick_d: "Без блокировки: сможет вернуться по ссылке",
     pf_pick: "Выбрать человека", pf_pick_more: "Выбрать ещё",
     pf_pick_hint: "Можно выбрать до 10 человек. Telegram спросит «Отправить»: нажмите. Это только сообщает боту ваш выбор, человеку ничего не придёт.",
-    pf_groups_pick: "Выбрать группы из списка", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
-    pf_where_in: "Где он есть · {n}", pf_need: "Выберите людей и группы",
+    pf_groups_pick: "Выбрать группы из списка", pf_groups_choose: "Выберите группы", pf_groups_custom: "Групп: {n} (выбраны вручную)", pf_groups_own: "Выберу сам из списка…", pf_groups_n: "Выбрано групп: {n}", pf_groups_none: "Группы ещё не выбраны",
+    pf_where_in: "Где он есть", pf_need: "Выберите людей и группы",
     pf_go_add: "Добавить в {n} групп", pf_go_admin: "Сделать админом в {n} группах", pf_go_unadmin: "Снять админа в {n} группах",
     pf_go_kick: "Удалить из {n} групп",
     pf_confirm: "{people}\n\n{what}: групп — {n}. Продолжить?", pf_kick_sure: "Точно удалить? (групп: {n})",
@@ -686,8 +686,8 @@ const T = {
     pf_kick: "Remove from group", pf_kick_d: "Not banned: can come back by a link",
     pf_pick: "Choose a person", pf_pick_more: "Choose more",
     pf_pick_hint: "You can choose up to 10 people. Telegram will ask “Send”: tap it. It only tells the bot who you chose; nothing is sent to them.",
-    pf_groups_pick: "Choose groups from the list", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
-    pf_where_in: "Where they are · {n}", pf_need: "Choose people and groups",
+    pf_groups_pick: "Choose groups from the list", pf_groups_choose: "Choose groups", pf_groups_custom: "{n} groups (your own choice)", pf_groups_own: "I'll pick from the list…", pf_groups_n: "{n} groups chosen", pf_groups_none: "No groups chosen yet",
+    pf_where_in: "Where they are", pf_need: "Choose people and groups",
     pf_go_add: "Add to {n} groups", pf_go_admin: "Make admin in {n} groups", pf_go_unadmin: "Remove admin in {n} groups",
     pf_go_kick: "Remove from {n} groups",
     pf_confirm: "{people}\n\n{what}: {n} groups. Go ahead?", pf_kick_sure: "Really remove? ({n} groups)",
@@ -1759,18 +1759,24 @@ const SUBS = {
       })), el("div", { style: "padding:14px 16px" }, pick, el("div", { class: "hint", style: "margin:10px 2px 0" }, t("pf_pick_hint"))));
       // 3. where
       const grades = [...new Set(groups.map((g) => g.grade).filter(Boolean))].sort((a, b) => a - b);
-      const chip = (label, ids) => {
-        const on = ids.length && ids.every((id) => pf.sel.has(id));
-        return el("button", { class: "chip" + (on ? " on" : ""), type: "button", onclick: () => {
-          ids.forEach((id) => (on ? pf.sel.delete(id) : pf.sel.add(id))); haptic(); draw();
-        } }, label);
-      };
+      // One dropdown: a ready set of groups, or one's own choice from the list.
       const inIds = groups.filter((g) => ["member", "admin", "admin_other"].includes(statusOf(g))).map((g) => g.chat_id);
-      const chips = el("div", { class: "chips wrap-ok" }, chip(t("ann_all"), groups.map((g) => g.chat_id)),
-        inIds.length ? chip(t("pf_where_in", { n: inIds.length }), inIds) : null,
-        ...grades.map((gr) => chip(t("ann_grade", { g: gr }), groups.filter((g) => g.grade === gr).map((g) => g.chat_id))));
-      const where = card(row({ lead: lead("school"), title: t("pf_groups_pick"),
-        sub: pf.sel.size ? t("pf_groups_n", { n: pf.sel.size }) : t("pf_groups_none"), onclick: openList, chevron: true }));
+      const presets = [["all", t("ann_all"), groups.map((g) => g.chat_id)],
+        ...(inIds.length ? [["in", t("pf_where_in", { n: inIds.length }), inIds]] : []),
+        ...grades.map((gr) => ["g" + gr, t("ann_grade", { g: gr }), groups.filter((g) => g.grade === gr).map((g) => g.chat_id)])];
+      const same = (ids) => ids.length === pf.sel.size && ids.every((id) => pf.sel.has(id));
+      const current = pf.sel.size ? (presets.find(([, , ids]) => same(ids)) || [""])[0] : "";
+      const currentLabel = current ? presets.find(([k]) => k === current)[1]
+        : pf.sel.size ? t("pf_groups_custom", { n: pf.sel.size }) : t("pf_groups_choose");
+      const names = groups.filter((g) => pf.sel.has(g.chat_id)).map(groupLabel);
+      const openDropdown = () => openPicker(t("pf_step_where"),
+        [...presets.map(([k, label, ids]) => [k, `${label} · ${ids.length}`]), ["own", t("pf_groups_own")]], current, (k) => {
+          if (k === "own") return setTimeout(openList, 250);
+          pf.sel = new Set(presets.find(([key]) => key === k)[2]); draw();
+        });
+      const where = card(row({ lead: lead("school"), title: currentLabel,
+        sub: names.length ? (names.length > 12 ? names.slice(0, 12).join(", ") + " …" : names.join(", ")) : null,
+        onclick: openDropdown, chevron: true }));
       // go
       const chosen = groups.filter((g) => pf.sel.has(g.chat_id));
       const ready = pf.people.length && chosen.length;
@@ -1787,7 +1793,7 @@ const SUBS = {
       box.replaceChildren(...[
         header(t("pf_step_what")), what,
         header(t("pf_step_who")), who,
-        header(t("pf_step_where")), chips, el("div", { class: "mt" }), where,
+        header(t("pf_step_where")), where,
         pf.status === "loading" ? el("div", { class: "hint", style: "margin:8px 4px 0" }, t("pf_status_loading")) : null,
         el("div", { style: "height:18px" }), warn, warn ? el("div", { class: "mt" }) : null, goBtn].filter(Boolean));
     };
